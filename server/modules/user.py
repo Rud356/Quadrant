@@ -1,5 +1,5 @@
 import json
-
+import modules.async_db
 clients = {}
 
 class users:
@@ -8,32 +8,34 @@ class users:
         'reader', 'writer',
         'id', 'nick', 'avatar',
         'friends', 'servers', 'channels',
-        'blocked', 'status', 'keychain'
+        'blocked', 'status', 'keychain', 'run_loop'
     )
-    def __init__(
-        self, reader, writer, keychain,
-        id, nick, avatar,
-        friends, servers, channels, blocked, status
-        ):
+    def __init__(self, reader, writer, keychain=None, authorization_info=None):
 
         self.reader, self.writer = reader, writer
         self.keychain = keychain
-        self.id = id
-        self.nick = nick
-        self.avatar = avatar
-        self.servers = servers
-        self.channels = channels
-        self.blocked = blocked
-        self.status = status
+        self.run_loop = False
+        if authorization_info:
+            self.run_loop = True
+            self.id = authorization_info[0]
+            self.nick = authorization_info[1]
+            self.avatar = authorization_info[2]
+            self.servers = authorization_info[3]
+            self.channels = authorization_info[4]
+            self.blocked = authorization_info[5]
+            self.status = authorization_info[6]
+            clients.update({self.id:self})
 
     async def clear_data(self):
         pass #plaseholder for decrypting data and parsing as json
 
     async def run_handler(self):
-        while True:
+        while self.run_loop:
             try: header = int(await self.reader(users.HEADER_SIZE).decode())
             except TypeError: continue
             data = await self.reader(header)
+        if not self.run_loop:
+            await self.writer(f'{3:<users.HEADER_SIZE}403'.encode())
 
     @staticmethod
     async def authorize(login, password):
@@ -42,14 +44,22 @@ class users:
 
     @classmethod
     async def registrate_user(cls, reader, writer, keychain):
-        header = int(await reader.read(users.HEADER_SIZE).decode())
-        # decrypt data
-        login, password = await reader.read(header).decode().split(' -> ', 1)[:2]
-        authorization = users.authorize(login, password)
-        if not authorization: writer.write(f'{3:<users.HEADER_SIZE}403'); await writer.drain() #incorrect password or login
-        else: return cls(
-            reader, writer, keychain, pass
-        ) #! write somehow simpler user creationg
+        logged_in = False
+        user = users(reader, writer)
+        tries = 0
+        while (not logged_in) or (tries == 5):
+            try: header = int((await reader.read(users.HEADER_SIZE)).decode())
+            except TypeError: continue
+            data = str(await reader.read(header), 'utf-8')
+            if data is not None:
+                login, password = data.split(' -> ', 1)
+                login_info = await users.authorize(login, password)
+                if login_info:
+                    user = cls(reader, writer, keychain, login_info)
+                    logged_in = True
+                    break
+                else: tries += 1
+        await user.run_handler()
 
 # echo client down below
 class users_s:

@@ -1,5 +1,5 @@
 import asyncio
-from modules import user
+from modules.user import users
 
 # -- constants -- #
 HEADER_SIZE = 6
@@ -16,7 +16,7 @@ async def handle_conn(reader, writer):
     # pkey = await reader.read(pkg_size).decode() #placeholder yet
     # generate our key and send it
     # sample user object
-    loop.create_task(user.users_s(reader, writer).run_handler())
+    loop.create_task(await users.registrate_user(reader, writer, None))
 
 async def server_make(host='127.0.0.1', port=12645):
     server = await asyncio.start_server(handle_conn, '127.0.0.1', port)

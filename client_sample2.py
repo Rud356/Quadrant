@@ -1,5 +1,6 @@
 import asyncio
 import random
+HEADER_SIZE = 6
 class client:
     def __init__(self, host='127.0.0.1', port=12645):
         self.host = host
@@ -18,7 +19,7 @@ async def tcp_echo_client(message):
         print(f'Send: {message!r}')
         message = message
         await asyncio.sleep(random.randint(0, 10))
-        writer.write(message.encode())
+        writer.write(f'{len(message):<HEADER_SIZE}'.encode()+message.encode())
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
