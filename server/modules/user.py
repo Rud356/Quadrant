@@ -32,10 +32,11 @@ class users:
     async def run_handler(self):
         while self.run_loop:
             try: header = int(await self.reader(users.HEADER_SIZE).decode())
-            except TypeError: continue
+            except (TypeError, ValueError): continue
             data = await self.reader(header)
         if not self.run_loop:
-            await self.writer(f'{3:<users.HEADER_SIZE}403'.encode())
+            self.writer.write(f'{3:<6}403'.encode())
+            await self.writer.drain()
 
     @staticmethod
     async def authorize(login, password):
@@ -47,19 +48,24 @@ class users:
         logged_in = False
         user = users(reader, writer)
         tries = 0
-        while (not logged_in) or (tries == 5):
+        while (not logged_in) and (tries != 5):
             try: header = int((await reader.read(users.HEADER_SIZE)).decode())
-            except TypeError: continue
+            except (TypeError, ValueError): continue
+            print('Incoming size: ', header)
             data = str(await reader.read(header), 'utf-8')
             if data is not None:
-                login, password = data.split(' -> ', 1)
-                login_info = await users.authorize(login, password)
-                if login_info:
-                    user = cls(reader, writer, keychain, login_info)
-                    logged_in = True
-                    break
-                else: tries += 1
-        await user.run_handler()
+                login_parts = data.split(' -> ')
+                if len(login_parts) == 2:
+                    login, password = login_parts[0], login_parts[1]
+                    login_info = await users.authorize(login, password)
+                    if login_info:
+                        user = cls(reader, writer, keychain, login_info)
+                        logged_in = True
+                        break
+                    else: tries += 1; await user.run_handler()
+                else: tries += 1; await user.run_handler()
+            print("Tries passed: ", tries)
+        return user.run_handler()
 
 # echo client down below
 class users_s:

@@ -16,14 +16,15 @@ async def tcp_echo_client(message):
         '127.0.0.1', 12645)
 
     for i in range(0, 15):
-        print(f'Send: {message!r}')
-        message = message
-        await asyncio.sleep(random.randint(0, 10))
-        writer.write(f'{len(message):<HEADER_SIZE}'.encode()+message.encode())
-        data = await reader.read(100)
-        print(f'Received: {data.decode()!r}')
+        # message = (f'{3:<6}'+message).encode()
+        # print(f'Send: {message!r}')
+        await asyncio.sleep(random.randint(0, 3))
+        writer.write(b'3     Hi!')
+        if i//5 == 0:
+            data = await reader.read(100)
+            print(f'Received: {data.decode()!r}')
 
     print('Close the connection')
     writer.close()
-
-asyncio.run(tcp_echo_client('Hello World from person 2!'))
+loop = asyncio.get_event_loop()
+asyncio.run(tcp_echo_client('Hi!'))
