@@ -1,0 +1,17 @@
+90
+{
+    'author':some_id,
+    'content': 'some text',
+    'reciever': some_other_id,
+    'attachments': [
+        'file1': {
+            'size': 4096,
+            'data': some_much_bytes
+        },
+        'file2': {
+            'size': 4096,
+            'data': some_much_bytes
+        },
+    ],
+    'mentions': [user_id, user_id2]
+}

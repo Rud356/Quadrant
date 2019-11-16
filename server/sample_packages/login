@@ -1,0 +1,5 @@
+90
+{
+    'login': some_user_login,
+    'pwd': password_hex_hash
+}
