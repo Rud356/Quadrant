@@ -68,10 +68,10 @@ Default max content length is 2000 chars
 
 * permissions (int) - represents a permissions user has (inheriting all roles permissions)
 bits permissions order
-1 - read messages
-2 - write messages
-3 - manage messages (delete, pin)
-4 - add attachments
+1. - read messages
+2. - write messages
+3. - manage messages (delete, pin)
+4. - add attachments
 
 * users - represents a client that connected to our online server
     - ID (int)
