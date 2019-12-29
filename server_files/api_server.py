@@ -16,7 +16,7 @@ Header = 8
 class __Tools:
     @staticmethod
     def limint(num: int):
-        return num.to_bytes(8, sys.byteorder)
+        return num.to_bytes(4, sys.byteorder)
 
 class ResponceCodes(enum.Enum): pass
 
@@ -25,6 +25,9 @@ class messages:
         self, author='system', content=None, attachments=None,
         endpoint: int=None
         ): pass
+
+class server:
+    pass
 
 class ChannelTypes(enum.Enum):
     secret_dm = 0
