@@ -2,13 +2,13 @@
 This project is created to be client and server side solution at the same time
 Also this project trying to use as less dependencies as possible
 
-**Current tasks**
-[ ] make server functional
-[ ] create basic database interaction
-[ ] write user auth system workable
-[ ] create server api file with everything it needs to run
-[ ] make user class to work with everyone connected to server
-[ ] add encryption mechanisms to make this crap secure
+**Current tasks**__
+[ ]make server functional__
+[ ]create basic database interaction__
+[ ]write user auth system workable__
+[ ]create server api file with everything it needs to run__
+[ ]make user class to work with everyone connected to server__
+[ ]add encryption mechanisms to make this crap secure
 
 **Dependencies**
 1. peewee
