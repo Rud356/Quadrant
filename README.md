@@ -26,40 +26,39 @@ client.py (not existing yet)
 **Relationships and objects**
 
 * package - all raw packages from users
-- header - the size of incoming package (default size is 4 bytes)
-- pkg_type - type of package we sending
-- *other - package specified keywords in json
+    - header - the size of incoming package (default size is 4 bytes)
+    - pkg_type - type of package we sending
+    - *other - package specified keywords in json
 
 * message - represents the message from somewhere
-Containts fields:
-- ID (int)
-- Author (int)
-- Content (string)
-- Attachments (list of ids reffering to attachments)
-- Endpoint (id of endpoint channel)
-- Timestamp (int)
-- Mentions (list of mentions that can be separated onto mentions types)
-- pinned (bool)
+    - ID (int)
+    - Author (int)
+    - Content (string)
+    - Attachments (list of ids reffering to attachments)
+    - Endpoint (id of endpoint channel)
+    - Timestamp (int)
+    - Mentions (list of mentions that can be separated onto mentions types)
+    - pinned (bool)
 Default max content length is 2000 chars
 
 * channel - represents any channel with one or more users in
-- ID (int)
-- Type (int)
-- Recievers (list of recievers)
-- Banned (list of user ids)
-- Roles? (list of ids) - inheriting from the server if it's a part of one
-- Roles overwrites?
-- nsfw (bool)
+    - ID (int)
+    - Type (int)
+    - Recievers (list of recievers)
+    - Banned (list of user ids)
+    - Roles? (list of ids) - inheriting from the server if it's a part of one
+    - Roles overwrites?
+    - nsfw (bool)
 
 * server - represents collection of channels
-- ID (int)
-- Name (string)
-- Icon (int) - the id of saved image
-- Owner (int) - it of most previliged user
-- Roles? (list of ids) - all roles existing in this server
-- Created at (int)
-- Channels (list of ints)
-- Users (list of ints)
+    - ID (int)
+    - Name (string)
+    - Icon (int) - the id of saved image
+    - Owner (int) - it of most previliged user
+    - Roles? (list of ids) - all roles existing in this server
+    - Created at (int)
+    - Channels (list of ints)
+    - Users (list of ints)
 
 * permissions (int) - represents a permissions user has (inheriting all roles permissions)
 bits permissions order
@@ -69,11 +68,11 @@ bits permissions order
 4 - add attachments
 
 * users - represents a client that connected to our online server
-- ID (int)
-- Bans (list of ints) - users id same time being a channel
-- Nick (string)
-- Discriminator - if user nickname already in use
-- Avatar (int) - the id of avatar
-- Bot (bool)
-- Keypair (keypair) - this object helps us to encrypt/decrypt messages
-- Friendlist (list of ints)
+    - ID (int)
+    - Bans (list of ints) - users id same time being a channel
+    - Nick (string)
+    - Discriminator - if user nickname already in use
+    - Avatar (int) - the id of avatar
+    - Bot (bool)
+    - Keypair (keypair) - this object helps us to encrypt/decrypt messages
+    - Friendlist (list of ints)
