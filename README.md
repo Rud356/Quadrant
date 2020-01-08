@@ -67,6 +67,7 @@ Default max content length is 2000 chars
     - Users (list of ints)
 
 * permissions (int) - represents a permissions user has (inheriting all roles permissions)
+
 bits permissions order
 1. - read messages
 2. - write messages
