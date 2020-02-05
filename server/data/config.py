@@ -1,4 +1,3 @@
-import pymongo
+import peewee
 
-client = pymongo.MongoClient('localhost')
-database = client['chatapp']
+db_engine = peewee.SqliteDatabase("file::memory:") #for test purposes
