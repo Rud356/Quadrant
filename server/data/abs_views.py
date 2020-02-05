@@ -30,18 +30,15 @@ class User(ABC):
         self.__token = token
 
     @abstractclassmethod
-    @classmethod
-    def get_user(self, id):
+    def get_user(cls, id):
         pass
 
     @abstractclassmethod
-    @classmethod
-    def auth_user(self, **kwargs):
+    def auth_user(cls, **kwargs):
         pass
 
     @abstractclassmethod
-    @staticmethod
-    def create_user(self, **kwargs):
+    def create_user(cls, **kwargs):
         pass
 
     @property
@@ -146,7 +143,7 @@ class Roles(ABC):
         pass
 
     @abstractclassmethod
-    def create_role(self, **):
+    def create_role(self, **k):
         pass
 
     @property
@@ -177,7 +174,7 @@ class Member(ABC):
 
     @abstractclassmethod
     @classmethod
-    def join_chat(cls, **):
+    def join_chat(cls, **k):
         pass
 
     @abstractmethod
@@ -230,44 +227,62 @@ class Member(ABC):
 class ChatFactory(ABC):
     @abstractstaticmethod
     @staticmethod
-    def create_chat(**):
+    def create_chat(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_dm(**):
+    def create_dm(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_pdm(**):
+    def create_pdm(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_group_dm(**):
+    def create_group_dm(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_server(**):
+    def create_server(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_channel(**):
+    def create_channel(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_voice(**):
+    def create_voice(**k):
         pass
 
     @abstractstaticmethod
     @staticmethod
-    def create_invite(**):
+    def create_invite(**k):
         pass
 
 
-class Channel:
-    pass
+class Channel(ABC):
+    __slots__ = (
+        "id", "channel_type", "server_id",
+        "position", "overwrites", "name", "topic",
+        "nsfw", "icon", "owner", "last_message"
+    )
+
+    def __init__(self, **kwargs):
+        pass
+
+    @property
+    def NSFW(self):
+        return self.nsfw
+
+    @abstractproperty
+    @property.setter
+    def NSFW(self, value):
+        pass
+
+    #im too lazy to finish this crap so i just make a final views
