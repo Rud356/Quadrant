@@ -1,6 +1,6 @@
-import ssl
 
 from data.views import User
+from data.crypt import Encryption
 from quart import Quart, Response, request
 app = Quart(__name__)
 class CChat:
@@ -9,7 +9,11 @@ class CChat:
         self.port = port
 
     def run(self):
-        app.run(port=self.port, certfile='cert.pem', keyfile='key.pem')
+        try:
+            app.run(port=self.port, certfile='cert.pem', keyfile='key.pem')
+        except:
+            app.run(port=self.port)
+
 
 class Routes:
     @staticmethod
