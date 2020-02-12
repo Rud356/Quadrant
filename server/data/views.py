@@ -12,7 +12,7 @@ class User:
         token = models.authorize_user(login, pwd)
         print(token)
         if token is not None:
-            return {token: cls(ids, False, 1)}
+            return token, {token: cls(ids, False, 1)}
         else:
             raise cls.Exceptions.Unauthorized
 

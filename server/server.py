@@ -1,5 +1,7 @@
-from quart import Quart, Response, request
+import ssl
+
 from data.views import User
+from quart import Quart, Response, request
 app = Quart(__name__)
 class CChat:
     client_pool = {}
@@ -7,7 +9,7 @@ class CChat:
         self.port = port
 
     def run(self):
-        app.run(port=self.port)
+        app.run(port=self.port, certfile='cert.pem', keyfile='key.pem')
 
 class Routes:
     @staticmethod
@@ -21,9 +23,9 @@ class Routes:
         pwd = str(await request.get_data(), 'utf-8')
         try:
             token = User.auth(login, pwd)
-            CChat.client_pool.update(token)
-            r = Response("12345", status=200)
-            r.set_cookie("token", "1234556")
+            CChat.client_pool.update(token[1])
+            r = Response("Authorized", status=200)
+            r.set_cookie("token", token[0])
             return r
         except User.Exceptions.Unauthorized:
             return Response("Incorrect login or password", status=401)
