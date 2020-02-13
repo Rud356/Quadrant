@@ -5,6 +5,14 @@ class User:
         self.id: int = id
         self.bot: bool = False
         self.status: int = 1
+        self.ws = None
+
+    def __repr__(self):
+        return {
+            "id": self.id,
+            "bot": self.bot,
+            "status": self.status
+        }
 
     @classmethod
     def auth(cls, login, pwd):
@@ -18,3 +26,6 @@ class User:
 
     class Exceptions:
         class Unauthorized(Exception): pass
+
+class Message:
+    msg_pool = []

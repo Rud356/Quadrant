@@ -1,5 +1,5 @@
 
-from data.views import User
+from data.views import User, Message
 from data.crypt import Encryption
 from quart import Quart, Response, request, session, jsonify
 app = Quart(__name__)
@@ -22,7 +22,17 @@ class Routes:
         return 'hello!'
 
     @staticmethod
-    @app.route()
+    @app.route("/message/<id>", methods=["POST"])
+    async def msg(id):
+        Message.msg_pool.append(id)
+        return Response('hello!')
+
+    @app.route("/message/<id>", methods=["GET"])
+    async def msg_send(id):
+        if request.cookies.get("token", None) == "123456":
+            return Response(Message.msg_pool[0])
+        else:
+            return Response("No access, unauthorized", status=401)
 
     @staticmethod
     @app.route("/login/<string:login>", methods=["POST", "PUT"])
