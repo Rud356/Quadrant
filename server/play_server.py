@@ -1,6 +1,6 @@
 
-from data.views import User, Message
-from data.crypt import Encryption
+from data_play.views import User, Message
+from data_play.crypt import Encryption
 from quart import Quart, Response, request, session, jsonify
 app = Quart(__name__)
 class CChat:
