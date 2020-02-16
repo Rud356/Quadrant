@@ -106,3 +106,12 @@ class User:
             "friendlist": self.friendlist,
             "blacklist": self.blacklist
         }
+
+    def __repr__(self):
+        return {
+            "id": self.id,
+            "nick": self.nick,
+            "status": self.status,
+            "bot": self.bot,
+            "avatar": self.avatar,
+        }

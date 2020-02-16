@@ -114,6 +114,6 @@ class Routes:
                 pass
 
     class Channel:
-
+        pass
 
 CChat(debug=True).run()
