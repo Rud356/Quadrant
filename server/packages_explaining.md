@@ -143,8 +143,11 @@ Notes:
 
 ### Group dms
  These existing as a group for up to 25 persons in chat
+
  Can make voice calls and stuff together
+
  Also can set inviting mode: `owner only` or `all members`
+
 
  ? create channel
  ```json
@@ -157,6 +160,7 @@ Notes:
      "*nsfw": false // by default - false
  }
  ```
+
  ! Responce group_dm object
  200 - fine
  ```json
@@ -170,9 +174,12 @@ Notes:
  }
  ```
  (maybe add pinning channels for specific users?)
+
  401 - unauthorized
 
+
  ? create invite
+
  Taking invite creator from token and looking at least if he can make an invite
  ```json
  {
@@ -182,20 +189,32 @@ Notes:
  }
  ```
  ! Invite responce
+
  200 - invite created (giving internal invite link)
+
  401 - unauthorized
+
  403 - can't create invite links
 
+
  ? pin message
+
  Pinning message if member is existing there
+
  Taking user that pins message from cookies
+
  ! responce
+
  200 - message pinned
+
  401 - unauthorized
 
  ? use invite link
  Taking user from cookie and adding to related chat
  ! Responce
+
  200 - added to group
+
  401 - unauthorized
+
  403 - expired
