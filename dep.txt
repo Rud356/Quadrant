@@ -1,0 +1,3 @@
+flask
+flask-socketio
+Flask-SQLAlchemy

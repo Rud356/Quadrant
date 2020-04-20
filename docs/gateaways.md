@@ -2,9 +2,10 @@
 `/api/v<version>`
 
 ## Routes
+`/user/register` - POST  
 `/user/login` - POST  
 `/user/logout` - POST  
-`/user/reset` - POSt  
+`/user/reset` - POST  
 `/user/delete` - DELETE  
 
 `/user/<id>` - GET user with id (if is friend or has common groups)  
