@@ -22,6 +22,17 @@ class RelationsModel(db.Model):
     relation = Column(Enum(Relation))
     __tablename__ = 'relations'
 
+
+    @staticmethod
+    def _get_users_relationships(user_id, relationship):
+        query = session.query(RelationsModel).select()\
+            .filter(
+                RelationsModel.users_relations == user_id,
+                RelationsModel.relation == relationship
+            )
+
+        return query
+
     @staticmethod
     def _relationship_exists(users_relations, user_related, relation):
         relationship_count = RelationsModel._get_exact_relationship(

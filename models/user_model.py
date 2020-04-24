@@ -10,23 +10,23 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Load, load_only, relationship
 
-from .relations_model import RelationsModel
-
+from .relations_model import RelationsModel, Relation
+from .config_model import UserSettings, Setting
 #TODO: make custom exceptions
 
 
 class UserModel(db.Model):
     id: int = Column(BigInteger, primary_key=True)
-    token: str = Column(VARCHAR(512), unique=True, nullable=True)
+    token: str = Column(VARCHAR(512), unique=True)
     login: str = Column(VARCHAR(512), unique=True, nullable=True)
-    password: str = Column(VARCHAR(512))
+    password: str = Column(VARCHAR(512), nullable=True)
 
     nick: str = Column(VARCHAR(50))
     bot: bool = Column(Boolean, default=False)
     belongs_to: int = Column(BigInteger, nullable=True)
     joined_at = Column(DateTime, default=datetime.utcnow)
 
-    related_to = relationship('RelationsModel', lazy=True)
+    settings = relationship('UserSettings')
 
     __tablename__ = 'users'
 
@@ -50,7 +50,7 @@ class UserModel(db.Model):
         return not bool(token_count)
 
     @classmethod
-    def create_user(cls, id: int, nick: str, is_bot=False, **kwargs):
+    def create_user(cls, nick: str, is_bot=False, **kwargs):
         if is_bot:
             allowed_keys = {'belongs_to',}
             required_keys = {'belongs_to',}
@@ -71,7 +71,7 @@ class UserModel(db.Model):
             token = ''.join(random.choices('1234567890abcdef', k=256))
 
         new_user = cls(
-            id=id, nick=nick, bot=is_bot,
+            nick=nick, bot=is_bot,
             token=token,
             **kwargs
         )
@@ -114,3 +114,24 @@ class UserModel(db.Model):
             raise ValueError("Incorrect user id")
 
         return RelationsModel.delete_friend(self.id, unfriend)
+
+    @property
+    def friends(self):
+        users = RelationsModel._get_users_relationships(
+            self.id, Relation.friends
+        )
+        return users
+
+    @property
+    def blocked(self):
+        users = RelationsModel._get_users_relationships(
+            self.id, Relation.blocked
+        )
+        return users
+
+    @property
+    def pending(self):
+        users = RelationsModel._get_users_relationships(
+            self.id, Relation.pending
+        )
+        return users
