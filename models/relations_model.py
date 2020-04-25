@@ -24,6 +24,16 @@ class RelationsModel(db.Model):
 
 
     @staticmethod
+    def _get_related_like(user_id, relationship):
+        query = session.query(RelationsModel).select()\
+            .filter(
+                RelationsModel.user_related == user_id,
+                RelationsModel.relation == relationship
+            )
+
+        return query
+
+    @staticmethod
     def _get_users_relationships(user_id, relationship):
         query = session.query(RelationsModel).select()\
             .filter(

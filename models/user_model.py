@@ -130,8 +130,15 @@ class UserModel(db.Model):
         return users
 
     @property
-    def pending(self):
+    def my_pendings(self):
         users = RelationsModel._get_users_relationships(
+            self.id, Relation.pending
+        )
+        return users
+
+    @property
+    def pending_for_me(self):
+        users = RelationsModel._get_related_like(
             self.id, Relation.pending
         )
         return users
