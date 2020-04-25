@@ -1,5 +1,4 @@
 from app import db, app
-
 DEBUG = True
 db.create_all()
 
