@@ -13,4 +13,4 @@ invites
 
 # additional
 members can change their nicknames
-and also can pin messages, change name and topics
+and also can pin messages, change name and topics  
