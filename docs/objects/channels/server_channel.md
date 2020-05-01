@@ -6,7 +6,6 @@ nsfw: bool
 owner: users fk  
 of_category: fk  
 server: fk  
-last_message_id: int  
 
 members  
 overwrites  

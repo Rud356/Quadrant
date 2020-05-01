@@ -6,7 +6,6 @@ created_at: datetime
 members_count: int  
 topic: str  
 nsfw: bool  
-last_message_id: int  
 
 members: list of users
 invites  

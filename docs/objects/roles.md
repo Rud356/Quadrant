@@ -1,6 +1,7 @@
 # Roles
+role id: int  
+name: str  
+color: int  
 server: fk  
 permissions: int  
-color: int  
-name: str  
 position: int  

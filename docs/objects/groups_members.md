@@ -1,5 +1,5 @@
 # Group Members
-server: fk  
+group: fk  
 user: fk  
 nick: str  
 joined_at: datetime  
