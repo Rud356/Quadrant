@@ -1,10 +1,12 @@
-import flask
-from flask_sqlalchemy import SQLAlchemy
+from quart import Quart
 
-app = flask.Flask(__name__)
+import sqlalchemy
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data/db.sqlite"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+app = Quart(__name__)
 
-db = SQLAlchemy(app)
-session = db.session
+engine = sqlalchemy.create_engine("sqlite:///data/discord_bot.sqlite")
+Session = sessionmaker(engine)
+session = Session()
+Base = declarative_base()
