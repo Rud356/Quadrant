@@ -1,18 +1,16 @@
-from enum import IntEnum
+from app import client
 from typing import List, Dict
 from datetime import datetime
+from .enums import ChannelType
 from dataclasses import dataclass, field
 
 
-class ChannelType:
-    dm = 0
-    group = 1
-    server_text = 2
+db = client.channels
 
 
 @dataclass
 class DMChannel:
-    id: int
+    _id: int
     last_message: int = None
     members: List[int] = field(default_factory=list, default=[])
     created_at: datetime
@@ -20,7 +18,7 @@ class DMChannel:
 
 @dataclass
 class GroupDMChannel:
-    id: int
+    _id: int
     name: str
     owner: int
     topic: str = ''
@@ -33,7 +31,7 @@ class GroupDMChannel:
 
 @dataclass
 class TextChannel:
-    id: int
+    _id: int
     name: str
     owner: int
     # server that has channel
@@ -47,17 +45,17 @@ class TextChannel:
     category: int
 
     permissions: List[bool]
-    overwrites: Dict[int, List[bool]] = {}
+    overwrites: Dict[int, Dict[str, bool]] = {}
 
 
 @dataclass
 class CategoryChannel:
-    id: int
+    _id: int
     name: str
     owner: int
     parent: int
     position: int
-    overwriters: Dict[int, List[bool]] = {}
+    overwriters: Dict[int, Dict[str, bool]] = {}
 
 
 @dataclass
@@ -68,4 +66,5 @@ class VoiceChannel:
     parent: int
     position: int
     categoty: int = None
+    overwriters: Dict[int, Dict[str, bool]] = {}
     bitrate: int = 64*1024
