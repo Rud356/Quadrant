@@ -3,3 +3,4 @@ __pycache__
 .idea
 *.sqlite
 old_models/
+models/endpoints_old.py

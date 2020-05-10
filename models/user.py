@@ -1,18 +1,17 @@
 from app import client
 from typing import List
+from bson import ObjectId
 from random import choices
 from datetime import datetime
 from dataclasses import dataclass, field
-
-#* my modules
-
+from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
 db = client.chat_users
 
 
 @dataclass
-class UserModel:
-    _id: int
+class User:
+    _id: ObjectId
     token: str = field(repr=False)
     login: str = field(repr=False, default=None)
     password: str = field(repr=False, default=None)
@@ -21,84 +20,40 @@ class UserModel:
     text_status: str = None
     created_at: datetime
 
-    blocked: List[int] = field(default_factory=list, default=[], repr=False)
-    friends: List[int] = field(default_factory=list, default=[], repr=False)
-    pendings_outgoing: List[int] = field(default_factory=list, default=[], repr=False)
-    pendings_incoming: List[int] = field(default_factory=list, default=[], repr=False)
+    blocked: List[ObjectId] = field(default=[], repr=False)
+    friends: List[ObjectId] = field(default=[], repr=False)
 
-    @staticmethod
-    def valid_userID(id, bot=False) -> bool:
-        user = db.count_documents( {"$and": [{'_id': id}, {'bot': bot}]} )
-        return bool(user)
+    pendings_outgoing: List[ObjectId] = field(default=[], repr=False)
+    pendings_incoming: List[ObjectId] = field(default=[], repr=False)
 
-    @staticmethod
-    def available_token(token) -> bool:
-        user = db.count_documents( {'token': token} )
-        return not bool(user)
-
+    # creating token
     @staticmethod
     def create_token():
         letters_set = '1234567890abcdef'
         token = choices(letters_set, k=256)
-        while not UserModel.available_token(token):
+        #TODO: maybe get rid of part below for speed sake
+
+        while not User.available_token(token):
             token = choices(letters_set, k=256)
 
         return token
 
-    @classmethod
-    def create_user(
-        cls,
-        nick: str, bot=False,
-        login: str = None,
-        password: str = None,
-        parent: int = None
-        ) -> cls:
-        if bot and parent:
-            if cls.valid_userID(parent):
-                token = cls.create_token()
+    @staticmethod
+    def available_token(token) -> bool:
+        exists = db.count_documents( {'token': token} )
+        return not bool(exists)
 
-                user = {
-                    'bot': bot,
-                    'nick': nick,
-                    'parent': parent,
-                    'token': token,
-                    'created_at': datetime.utcnow()
-                }
-                db.insert_one(user)
+    @staticmethod
+    def valid_user_id(user_id: ObjectId, bot=False) -> bool:
+        user = db.count_documents( {"$and": [{'_id': user_id}, {'bot': bot}]} )
+        return bool(user)
 
-                return cls(**user)
-
-            #? user that trying to create bot
-            #? is not valid or bot
-            else:
-                raise cls.exc.InvalidUser("User doesn't exits")
-
-        #?if our user is regular
-        elif login and password:
-            if len(login) < 5 or len(password) < 10:
-                raise ValueError("Too short password or login")
-
-            token = cls.create_token()
-
-            user = {
-                'bot': False,
-                'nick': nick,
-                'login': login,
-                'password': password,
-                'token': token,
-                'blocked': [],
-                'friends': [],
-                'pendings_outgoing': [],
-                'pendings_incoming': [],
-                'created_at': datetime.utcnow()
-            }
-            db.insert_one(user)
-
-            return cls(**user)
-
-        else:
-            #? not enough data
-            raise ValueError("Not enough data")
+    @staticmethod
+    def check_blocked(users_block_list: ObjectId, user_checking: ObjectId):
+        is_blocked = db.count_documents(
+            {"$and": [{"_id": users_block_list}, {"blocked": {"$in": [user_checking]}}]}
+        )
+        return bool(is_blocked)
 
     @classmethod
     def authorize(cls, login='', password='', token=''):
@@ -120,7 +75,9 @@ class UserModel:
             raise cls.exc.InvalidUser('No such user')
 
     @classmethod
-    def by_id(cls, user_id):
+    def from_id(cls, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
         user = db.find_one({'_id': user_id})
 
         if not user:
@@ -128,83 +85,164 @@ class UserModel:
 
         return cls(**user)
 
-    @property
-    def is_bot(self) -> bool:
-        return self.bot
+    @classmethod
+    def create_user(
+        cls, nick: str, bot=False, login: str = None, password: str = None,
+        parent: str = None
+        ):
+        if bot and parent:
+            # likely raises bson.errors.InvalidId
+            parent = ObjectId(parent)
+            if cls.valid_user_id(parent):
+                token = cls.create_token()
 
-    @property
-    def my_pendings(self):
-        return self.pendings_incoming
+                user = {
+                    'bot': bot,
+                    'nick': nick,
+                    'token': token,
+                    'parent': parent,
+                    'created_at': datetime.utcnow()
+                }
+                id = db.insert_one(user).inserted_id
 
-    @property
-    def outgoing_pendings(self):
-        return self.pendings_outgoing
+                return cls(_id=id, **user)
 
-    @property
-    def my_friends(self):
-        return self.friends
+            else:
+                raise cls.exc.InvalidUser("User doesn't exits")
 
-    @property
-    def blocked(self):
-        return self.blocked
+        elif login and password:
+            if db.find_one({'login': login, 'password': password}):
+                raise ValueError("Disallowed")
 
-    def send_request(self, user_id) -> bool:
-        #TODO: get ids using somewhat friend codes
-        if not UserModel.valid_userID(user_id) or self.is_bot:
-            raise self.exc.InvalidUser("Must be an regular user")
+            if len(login) < 5 or len(password) < 10:
+                raise ValueError("Too short password or login")
 
-        db.update_one({'_id': self._id}, {'$push': {'pendings_outgoing': user_id}})
-        db.update_one({'_id': user_id}, {'$push': {'pendings_incoming': self._id}})
-        return True
+            token = cls.create_token()
 
-    def respond_pending(self, user_id, confirm: bool):
-        if user_id not in self.my_pendings:
-            raise self.exc.UserNotInGroup("User isn't in pendings")
+            user = {
+                'bot': False,
+                'nick': nick,
+                'login': login,
+                'password': password,
+                'token': token,
+                'blocked': [],
+                'friends': [],
+                'pendings_outgoing': [],
+                'pendings_incoming': [],
+                'created_at': datetime.utcnow()
+            }
+            id = db.insert_one(user).inserted_id
 
-        db.update_one({'_id': user_id}, {'$pull': {'pendings_outgoing': self._id}})
-        db.update_one({'_id': self._id}, {'$pull': {'pendings_incoming': user_id}})
+            return cls(_id=id, **user)
 
-        if confirm:
-            db.update_one({'_id': self._id}, {'$push': {'friends': user_id}})
-            db.update_one({'_id': user_id}, {'$push': {'friends': self._id}})
+        else:
+            #? not enough data
+            raise ValueError("Not enough data")
 
-    def cancel_pending(self, user_id):
-        if user_id not in self.outgoing_pendings:
+    def send_friend_request(self, user_id: str) -> bool:
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        if (
+            (
+                self.valid_user_id(user_id) and
+                self.check_blocked(self._id, user_id)
+            ) and
+
+            not self.bot and
+
+            (
+                user_id not in self.blocked and
+                user_id not in self.pendings_incoming and
+                user_id not in self.pendings_outgoing and
+                user_id not in self.friends
+            )
+        ):
+            db.bulk_write([
+                UpdateOne({"_id": self._id}, {"$push": {"pendings_outgoing": user_id}}),
+                UpdateOne({"_id": user_id}, {"$push": {"pendings_incoming": self._id}})
+            ])
+
+        raise self.exc.InvalidUser("You can't sent friend request to this user")
+
+    def cancel_friend_request(self, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        if user_id not in self.pendings_outgoing:
             raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
 
-        db.update_one({'_id': self._id}, {'$pull': {'pendings_outgoing': user_id}})
-        db.update_one({'_id': user_id}, {'$pull': {'pendings_incoming': self._id}})
+        db.bulk_write([
+                UpdateOne({"_id": self._id}, {"$pull": {"pendings_outgoing": user_id}}),
+                UpdateOne({"_id": user_id}, {"$pull": {"pendings_incoming": self._id}})
+            ])
 
-    def delete_friend(self, user_id) -> bool:
-        if user_id not in self.my_friends:
+    def responce_friend_request(self, user_id: str, confirm=True):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        if user_id not in self.pendings_incoming:
+            raise self.exc.UserNotInGroup("User isn't in incoming pendings")
+
+        operations = [
+            UpdateOne({'_id': user_id}, {'$pull': {'pendings_outgoing': self._id}}),
+            UpdateOne({'_id': self._id}, {'$pull': {'pendings_incoming': user_id}})
+        ]
+
+        if confirm:
+            operations += [
+                UpdateOne({'_id': self._id}, {'$push': {'friends': user_id}}),
+                UpdateOne({'_id': user_id}, {'$push': {'friends': self._id}})
+            ]
+
+        db.bulk_write(operations)
+
+    def delete_friend(self, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        if user_id not in self.friends:
             raise self.exc.UserNotInGroup("User isn't in friend list")
 
-        db.update_one({'_id': self._id}, {'$pull': {'friends': user_id}})
-        db.update_one({'_id': user_id}, {'$pull': {'friends': self._id}})
+        db.bulk_write([
+            UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
+            UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
+        ])
 
-    def block_user(self, user_id) -> bool:
-        if not self.valid_userID(user_id) or (user_id in self.blocked):
+    def block_user(self, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        if not self.valid_user_id(user_id) or (user_id in self.blocked):
             raise self.exc.InvalidUser("User is already blocked or invalid")
 
-        if user_id in self.outgoing_pendings:
-            self.cancel_pending(user_id)
+        operations = [
+            UpdateOne({'_id': self._id}, {'$push': {'blocked': user_id}})
+        ]
 
         if user_id in self.pendings_incoming:
-            self.respond_pending(user_id, False)
+            operations += [
+                UpdateOne({"_id": self._id}, {"$pull": {"pendings_outgoing": user_id}}),
+                UpdateOne({"_id": user_id}, {"$pull": {"pendings_incoming": self._id}})
+            ]
 
-        if user_id in self.my_friends:
-            self.delete_friend(user_id)
+        if user_id in self.pendings_outgoing:
+            operations += [
+                UpdateOne({'_id': user_id}, {'$pull': {'pendings_outgoing': self._id}}),
+                UpdateOne({'_id': self._id}, {'$pull': {'pendings_incoming': user_id}})
+            ]
 
-        db.update_one({'_id': self._id}, {'$push': {'blocked': user_id}})
+        if user_id in self.friends:
+            operations += [
+                UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
+                UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
+            ]
 
-    def unblock_user(self, user_id) -> bool:
-        if user_id not in self.blocked():
+        db.bulk_write(operations)
+
+    def unblock_user(self, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+
+        if user_id not in self.blocked:
             raise self.exc.UserNotInGroup("User isn't blocked")
 
         db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
-
-    def __repr__(self):
-        return super().__repr__()
 
     class exc:
         class UserNotInGroup(ValueError): ...
