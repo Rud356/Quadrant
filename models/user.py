@@ -1,11 +1,16 @@
-from app import db
-from typing import List
-from bson import ObjectId
 from random import choices
 from datetime import datetime
+
+from typing import List
+from bson import ObjectId
 from dataclasses import dataclass, field
+
+# my modules
+from app import db
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
+
+from .endpoint import MetaEndpoint
 
 users_db: AsyncIOMotorCollection = db['chat_users']
 
@@ -18,6 +23,7 @@ class User:
     token: str = field(repr=False)
     login: str = field(repr=False, default=None)
     password: str = field(repr=False, default=None)
+
     bot: bool = False
     parent: int = None
     text_status: str = None
@@ -32,7 +38,7 @@ class User:
     @staticmethod
     def create_token():
         letters_set = '1234567890abcdef'
-        token = ''.join(choices(letters_set, k=256))
+        token = ''.join(choices(letters_set, k=64))
         return token
 
     @staticmethod
@@ -133,8 +139,8 @@ class User:
     async def send_friend_request(self, user_id: ObjectId) -> bool:
         if (
             (
-                self.valid_user_id(user_id) and
-                self.check_blocked(self._id, user_id)
+                await self.valid_user_id(user_id) and not
+                await self.check_blocked(self._id, user_id)
             ) and
 
                 not self.bot and
@@ -222,6 +228,27 @@ class User:
 
         await users_db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
 
+    async def small_endpoints(self):
+        """
+        Retruns channels like dms and group dms
+        """
+        endpoints = await MetaEndpoint.get_small_endpoints_from_id(self._id)
+
+        return endpoints
+
+    async def set_nickname(self, new_nickname: str):
+        if len(new_nickname) > 50:
+            raise ValueError("Too long nickname")
+
+        await users_db.update_one({"_id": self._id}, {"$set": {"nick": new_nickname}})
+        self.nick = new_nickname
+
+    async def set_text_status(self, new_status: str):
+        if len(new_status) > 256:
+            raise ValueError("Too long statu")
+
+        await users_db.update_one({"_id": self._id}, {"$set": {"text_status": new_status}})
+        self.text_status = new_status
 
     class exc:
         class UserNotInGroup(ValueError): ...

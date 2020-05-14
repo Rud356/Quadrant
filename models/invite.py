@@ -1,13 +1,15 @@
-from app import db
 from random import choices
-from .enums import ChannelType
-from string import ascii_letters, digits
-from motor.motor_asyncio import AsyncIOMotorCollection
 
 from bson import ObjectId
+from string import ascii_letters, digits
 from typing import List, Dict
 from datetime import datetime
 from dataclasses import dataclass, field
+
+# my modules
+from app import db
+from .enums import ChannelType
+from motor.motor_asyncio import AsyncIOMotorCollection
 
 invites_db: AsyncIOMotorCollection = db.invites
 
@@ -87,3 +89,4 @@ class Invite:
 
     async def add_passed(self):
         await invites_db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
+        self.users_passed += 1

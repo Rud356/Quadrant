@@ -1,23 +1,33 @@
-from app import db
-
-from .enums import ChannelType
-from .invite import Invite
-from .message import Message
-from .user import User
-
 from bson import ObjectId
 from typing import List, Dict, overload, final
 from datetime import datetime
 from dataclasses import dataclass, field
+
+# my module
+from app import db
+from .enums import ChannelType
+from .invite import Invite
+from .message import Message
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 
 endpoints_db: AsyncIOMotorCollection = db.endpoints
 
+
 async def check_valid_user(user_id: ObjectId):
     users_db = db.chat_users
     user = await users_db.count_documents({'_id': user_id})
     return bool(user)
+
+
+"""
+Small endpoints are these that dont have hard structure and multiple channels in
+and for now these are only dms and group dms
+/api/endpoints/channel/<id>
+
+Big endpoints are parts of servers
+/api/endpoints/servers/<id>/channels/<id>
+"""
 
 
 @dataclass
@@ -44,7 +54,6 @@ class TextEndpoint:
             expires_at
         )
 
-
     async def send_message(self, author: ObjectId, content: str, files: List[str]=[]):
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
@@ -52,8 +61,25 @@ class TextEndpoint:
         new_message = await Message.send_message(
             author, self._id, content, files
         )
-
+        # setting out message as latest
+        await endpoints_db.update_one({"_id": self._id}, {"$set": {"last_message": new_message._id}})
+        self.last_message = new_message._id
         return new_message
+
+    async def get_message(self, requester: ObjectId, message_id: ObjectId):
+        if requester not in self.members:
+            raise self.exc.NotGroupMember("User trying to get message in invalid group")
+
+        # this may rise value error if no message found
+        message = await Message.get_message(message_id, self._id)
+        return message
+
+    async def get_messages(self, requester: ObjectId, message_from: ObjectId):
+        if requester not in self.members:
+            raise self.exc.NotGroupMember("User trying to get messages in invalid group")
+
+        messages = await Message.get_messages(message_from, self._id)
+        return messages
 
     async def delete_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
@@ -102,6 +128,34 @@ class DMchannel(TextEndpoint):
             "created_at": datetime.utcnow(),
             "last_message": None
         }
-        id = await messages_db.insert_one(new_dm)
+        id = await endpoints_db.insert_one(new_dm)
         new_dm["_id"] = id.inserted_id
         return cls(**new_dm)
+
+
+@final
+class MetaEndpoint:
+    @staticmethod
+    async def get_small_endpoints_from_id(requester: ObjectId):
+        """
+        Returns only non-specific channels like dms and groups
+        """
+        endpoints = []
+        small_endpoints_with_user = endpoints_db.find({"$and": [
+            {"members": requester},
+            {"_type": {"$nin":
+                [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            }}
+        ]})
+
+        async for endpoint in small_endpoints_with_user:
+            if endpoint['_type'] == ChannelType.dm:
+                endpoint = DMchannel(**endpoint)
+                endpoints.append(endpoint)
+
+            elif endpoint['_type'] == ChannelType.group:
+                # TODO: later change builder to group dms
+                endpoint = DMchannel(**endpoint)
+                endpoints.append(endpoint)
+
+        return endpoints

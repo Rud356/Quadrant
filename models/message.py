@@ -51,7 +51,7 @@ class Message:
 
         result = await messages_db.update_one(
             {"$and": [{"_id": message_id}, {"author": author_id}]},
-            {"$set": [{"content": new_content}, {"edited": True}]}
+            {"$set": {"content": new_content, "edited": True}}
         )
         return bool(result.modified_count)
 
@@ -59,6 +59,9 @@ class Message:
     async def get_message(cls, message_id: ObjectId, from_channel: ObjectId):
         #! DONT FORGET TO VALIDATE THAT USER IS MEMBER OF CHANNEL
         msg = await messages_db.find_one({"$and": [{"_id": message_id}, {"endpoint": from_channel}]})
+        if not msg:
+            raise ValueError("No such message")
+
         return cls(**msg)
 
     @classmethod
@@ -66,7 +69,6 @@ class Message:
         # messages from newest to oldest
         messages = []
         msg_query = messages_db.find({"$and": [
-            {"_id": from_message},
             {"endpoint": from_channel},
             {"_id": {"$lt": from_message}}
             ]}
@@ -80,7 +82,7 @@ class Message:
 
     @staticmethod
     async def set_message_pin(author_id: ObjectId, message_id: ObjectId, pin: bool):
-        result = messages_db.update_one({"_id": message_id}, {"$set": [{"pin": pin}]})
+        result = await messages_db.update_one({"_id": message_id}, {"$set": {"pin": pin}})
         return bool(result.modified_count)
 
     @staticmethod
