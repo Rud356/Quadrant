@@ -1,5 +1,5 @@
 from quart import Quart
-from pymongo import MongoClient
+from motor import motor_asyncio
 
 app = Quart(__name__)
-client = MongoClient('localhost', 27017)
+client = motor_asyncio.AsyncIOMotorClient('localhost', 27017)
