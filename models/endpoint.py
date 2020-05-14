@@ -1,8 +1,9 @@
-from app import client
+from app import db
 
 from .enums import ChannelType
 from .invite import Invite
 from .message import Message
+from .user import User
 
 from bson import ObjectId
 from typing import List, Dict, overload, final
@@ -10,11 +11,11 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-db: AsyncIOMotorCollection = client.endpoints
 
+db: AsyncIOMotorCollection = db.endpoints
 
 async def check_valid_user(user_id: ObjectId):
-    users_db = client.chat_users
+    users_db = db.chat_users
     user = await users_db.count_documents({'_id': user_id})
     return bool(user)
 
@@ -44,7 +45,7 @@ class TextEndpoint:
         )
 
 
-    async def send_message(self, author: ObjectId, content: str, files: List[str]):
+    async def send_message(self, author: ObjectId, content: str, files: List[str]=[]):
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
@@ -84,11 +85,9 @@ class TextEndpoint:
 @final
 @dataclass
 class DMchannel(TextEndpoint):
-    @overload
     async def create_invite(self, *args, **kwargs):
         raise self.exc.UnsupprotedMethod("Can't create invite to dm")
 
-    @overload
     @classmethod
     async def create_endpoint(cls, user_init: ObjectId, user_accept: ObjectId):
         if not (
@@ -103,6 +102,6 @@ class DMchannel(TextEndpoint):
             "created_at": datetime.utcnow(),
             "last_message": None
         }
-        id = await db.insert_one(new_dm).inserted_id
-
-        return cls(_id = id, **new_dm)
+        id = await db.insert_one(new_dm)
+        new_dm["_id"] = id.inserted_id
+        return cls(**new_dm)

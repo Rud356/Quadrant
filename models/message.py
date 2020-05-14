@@ -1,4 +1,4 @@
-from app import client
+from app import db
 
 from bson import ObjectId
 from typing import List, Dict
@@ -6,7 +6,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-db: AsyncIOMotorCollection = client.messages
+db: AsyncIOMotorCollection = db.messages
 
 
 @dataclass
@@ -39,9 +39,9 @@ class Message:
             "files": files,
         }
 
-        id = await db.insert_one(new_message).inserted_id
-
-        return cls(_id=id, **new_message)
+        id = await db.insert_one(new_message)
+        new_message["_id"] = id.inserted_id
+        return cls(**new_message)
 
     @staticmethod
     async def edit_message(author_id: ObjectId, message_id: str, new_content: str):
@@ -62,7 +62,7 @@ class Message:
         return cls(**msg)
 
     @classmethod
-    async def get_messages(cls, from_message: ObjectId, from_channel: ObjectId) -> List[Message]:
+    async def get_messages(cls, from_message: ObjectId, from_channel: ObjectId):
         # messages from newest to oldest
         messages = []
         msg_query = db.find({"$and": [

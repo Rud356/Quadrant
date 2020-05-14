@@ -1,4 +1,4 @@
-from app import client
+from app import db
 from random import choices
 from .enums import ChannelType
 from string import ascii_letters, digits
@@ -9,7 +9,7 @@ from typing import List, Dict
 from datetime import datetime
 from dataclasses import dataclass, field
 
-db: AsyncIOMotorCollection = client.invites
+db: AsyncIOMotorCollection = db.invites
 
 
 def generate_code():
@@ -22,11 +22,11 @@ class Invite:
     _id: ObjectId
     endpoint: ObjectId
     user_created: ObjectId
+    expires_at: datetime
 
     code: str
     users_limit: int = -1
     users_passed: int = 0
-    expires_at: datetime
 
     @staticmethod
     async def create_invite(endpoint: ObjectId, created_by: ObjectId, users_limit: int, expires_at: datetime):

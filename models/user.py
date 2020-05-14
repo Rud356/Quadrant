@@ -1,4 +1,4 @@
-from app import client
+from app import db
 from typing import List
 from bson import ObjectId
 from random import choices
@@ -7,31 +7,32 @@ from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
-db: AsyncIOMotorCollection = client['chat_users']
+db: AsyncIOMotorCollection = db['chat_users']
 
 
 @dataclass
 class User:
-    _id: ObjectId
+    _id: str
+    created_at: datetime
+    nick: str
     token: str = field(repr=False)
     login: str = field(repr=False, default=None)
     password: str = field(repr=False, default=None)
     bot: bool = False
     parent: int = None
     text_status: str = None
-    created_at: datetime
 
-    blocked: List[ObjectId] = field(default=[], repr=False)
-    friends: List[ObjectId] = field(default=[], repr=False)
+    blocked: List[ObjectId] = field(default_factory=list, repr=False)
+    friends: List[ObjectId] = field(default_factory=list, repr=False)
 
-    pendings_outgoing: List[ObjectId] = field(default=[], repr=False)
-    pendings_incoming: List[ObjectId] = field(default=[], repr=False)
+    pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
+    pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
 
 
     @staticmethod
     def create_token():
         letters_set = '1234567890abcdef'
-        token = choices(letters_set, k=256)
+        token = ''.join(choices(letters_set, k=256))
         return token
 
     @staticmethod
@@ -47,10 +48,10 @@ class User:
         return bool(is_blocked)
 
     @classmethod
-    def from_id(cls, user_id: str):
+    async def from_id(cls, user_id: str):
         # likely raises bson.errors.InvalidId
         user_id = ObjectId(user_id)
-        user = db.find_one({'_id': user_id})
+        user = await db.find_one({'_id': user_id})
 
         if not user:
             raise cls.exc.InvalidUser("User id doesn't exists")
@@ -92,9 +93,9 @@ class User:
                     'parent': parent,
                     'created_at': datetime.utcnow()
                 }
-                id = await db.insert_one(user).inserted_id
-
-                return cls(_id=id, **user)
+                id = await db.insert_one(user)
+                user['_id'] = id.inserted_id
+                return cls(**user)
 
             else:
                 raise cls.exc.InvalidUser("User doesn't exits")
@@ -121,9 +122,9 @@ class User:
                 'pendings_incoming': [],
                 'created_at': datetime.utcnow()
             }
-            id = await db.insert_one(user).inserted_id
-
-            return cls(_id=id, **user)
+            id = await db.insert_one(user)
+            user['_id'] = id.inserted_id
+            return cls(**user)
 
         else:
             #? not enough data
@@ -187,9 +188,8 @@ class User:
             UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
         ])
 
-
     async def block_user(self, user_id: ObjectId):
-        if not self.valid_user_id(user_id) or (user_id in self.blocked):
+        if not await self.valid_user_id(user_id) or (user_id in self.blocked):
             raise self.exc.InvalidUser("User is already blocked or invalid")
 
         operations = [
