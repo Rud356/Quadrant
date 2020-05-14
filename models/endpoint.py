@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 
-db: AsyncIOMotorCollection = db.endpoints
+endpoints_db: AsyncIOMotorCollection = db.endpoints
 
 async def check_valid_user(user_id: ObjectId):
     users_db = db.chat_users
@@ -102,6 +102,6 @@ class DMchannel(TextEndpoint):
             "created_at": datetime.utcnow(),
             "last_message": None
         }
-        id = await db.insert_one(new_dm)
+        id = await messages_db.insert_one(new_dm)
         new_dm["_id"] = id.inserted_id
         return cls(**new_dm)

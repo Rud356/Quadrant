@@ -6,7 +6,7 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 
-db: AsyncIOMotorCollection = db.messages
+messages_db: AsyncIOMotorCollection = db.messages
 
 
 @dataclass
@@ -39,7 +39,7 @@ class Message:
             "files": files,
         }
 
-        id = await db.insert_one(new_message)
+        id = await messages_db.insert_one(new_message)
         new_message["_id"] = id.inserted_id
         return cls(**new_message)
 
@@ -49,7 +49,7 @@ class Message:
         if len(new_content) > 3000:
             raise ValueError("Too long message")
 
-        result = await db.update_one(
+        result = await messages_db.update_one(
             {"$and": [{"_id": message_id}, {"author": author_id}]},
             {"$set": [{"content": new_content}, {"edited": True}]}
         )
@@ -58,14 +58,14 @@ class Message:
     @classmethod
     async def get_message(cls, message_id: ObjectId, from_channel: ObjectId):
         #! DONT FORGET TO VALIDATE THAT USER IS MEMBER OF CHANNEL
-        msg = await db.find_one({"$and": [{"_id": message_id}, {"endpoint": from_channel}]})
+        msg = await messages_db.find_one({"$and": [{"_id": message_id}, {"endpoint": from_channel}]})
         return cls(**msg)
 
     @classmethod
     async def get_messages(cls, from_message: ObjectId, from_channel: ObjectId):
         # messages from newest to oldest
         messages = []
-        msg_query = db.find({"$and": [
+        msg_query = messages_db.find({"$and": [
             {"_id": from_message},
             {"endpoint": from_channel},
             {"_id": {"$lt": from_message}}
@@ -80,15 +80,15 @@ class Message:
 
     @staticmethod
     async def set_message_pin(author_id: ObjectId, message_id: ObjectId, pin: bool):
-        result = db.update_one({"_id": message_id}, {"$set": [{"pin": pin}]})
+        result = messages_db.update_one({"_id": message_id}, {"$set": [{"pin": pin}]})
         return bool(result.modified_count)
 
     @staticmethod
     async def delete_message(author_id: ObjectId, message_id: ObjectId):
-        result = await db.delete_one({"$and": [{"_id": message_id}, {"author": author_id}]})
+        result = await messages_db.delete_one({"$and": [{"_id": message_id}, {"author": author_id}]})
         return bool(result.deleted_count)
 
     @staticmethod
     async def force_delete(message_id: ObjectId, channel_id: ObjectId):
-        result = await db.delete_one({"$and": [{"_id": message_id}, {"endpoint": channel_id}]})
+        result = await messages_db.delete_one({"$and": [{"_id": message_id}, {"endpoint": channel_id}]})
         return bool(result.deleted_count)

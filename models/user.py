@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
-db: AsyncIOMotorCollection = db['chat_users']
+users_db: AsyncIOMotorCollection = db['chat_users']
 
 
 @dataclass
@@ -37,12 +37,12 @@ class User:
 
     @staticmethod
     async def valid_user_id(user_id: ObjectId, bot=False) -> bool:
-        user = await db.count_documents( {"$and": [{'_id': user_id}, {'bot': bot}]} )
+        user = await users_db.count_documents( {"$and": [{'_id': user_id}, {'bot': bot}]} )
         return bool(user)
 
     @staticmethod
     async def check_blocked(users_block_list: ObjectId, user_checking: ObjectId):
-        is_blocked = await db.count_documents(
+        is_blocked = await users_db.count_documents(
             {"$and": [{"_id": users_block_list}, {"blocked": {"$in": [user_checking]}}]}
         )
         return bool(is_blocked)
@@ -51,7 +51,7 @@ class User:
     async def from_id(cls, user_id: str):
         # likely raises bson.errors.InvalidId
         user_id = ObjectId(user_id)
-        user = await db.find_one({'_id': user_id})
+        user = await users_db.find_one({'_id': user_id})
 
         if not user:
             raise cls.exc.InvalidUser("User id doesn't exists")
@@ -61,14 +61,14 @@ class User:
     @classmethod
     async def authorize(cls, login='', password='', token=''):
         if token:
-            user = await db.find_one({'token': token})
+            user = await users_db.find_one({'token': token})
             if user is None:
                 raise ValueError('No such token')
 
             return cls(**user)
 
         elif login and password:
-            user = await db.find_one({'login': login, 'password': password})
+            user = await users_db.find_one({'login': login, 'password': password})
             if user is None:
                 raise ValueError('No such user')
 
@@ -93,7 +93,7 @@ class User:
                     'parent': parent,
                     'created_at': datetime.utcnow()
                 }
-                id = await db.insert_one(user)
+                id = await users_db.insert_one(user)
                 user['_id'] = id.inserted_id
                 return cls(**user)
 
@@ -102,7 +102,7 @@ class User:
 
         elif login and password:
             #TODO: idk how to make sure that this is unique info faster
-            if await db.find_one({'login': login}):
+            if await users_db.find_one({'login': login}):
                 raise ValueError("Disallowed registration")
 
             if len(login) < 5 or len(password) < 10:
@@ -122,7 +122,7 @@ class User:
                 'pendings_incoming': [],
                 'created_at': datetime.utcnow()
             }
-            id = await db.insert_one(user)
+            id = await users_db.insert_one(user)
             user['_id'] = id.inserted_id
             return cls(**user)
 
@@ -146,7 +146,7 @@ class User:
                 user_id not in self.friends
             )
         ):
-            await db.bulk_write([
+            await users_db.bulk_write([
                 UpdateOne({"_id": self._id}, {"$push": {"pendings_outgoing": user_id}}),
                 UpdateOne({"_id": user_id}, {"$push": {"pendings_incoming": self._id}})
             ])
@@ -157,7 +157,7 @@ class User:
         if user_id not in self.pendings_outgoing:
             raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
 
-        await db.bulk_write([
+        await users_db.bulk_write([
                 UpdateOne({"_id": self._id}, {"$pull": {"pendings_outgoing": user_id}}),
                 UpdateOne({"_id": user_id}, {"$pull": {"pendings_incoming": self._id}})
             ])
@@ -177,13 +177,13 @@ class User:
                 UpdateOne({'_id': user_id}, {'$push': {'friends': self._id}})
             ]
 
-        await db.bulk_write(operations)
+        await users_db.bulk_write(operations)
 
     async def delete_friend(self, user_id: ObjectId):
         if user_id not in self.friends:
             raise self.exc.UserNotInGroup("User isn't in friend list")
 
-        await db.bulk_write([
+        await users_db.bulk_write([
             UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
             UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
         ])
@@ -214,13 +214,13 @@ class User:
                 UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
             ]
 
-        await db.bulk_write(operations)
+        await users_db.bulk_write(operations)
 
     async def unblock_user(self, user_id: ObjectId):
         if user_id not in self.blocked:
             raise self.exc.UserNotInGroup("User isn't blocked")
 
-        await db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
+        await users_db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
 
 
     class exc:

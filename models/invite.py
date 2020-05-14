@@ -9,7 +9,7 @@ from typing import List, Dict
 from datetime import datetime
 from dataclasses import dataclass, field
 
-db: AsyncIOMotorCollection = db.invites
+invites_db: AsyncIOMotorCollection = db.invites
 
 
 def generate_code():
@@ -43,14 +43,14 @@ class Invite:
             "users_passed": 0,
             "expires_at": expires_at,
         }
-        await db.insert_one(invite)
+        await invites_db.insert_one(invite)
         return code
 
     @classmethod
     async def endpoints_invites(cls, endpoint_id: ObjectId):
         fine = []
         to_delete = []
-        invites = db.find({"endpoint": endpoint_id})
+        invites = invites_db.find({"endpoint": endpoint_id})
 
         async for invite in invites:
             invite = cls(**invite)
@@ -60,13 +60,13 @@ class Invite:
                 to_delete.append(invite._id)
 
         # auto-cleanup invites
-        await db.delete_many({"_id": {"$in": to_delete}})
+        await invites_db.delete_many({"_id": {"$in": to_delete}})
 
         return fine
 
     @classmethod
     async def get_invite(cls, code: str):
-        invite_obj = await db.find_one({"code": code})
+        invite_obj = await invites_db.find_one({"code": code})
         if invite_obj:
             return cls(**invite_obj)
 
@@ -86,4 +86,4 @@ class Invite:
         return False
 
     async def add_passed(self):
-        await db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
+        await invites_db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
