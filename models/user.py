@@ -110,7 +110,6 @@ class User:
                 {
                     "login": 0,
                     "password": 0,
-                    "token": 1
                 }
             )
             if user is None:
