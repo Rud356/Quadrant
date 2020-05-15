@@ -20,11 +20,10 @@ class User:
     _id: str
     created_at: datetime
     nick: str
-    token: str = field(repr=False)
-    login: str = field(repr=False, default=None)
-    password: str = field(repr=False, default=None)
 
     bot: bool = False
+    token: str = None
+    code: str = field(repr=False, default=None)
     parent: int = None
     text_status: str = None
 
@@ -53,11 +52,36 @@ class User:
         )
         return bool(is_blocked)
 
+    @staticmethod
+    async def avaliable_friend_code(code: str):
+        same_codes = await users_db.count_documents(
+            {"code": code}
+        )
+        return not bool(same_codes)
+
+    @staticmethod
+    async def friendcodes_owner(code: str) -> ObjectId:
+        user_id = await users_db.find_one({"code": code}, {"_id": 1, "total": 1})
+        return user_id.get('_id')
+
     @classmethod
     async def from_id(cls, user_id: str):
         # likely raises bson.errors.InvalidId
         user_id = ObjectId(user_id)
-        user = await users_db.find_one({'_id': user_id})
+        user = await users_db.find_one(
+            {'_id': user_id},
+            {
+                "code": 0,
+                "blocked": 0,
+                "friends": 0,
+                "pendings_outgoing": 0,
+                "pendings_incoming": 0,
+                "login": 0,
+                "password": 0,
+                "parent": 0,
+                "token": 0
+            }
+        )
 
         if not user:
             raise cls.exc.InvalidUser("User id doesn't exists")
@@ -67,14 +91,28 @@ class User:
     @classmethod
     async def authorize(cls, login='', password='', token=''):
         if token:
-            user = await users_db.find_one({'token': token})
+            user = await users_db.find_one(
+                {'token': token},
+                {
+                    "login": 0,
+                    "password": 0,
+                }
+            )
+
             if user is None:
                 raise ValueError('No such token')
 
             return cls(**user)
 
         elif login and password:
-            user = await users_db.find_one({'login': login, 'password': password})
+            user = await users_db.find_one(
+                {'login': login, 'password': password},
+                {
+                    "login": 0,
+                    "password": 0,
+                    "token": 1
+                }
+            )
             if user is None:
                 raise ValueError('No such user')
 
@@ -85,7 +123,9 @@ class User:
 
     @classmethod
     async def create_user(
-        cls, nick: str, bot=False, login: str = None, password: str = None,
+        cls,
+        nick: str, bot=False,
+        login: str = None, password: str = None,
         parent: ObjectId = None
         ):
         if bot and parent:
@@ -245,10 +285,21 @@ class User:
 
     async def set_text_status(self, new_status: str):
         if len(new_status) > 256:
-            raise ValueError("Too long statu")
+            raise ValueError("Too long status")
 
         await users_db.update_one({"_id": self._id}, {"$set": {"text_status": new_status}})
         self.text_status = new_status
+
+    async def set_friend_code(self, new_code):
+        if len(new_code) in range(1, 51):
+            raise ValueError("Too long friend code")
+
+        is_avaliable = await self.avaliable_friend_code(new_code)
+        if not is_avaliable:
+            raise ValueError("Code is already used")
+
+        await users_db.update_one({"_id": self._id}, {"$set": {"code": new_code}})
+        self.code = new_code
 
     class exc:
         class UserNotInGroup(ValueError): ...
