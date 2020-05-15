@@ -10,14 +10,14 @@ from app import db
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
-from .endpoint import MetaEndpoint
+from .endpoint import MetaEndpoint, DMchannel
 
 users_db: AsyncIOMotorCollection = db['chat_users']
 
 
 @dataclass
 class User:
-    _id: str
+    _id: ObjectId
     created_at: datetime
     nick: str
 
@@ -26,6 +26,7 @@ class User:
     code: str = field(repr=False, default=None)
     parent: int = None
     text_status: str = None
+
 
     blocked: List[ObjectId] = field(default_factory=list, repr=False)
     friends: List[ObjectId] = field(default_factory=list, repr=False)
@@ -76,6 +77,7 @@ class User:
                 "friends": 0,
                 "pendings_outgoing": 0,
                 "pendings_incoming": 0,
+                "status": 0,
                 "login": 0,
                 "password": 0,
                 "parent": 0,
@@ -124,8 +126,8 @@ class User:
     async def create_user(
         cls,
         nick: str, bot=False,
-        login: str = None, password: str = None,
-        parent: ObjectId = None
+        login: str = '', password: str = '',
+        parent: ObjectId = None, **_
         ):
         if bot and parent:
             if cls.valid_user_id(parent):
@@ -267,13 +269,24 @@ class User:
 
         await users_db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
 
-    async def small_endpoints(self):
+    # For now those are only dms
+    async def small_endpoints(self) -> List[DMchannel]:
         """
         Retruns channels like dms and group dms
         """
         endpoints = await MetaEndpoint.get_small_endpoints_from_id(self._id)
 
         return endpoints
+
+    async def small_endpoint(self, endpoint_id: ObjectId):
+        """
+        Returns one small endpoint with given id
+        """
+        endpoint = await MetaEndpoint.get_small_endpoint(self._id, endpoint_id)
+        if not endpoint:
+            raise ValueError("User isn't a part of endpoint")
+
+        return endpoint
 
     async def set_nickname(self, new_nickname: str):
         if len(new_nickname) > 50:
@@ -290,7 +303,7 @@ class User:
         self.text_status = new_status
 
     async def set_friend_code(self, new_code):
-        if len(new_code) in range(1, 51):
+        if len(new_code) in range(3, 51):
             raise ValueError("Too long friend code")
 
         is_avaliable = await self.avaliable_friend_code(new_code)

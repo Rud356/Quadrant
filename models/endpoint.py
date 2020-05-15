@@ -8,6 +8,7 @@ from app import db
 from .enums import ChannelType
 from .invite import Invite
 from .message import Message
+
 from motor.motor_asyncio import AsyncIOMotorCollection
 
 
@@ -54,12 +55,12 @@ class TextEndpoint:
             expires_at
         )
 
-    async def send_message(self, author: ObjectId, content: str, files: List[str]=[]):
+    async def send_message(self, author: ObjectId, content: str, files: List[str]=[], user_mentions=[]):
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
         new_message = await Message.send_message(
-            author, self._id, content, files
+            author, self._id, content, files, user_mentions
         )
         # setting out message as latest
         await endpoints_db.update_one({"_id": self._id}, {"$set": {"last_message": new_message._id}})
@@ -159,3 +160,20 @@ class MetaEndpoint:
                 endpoints.append(endpoint)
 
         return endpoints
+
+    @staticmethod
+    async def get_small_endpoint(requester: ObjectId, endpoint_id: ObjectId):
+        users_endpoint = await endpoints_db.find_one({"$and": [
+            {"_id": endpoint_id},
+            {"members": requester},
+            {"_type": {"$nin":
+                [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            }}
+        ]})
+
+        if users_endpoint['_type'] == ChannelType.dm:
+            return DMchannel(**users_endpoint)
+
+        elif users_endpoint['_type'] == ChannelType.group:
+            # TODO: later change builder to group dms
+            return DMchannel(**users_endpoint)
