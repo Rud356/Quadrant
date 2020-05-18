@@ -16,7 +16,7 @@ from .schemas import (
 )
 
 
-@app.route("/api/users/login")
+@app.route("/api/users/login", methods=["POST"])
 @validate_api_version("1.0.0")
 @validate_schema(login)
 async def user_login():
@@ -27,7 +27,7 @@ async def user_login():
     return responce
 
 
-@app.route("/api/users/register")
+@app.route("/api/users/register", methods=["POST"])
 @validate_api_version("1.0.0")
 @validate_schema(registrate)
 async def user_create():
@@ -45,7 +45,7 @@ async def user_create():
     return responce
 
 
-@app.route("/api/users/logout")
+@app.route("/api/users/logout", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
 async def logout(user: UserView):
@@ -63,3 +63,98 @@ async def user_from_id(user: UserView, id: str):
 
     except UserView.exc.InvalidUser:
         return error("Invalid user id", 400)
+
+    else:
+        return success(user_repr.public_dict)
+
+
+@app.route("/api/users/friends")
+@validate_api_version("1.0.0")
+@authorized
+async def get_users_friends(user: UserView):
+    #TODO: somehow optimize this operation later
+    friends = await user.batch_get_friends()
+    return success(friends)
+
+
+@app.route("/api/users/friends/<string:id>")
+@validate_api_version("1.0.0")
+@authorized
+async def user_from_friends(user: UserView, id: str):
+    try:
+        id = ObjectId(id)
+        if id not in user.friends:
+            raise ValueError("User isn't a friend of yours")
+
+        user_repr = await UserView.from_id(id)
+
+    except (UserView.exc.InvalidUser, bson_errors.InvalidId):
+        return error("Invalid user id", 400)
+
+    except ValueError:
+        return error("User isn't your friend")
+
+    else:
+        return success(user_repr.public_dict)
+
+
+@app.route("/api/users/friends/<string:id>", methods=["DELETE"])
+@validate_api_version("1.0.0")
+@authorized
+async def delete_friend(user: UserView, id: str):
+    try:
+        id = ObjectId(id)
+        await user.delete_friend(id)
+
+    except bson_errors.InvalidId:
+        return error("No user with this id")
+
+    except UserView.exc.UserNotInGroup:
+        return error("User isn't your friend")
+
+    else:
+        return success("ok")
+
+
+@app.route("/api/users/blocked")
+@validate_api_version("1.0.0")
+@authorized
+async def blocked_users(user: UserView):
+    blocked_repr = await user.batch_get_blocked()
+    return success(blocked_repr)
+
+
+@app.route("/api/users/blocked/<string:id>", methods=["POST"])
+@validate_api_version("1.0.0")
+@authorized
+async def block_user(user: UserView, id: str):
+    try:
+        id = ObjectId(id)
+        await user.block_user(id)
+
+    except bson_errors.InvalidId:
+        return error("No user with this id")
+
+    except UserView.exc.UserNotInGroup:
+        return error("User is blocked already")
+
+    else:
+        return success("ok")
+
+
+@app.route("/api/users/blocked/<string:id>", methods=["DELETE"])
+@validate_api_version("1.0.0")
+@authorized
+async def unblock_user(user: UserView, id: str):
+    try:
+        id = ObjectId(id)
+        await user.unblock_user(id)
+
+    except bson_errors.InvalidId:
+        return error("No user with this id")
+
+    except UserView.exc.UserNotInGroup:
+        return error("User isn't blocked")
+
+    else:
+        return success("ok")

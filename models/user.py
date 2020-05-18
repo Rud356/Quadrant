@@ -177,6 +177,37 @@ class User:
             #? not enough data
             raise ValueError("Not enough data")
 
+    async def batch_get_friends(self, friends_getting=[]):
+        """
+        Returns an async iterable to fetch friends from list of ids or all
+        """
+        not_fetching = {
+                    "code": 0,
+                    "blocked": 0,
+                    "friends": 0,
+                    "pendings_outgoing": 0,
+                    "pendings_incoming": 0,
+                    "status": 0,
+                    "login": 0,
+                    "password": 0,
+                    "parent": 0,
+                    "token": 0
+                }
+
+        if not friends_getting:
+            users = users_db.find(
+                {"_id": {"$in": self.friends}},
+                not_fetching
+            )
+
+        else:
+            users = users_db.find(
+                {"_id": {"$in": friends_getting}},
+                not_fetching
+            )
+
+        return users
+
     async def send_friend_request(self, user_id: ObjectId) -> bool:
         if (
             (
@@ -234,6 +265,27 @@ class User:
             UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
             UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
         ])
+
+    async def batch_get_blocked(self):
+        not_fetching = {
+                    "code": 0,
+                    "blocked": 0,
+                    "friends": 0,
+                    "pendings_outgoing": 0,
+                    "pendings_incoming": 0,
+                    "status": 0,
+                    "login": 0,
+                    "password": 0,
+                    "parent": 0,
+                    "token": 0
+                }
+
+        users = users_db.find(
+                {"_id": {"$in": self.blocked}},
+                not_fetching
+            )
+
+        return users
 
     async def block_user(self, user_id: ObjectId):
         if not await self.valid_user_id(user_id) or (user_id in self.blocked):

@@ -50,6 +50,35 @@ class UserView(UserModel):
 
         return user_view
 
+    async def batch_get_friends(self):
+        friends_representations = []
+        applied_ids = set()
+
+        for friend in self.friends:
+            view_friend: UserView = users_connected_ids.get(friend)
+
+            if view_friend:
+                friends_representations.append(view_friend.public_dict)
+                applied_ids.add(view_friend._id)
+
+        friends_set = set(self.friends)
+        friends_unapplied = list(friends_set.difference(applied_ids))
+        friends_to_apply = super().batch_get_friends(friends_unapplied)
+
+        async for friend in friends_to_apply:
+            friend_object = UserView(**friend)
+            friends_representations.append(friend_object.public_dict)
+
+        return friends_representations
+
+    async def batch_get_blocked(self):
+        blocked_repr = []
+        async for blocked_user in super().batch_get_blocked():
+            blocked_user_repr = UserView(**blocked_user).public_dict
+            blocked_repr.append(blocked_user_repr)
+
+        return blocked_repr
+
     def make_connection(self, ws):
         # this function puts new websocket in list
         self.connected.append(ws)
@@ -66,6 +95,7 @@ class UserView(UserModel):
         # TODO: close all websockets
         users_connected_ids.pop(self._id)
 
+    @property
     def public_dict(self):
         return {
             '_id': self._id,
@@ -75,3 +105,11 @@ class UserView(UserModel):
             "nick": self.nick,
             "created_at": self.created_at,
         }
+
+    @property
+    def private_dict(self):
+        # making sure that our object is new one
+        output = dict(self.__dict__)
+        output.pop('connected', None)
+        output.pop('token', None)
+        return output

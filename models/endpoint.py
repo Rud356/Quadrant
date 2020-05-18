@@ -137,11 +137,11 @@ class DMchannel(TextEndpoint):
 @final
 class MetaEndpoint:
     @staticmethod
-    async def get_small_endpoints_from_id(requester: ObjectId):
+    async def get_small_endpoints_from_id(requester: ObjectId) -> Dict[ObjectId, TextEndpoint]:
         """
         Returns only non-specific channels like dms and groups
         """
-        endpoints = []
+        endpoints = {}
         small_endpoints_with_user = endpoints_db.find({"$and": [
             {"members": requester},
             {"_type": {"$nin":
@@ -152,12 +152,12 @@ class MetaEndpoint:
         async for endpoint in small_endpoints_with_user:
             if endpoint['_type'] == ChannelType.dm:
                 endpoint = DMchannel(**endpoint)
-                endpoints.append(endpoint)
+                endpoints[endpoint._id] = endpoint
 
             elif endpoint['_type'] == ChannelType.group:
                 # TODO: later change builder to group dms
                 endpoint = DMchannel(**endpoint)
-                endpoints.append(endpoint)
+                endpoints[endpoint._id] = endpoint
 
         return endpoints
 
