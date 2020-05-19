@@ -1,5 +1,6 @@
+import json
 import fastjsonschema
-from quart import Response, request
+from quart import Response, request, websocket
 
 from app import server_api_version
 from api_version import APIVersion
@@ -12,10 +13,7 @@ def authorized(f):
     async def wraps(*args, **kwargs):
         if not request.cookies.get('token'):
             print(request.cookies)
-            #TODO: fix this part
-            return """
-            Before going to this page you have to visit <a href="/set_name/sample"></a>
-            """
+            return error("You have to authorize first")
 
         try:
             user = await UserView.authorize(token=request.cookies.get('token'))
@@ -70,3 +68,21 @@ def validate_schema(schema: object):
         return wraps
 
     return wrapper
+
+
+def auth_websocket(f):
+    async def wraps(*args, **kwargs):
+        auth = await websocket.data()
+        try:
+            auth = json.loads(auth)
+            user = await UserView.authorize(token=auth['token'])
+
+        except ValueError:
+            return error("Incorrect credentials", 401)
+
+        except KeyError:
+            return error("No token provided", 401)
+
+        return await f(*args, **kwargs, user=user)
+    wraps.__name__ = f.__name__
+    return wraps

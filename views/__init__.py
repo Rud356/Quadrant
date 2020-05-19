@@ -1,2 +1,1 @@
-from .user import UserView
-from .status_enum import Status
+from .user import UserView, users_connected_ids

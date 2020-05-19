@@ -41,3 +41,11 @@ dm_endpoint = fastjsonschema.compile({
     },
     "required": ["with"]
 })
+
+text_status = fastjsonschema.compile({
+    "type": "object",
+    "properties": {
+        "text_status": {"type": "string", "default": ''}
+    },
+    "required": ["text_status"]
+})

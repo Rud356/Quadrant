@@ -55,7 +55,11 @@ class TextEndpoint:
             expires_at
         )
 
-    async def send_message(self, author: ObjectId, content: str, files: List[str]=[], user_mentions=[]):
+    async def send_message(
+        self, author: ObjectId, content: str,
+        files: List[str]=[], user_mentions=[],
+        roles_mentions=[], channel_mentions=[]
+        ):
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
@@ -118,7 +122,17 @@ class DMchannel(TextEndpoint):
     @classmethod
     async def create_endpoint(cls, user_init: ObjectId, user_accept: ObjectId):
         if not await check_valid_user(user_accept):
-            raise ValueError("One of two users is invalid")
+            raise ValueError("User is invalid")
+
+        existing_endpoint = await endpoints_db.count_documents({"$and": [
+            {"members": [user_init, user_accept]},
+            {"_type": {"$nin":
+                [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            }}
+        ]})
+
+        if existing_endpoint:
+            raise ValueError("Endpoint already exists")
 
         new_dm = {
             "_type": ChannelType.dm,

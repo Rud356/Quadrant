@@ -17,7 +17,7 @@ from .schemas import (
 )
 
 
-@app.route("/api/users/my/endpoints")
+@app.route("/api/endpoints")
 @validate_api_version("1.0.0")
 @authorized
 async def get_endpoints(user: UserView):
@@ -25,7 +25,7 @@ async def get_endpoints(user: UserView):
     return success(endpoints)
 
 
-@app.route("/api/users/my/endpoints/<string:endpoint_id>")
+@app.route("/api/endpoints/<string:endpoint_id>")
 @validate_api_version("1.0.0")
 @authorized
 async def get_endpoint(user: UserView, endpoint_id: str):
@@ -39,7 +39,7 @@ async def get_endpoint(user: UserView, endpoint_id: str):
         return error("Invalid id")
 
 
-@app.route("/api/users/my/endpoints/create_endpoint?=dm")
+@app.route("/api/endpoints/create_endpoint?=dm")
 @validate_api_version("1.0.0")
 @validate_schema(dm_endpoint)
 @authorized
@@ -53,5 +53,7 @@ async def create_dm(user: UserView):
     except bson_errors.InvalidId:
         return error("Invalid user with id")
 
+    except ValueError as ve:
+        return error(ve)
 
 #TODO: create invites

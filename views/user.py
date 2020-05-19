@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Dict
 from bson import ObjectId
 from datetime import datetime
@@ -5,24 +6,19 @@ from dataclasses import dataclass, field
 
 from models import User as UserModel
 from models import Message
+from models.status_enum import Status
 from models import MetaEndpoint, DMchannel, TextEndpoint
 
-from .status_enum import Status
+
 
 users_connected_ids = {}
 
 
 @dataclass
 class UserView(UserModel):
-    # TODO: maybe add saving of users states
-    status: int = Status.online
     connected: list = field(default_factory=list)
-
-    async def set_status(self, status: int):
-        if status not in list(Status):
-            raise ValueError("Wrong status")
-
-        self.status = status
+    message_queue: list = field(default_factory=list)
+    to_clear_connections: list = field(default_factory=list)
 
     async def frined_code_request(self, code: str):
         user_id = await self.friendcodes_owner(code)
@@ -40,6 +36,10 @@ class UserView(UserModel):
             user = await super().authorize(token=token)
 
         view_user = cls(**user.__dict__)
+
+        if view_user._id in users_connected_ids:
+            view_user.status = users_connected_ids[view_user._id].status
+
         users_connected_ids[user._id] = view_user
         return view_user
 
@@ -80,20 +80,30 @@ class UserView(UserModel):
 
         return blocked_repr
 
-    def make_connection(self, ws):
-        # this function puts new websocket in list
+    async def add_ws(self, ws):
+        ws.index = len(self.connected)
         self.connected.append(ws)
 
-    def make_disconnect(self, ws):
-        # this function deletes disconnected websockets
-        self.connected.remove(ws)
+        if not len(self.connected):
+            asyncio.ensure_future(self.run_websockets())
 
-    async def broadcast_message(self, message):
-        # TODO: write sending to all connected websockets
-        ...
+    async def run_websockets(self):
+        while len(self.connected):
+            await asyncio.sleep(0.1)
+            messages_queue_len = len(self.message_queue)
+            # this is made to have some small number of messages
+            # so we cleaning up queue and also work on everything
+            for _ in range(messages_queue_len):
+                message = self.message_queue.pop(0)
+                for ws in self.connected:
+                    asyncio.ensure_future(ws(message))
+
+            for clearing_index in self.to_clear_connections:
+                self.connected.pop(clearing_index)
 
     def logout(self):
-        # TODO: close all websockets
+        self.connected.clear()
+        self.message_queue.clear()
         users_connected_ids.pop(self._id)
 
     @property

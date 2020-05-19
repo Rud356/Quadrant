@@ -1,5 +1,7 @@
 import requests
+from os import system
 
+# system('cls')
 s = requests.session()
 s2 = requests.session()
 link = "http://localhost:5000"

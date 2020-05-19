@@ -12,10 +12,11 @@ from .responces import (
     success, warning, error
 )
 from .schemas import (
-    login, registrate
+    login, registrate, text_status
 )
+
+
 #TODO: change all error codes to some fine
-#TODO: add way for user getting info about himself
 @app.route("/api/users/login", methods=["POST"])
 @validate_api_version("1.0.0")
 @validate_schema(login)
@@ -26,7 +27,6 @@ async def user_login():
     except:
         return error("Invalid credentials")
     else:
-        #TODO: fix giving cookies
         responce = success({"user": user.private_dict})
         responce.set_cookie("token", user.token, secure=True, max_age=48*60*60)
         return responce
@@ -44,26 +44,75 @@ async def user_create():
         except bson_errors.InvalidId:
             return error("Invalid parent id", 400)
 
-        #TODO: add responce
     try:
         new_user = await UserView.create_user(**reg)
-    except:
-        return error("You can't registrate account with that login")
-
-    else:
         responce = success({"user": new_user.private_dict})
         responce.set_cookie("token", new_user.token, secure=True, max_age=48*60*60)
         return responce
 
+    except ValueError as ve:
+        return error(ve)
 
-@app.route("/api/users/my")
+
+@app.route("/api/users/me")
 @validate_api_version("1.0.0")
 @authorized
 async def about_me(user: UserView):
-    return user.private_dict()
+    return success(user.private_dict())
 
 
-@app.route("/api/users/my/logout")
+@app.route("/api/me/nick", methods=["POST"])
+@validate_api_version("1.0.0")
+@authorized
+async def set_nickname(user: UserView):
+    nickname = request.args.get('new_nick', '')
+    try:
+        user.set_nickname(nickname)
+        return success(nickname)
+
+    except ValueError:
+        return error("Incorrect nickname length (should be in range from 1 to 50)")
+
+
+@app.route("/api/me/friendcode", methods=["POST"])
+@validate_api_version("1.0.0")
+@authorized
+async def set_friendcode(user: UserView):
+    friendcode = request.args.get('code', '')
+    try:
+        await user.set_friend_code(friendcode)
+        return success(friendcode)
+
+    except ValueError as ve:
+        return error(ve)
+
+
+@app.route("/api/me/text_status", methods=["POST"])
+@validate_api_version("1.0.0")
+@validate_schema(text_status)
+@authorized
+async def set_text_status(user: UserView):
+    text_status = await request.get('text_status')
+    try:
+        await user.set_text_status(text_status)
+        return success("ok")
+    except ValueError:
+        return error("Too long text status")
+
+
+@app.route("/api/me/status/<int:new_status>", methods=["POST"])
+@validate_api_version("1.0.0")
+@authorized
+async def set_status(user: UserView, new_status):
+    try:
+        await user.set_status(new_status)
+        return success("ok")
+
+    except ValueError:
+        return error("Invalid status")
+
+
+@app.route("/api/users/me/logout")
 @validate_api_version("1.0.0")
 @authorized
 async def logout(user: UserView):
@@ -86,7 +135,7 @@ async def user_from_id(user: UserView, id: str):
 
 
 #? friends
-@app.route("/api/users/my/friends")
+@app.route("/api/friends")
 @validate_api_version("1.0.0")
 @authorized
 async def get_users_friends(user: UserView):
@@ -95,7 +144,7 @@ async def get_users_friends(user: UserView):
     return success(friends)
 
 
-@app.route("/api/users/my/friends/<string:id>")
+@app.route("/api/friends/<string:id>")
 @validate_api_version("1.0.0")
 @authorized
 async def user_from_friends(user: UserView, id: str):
@@ -106,6 +155,7 @@ async def user_from_friends(user: UserView, id: str):
 
         user_repr = await UserView.from_id(id)
         return success(user_repr.public_dict)
+
     except (UserView.exc.InvalidUser, bson_errors.InvalidId):
         return error("Invalid user id", 400)
 
@@ -113,7 +163,7 @@ async def user_from_friends(user: UserView, id: str):
         return error("User isn't your friend")
 
 
-@app.route("/api/users/my/friends/<string:id>", methods=["DELETE"])
+@app.route("/api/friends/<string:id>", methods=["DELETE"])
 @validate_api_version("1.0.0")
 @authorized
 async def delete_friend(user: UserView, id: str):
@@ -130,7 +180,7 @@ async def delete_friend(user: UserView, id: str):
 
 
 ##? friends requests and all related
-@app.route("/api/users/my/friends/<string:id>", methods=["POST"])
+@app.route("/api/friends/<string:id>", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
 async def send_friend_request(user: UserView, id: str):
@@ -146,11 +196,15 @@ async def send_friend_request(user: UserView, id: str):
         return error("You can't send friend request to this user")
 
 
-@app.route("/api/users/my/friends/code?=<string:code>", methods=["POST"])
+@app.route("/api/friends", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
-async def send_friend_request_code(user: UserView, code: str):
+async def send_friend_request_code(user: UserView):
     try:
+        code = request.args.get('code')
+        if not code:
+            raise ValueError("Too short code")
+
         await user.frined_code_request(code)
         return success("ok")
 
@@ -162,22 +216,21 @@ async def send_friend_request_code(user: UserView, code: str):
 
 
 #TODO: add batches to two bethods below
-@app.route("/api/users/my/requests")
+@app.route("/api/friend_requests")
 @validate_api_version("1.0.0")
 @authorized
 async def outgoing_requests(user: UserView):
-    #TODO: maybe add batch request
     return success(user.pendings_outgoing)
 
 
-@app.route("/api/users/my/pendings")
+@app.route("/api/pending_requests")
 @validate_api_version("1.0.0")
 @authorized
 async def incoming_pendings(user: UserView):
     return success(user.pendings_incoming)
 
 
-@app.route("/api/users/my/requests/<string:id>", methods=["DELETE"])
+@app.route("/api/friend_requests/<string:id>", methods=["DELETE"])
 @validate_api_version("1.0.0")
 @authorized
 async def cancel_friend_request(user: UserView, id: str):
@@ -193,12 +246,14 @@ async def cancel_friend_request(user: UserView, id: str):
         return error("User wasn't sent a friend request")
 
 
-@app.route("/api/users/my/pendings/<string:id>", methods=["POST"])
+@app.route("/api/pending_requests/<string:id>", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
 async def responce_friend_request(user: UserView, id: str):
     try:
-        accept = bool(request.args.get('accept', 1))
+        # workaround not being able to get bool out of string
+        # default value is True
+        accept = request.args.get('accept', 'True') == 'True'
         id = ObjectId(id)
         await user.responce_friend_request(id, bool(accept))
         return success("ok")
@@ -209,9 +264,11 @@ async def responce_friend_request(user: UserView, id: str):
     except user.exc.UserNotInGroup:
         return error("This user isn't pending your responce on friendship")
 
+    except ValueError:
+        return error("Invalid accept parameter in url")
 
 #? blocked users
-@app.route("/api/users/my/blocked")
+@app.route("/api/blocked")
 @validate_api_version("1.0.0")
 @authorized
 async def blocked_users(user: UserView):
@@ -220,7 +277,7 @@ async def blocked_users(user: UserView):
     return success(blocked_repr)
 
 
-@app.route("/api/users/my/blocked/<string:id>", methods=["POST"])
+@app.route("/api/blocked/<string:id>", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
 async def block_user(user: UserView, id: str):
@@ -236,7 +293,7 @@ async def block_user(user: UserView, id: str):
         return error("User is blocked already")
 
 
-@app.route("/api/users/my/blocked/<string:id>", methods=["DELETE"])
+@app.route("/api/blocked/<string:id>", methods=["DELETE"])
 @validate_api_version("1.0.0")
 @authorized
 async def unblock_user(user: UserView, id: str):
@@ -253,4 +310,3 @@ async def unblock_user(user: UserView, id: str):
     else:
         return success("ok")
 
-#TODO: add setting users things

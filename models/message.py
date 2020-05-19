@@ -1,3 +1,5 @@
+import json
+
 from app import db
 
 from bson import ObjectId
@@ -96,3 +98,9 @@ class Message:
     async def force_delete(message_id: ObjectId, channel_id: ObjectId):
         result = await messages_db.delete_one({"$and": [{"_id": message_id}, {"endpoint": channel_id}]})
         return bool(result.deleted_count)
+
+    def __str__(self):
+        return json.dumps(self.__dict__)
+
+    def __bytes__(self):
+        return bytes(str(self), 'utf-8')

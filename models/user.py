@@ -10,6 +10,7 @@ from app import db
 from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
+from .status_enum import Status
 from .endpoint import MetaEndpoint, DMchannel
 
 users_db: AsyncIOMotorCollection = db['chat_users']
@@ -23,6 +24,7 @@ class User:
 
     bot: bool = False
     token: str = None
+    status: int = Status.offline
     code: str = field(repr=False, default=None)
     parent: int = None
     text_status: str = None
@@ -342,7 +344,7 @@ class User:
         return endpoint
 
     async def set_nickname(self, new_nickname: str):
-        if len(new_nickname) > 50:
+        if len(new_nickname) in range(1, 50):
             raise ValueError("Too long nickname")
 
         await users_db.update_one({"_id": self._id}, {"$set": {"nick": new_nickname}})
@@ -365,6 +367,13 @@ class User:
 
         await users_db.update_one({"_id": self._id}, {"$set": {"code": new_code}})
         self.code = new_code
+
+    async def set_status(self, status: int):
+        if status not in list(Status):
+            raise ValueError("Wrong status")
+
+        self.status = status
+        await users_db.update_one({"_id": self._id}, {"$set": {"status": status}})
 
     class exc:
         class UserNotInGroup(ValueError): ...
