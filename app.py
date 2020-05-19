@@ -1,4 +1,5 @@
 import asyncio
+from bson import ObjectId
 from quart import Quart
 from quart.json import JSONEncoder
 from datetime import datetime
@@ -11,6 +12,10 @@ class CustomJSONEncoder(JSONEncoder):
         try:
             if isinstance(obj, datetime):
                 return obj.isoformat()
+
+            if isinstance(obj, ObjectId):
+                return str(obj)
+
             iterable = iter(obj)
         except TypeError:
             pass

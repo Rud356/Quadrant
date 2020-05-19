@@ -22,7 +22,7 @@ from .schemas import (
 @authorized
 async def get_endpoints(user: UserView):
     endpoints = list(map(lambda endpoint: endpoint.__dict__, await user.endpoint()))
-    return await success(endpoints)
+    return success(endpoints)
 
 
 @app.route("/api/users/my/endpoints/<string:endpoint_id>")
@@ -33,10 +33,10 @@ async def get_endpoint(user: UserView, endpoint_id: str):
         endpoint = ObjectId(endpoint_id)
         endpoint = await user.small_endpoint(endpoint)
 
-        return await success(endpoint.__dict__)
+        return success(endpoint.__dict__)
 
     except bson_errors.InvalidId:
-        return await error("Invalid id")
+        return error("Invalid id")
 
 
 @app.route("/api/users/my/endpoints/create_endpoint?=dm")
@@ -48,10 +48,10 @@ async def create_dm(user: UserView):
         with_user = ObjectId(await request.json['with'])
         new_endpoint = await DMchannel.create_endpoint(user._id, with_user)
         # send to second user if online info about new endpoint
-        return await success({"endpoint":new_endpoint.__dict__})
+        return success({"endpoint":new_endpoint.__dict__})
 
     except bson_errors.InvalidId:
-        return await error("Invalid user with id")
+        return error("Invalid user with id")
 
 
 #TODO: create invites

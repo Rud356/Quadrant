@@ -24,10 +24,10 @@ async def user_login():
     try:
         user = await UserView.authorize(auth['login'], auth['password'])
     except:
-        return await error("Invalid credentials")
+        return error("Invalid credentials")
     else:
         #TODO: fix giving cookies
-        responce = Response("Success!", 200)
+        responce = success({"user": user.private_dict})
         responce.set_cookie("token", user.token, secure=True, max_age=48*60*60)
         return responce
 
@@ -42,15 +42,25 @@ async def user_create():
             reg['parent'] = ObjectId(reg['parent'])
 
         except bson_errors.InvalidId:
-            return await error("Invalid parent id", 400)
+            return error("Invalid parent id", 400)
+
+        #TODO: add responce
     try:
         new_user = await UserView.create_user(**reg)
     except:
-        return await error("You can't registrate account with that login")
+        return error("You can't registrate account with that login")
+
     else:
-        responce = Response("Registrated!", 200)
+        responce = success({"user": new_user.private_dict})
         responce.set_cookie("token", new_user.token, secure=True, max_age=48*60*60)
-        return await responce
+        return responce
+
+
+@app.route("/api/users/my")
+@validate_api_version("1.0.0")
+@authorized
+async def about_me(user: UserView):
+    return user.private_dict()
 
 
 @app.route("/api/users/my/logout")
@@ -59,7 +69,7 @@ async def user_create():
 async def logout(user: UserView):
     await user.logout()
     #TODO: drop token from cookies
-    return await success("All is fine!")
+    return success("All is fine!")
 
 
 @app.route("/api/users/<string:id>")
@@ -69,10 +79,10 @@ async def user_from_id(user: UserView, id: str):
     try:
         id = ObjectId(id)
         user_repr = await UserView.from_id(id)
-        return await success(user_repr.public_dict)
+        return success(user_repr.public_dict)
 
     except UserView.exc.InvalidUser:
-        return await error("Invalid user id", 400)
+        return error("Invalid user id", 400)
 
 
 #? friends
@@ -82,7 +92,7 @@ async def user_from_id(user: UserView, id: str):
 async def get_users_friends(user: UserView):
     #TODO: somehow optimize this operation later
     friends = await user.batch_get_friends()
-    return await success(friends)
+    return success(friends)
 
 
 @app.route("/api/users/my/friends/<string:id>")
@@ -95,12 +105,12 @@ async def user_from_friends(user: UserView, id: str):
             raise ValueError("User isn't a friend of yours")
 
         user_repr = await UserView.from_id(id)
-        return await success(user_repr.public_dict)
+        return success(user_repr.public_dict)
     except (UserView.exc.InvalidUser, bson_errors.InvalidId):
-        return await error("Invalid user id", 400)
+        return error("Invalid user id", 400)
 
     except ValueError:
-        return await error("User isn't your friend")
+        return error("User isn't your friend")
 
 
 @app.route("/api/users/my/friends/<string:id>", methods=["DELETE"])
@@ -110,13 +120,13 @@ async def delete_friend(user: UserView, id: str):
     try:
         id = ObjectId(id)
         await user.delete_friend(id)
-        return await success("ok")
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return await error("No user with this id")
+        return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return await error("User isn't your friend")
+        return error("User isn't your friend")
 
 
 ##? friends requests and all related
@@ -127,13 +137,13 @@ async def send_friend_request(user: UserView, id: str):
     try:
         id = ObjectId(id)
         await user.send_friend_request(id)
-        return await success("ok")
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return await error("Invalid id")
+        return error("Invalid id")
 
     except user.exc.InvalidUser:
-        return await error("You can't send friend request to this user")
+        return error("You can't send friend request to this user")
 
 
 @app.route("/api/users/my/friends/code?=<string:code>", methods=["POST"])
@@ -142,13 +152,13 @@ async def send_friend_request(user: UserView, id: str):
 async def send_friend_request_code(user: UserView, code: str):
     try:
         await user.frined_code_request(code)
-        return await success("ok")
+        return success("ok")
 
     except ValueError:
-        return await error("Invalid friend code")
+        return error("Invalid friend code")
 
     except user.exc.InvalidUser:
-        return await error("You can't send friend request to this user")
+        return error("You can't send friend request to this user")
 
 
 #TODO: add batches to two bethods below
@@ -157,14 +167,14 @@ async def send_friend_request_code(user: UserView, code: str):
 @authorized
 async def outgoing_requests(user: UserView):
     #TODO: maybe add batch request
-    return await success(user.pendings_outgoing)
+    return success(user.pendings_outgoing)
 
 
 @app.route("/api/users/my/pendings")
 @validate_api_version("1.0.0")
 @authorized
 async def incoming_pendings(user: UserView):
-    return await success(user.pendings_incoming)
+    return success(user.pendings_incoming)
 
 
 @app.route("/api/users/my/requests/<string:id>", methods=["DELETE"])
@@ -174,13 +184,13 @@ async def cancel_friend_request(user: UserView, id: str):
     try:
         id = ObjectId(id)
         await user.cancel_friend_request(id)
-        return await success("ok")
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return await error("Invalid id")
+        return error("Invalid id")
 
     except user.exc.UserNotInGroup:
-        return await error("User wasn't sent a friend request")
+        return error("User wasn't sent a friend request")
 
 
 @app.route("/api/users/my/pendings/<string:id>?=<int:accept>", methods=["POST"])
@@ -190,13 +200,13 @@ async def responce_friend_request(user: UserView, id: str, accept: int):
     try:
         id = ObjectId(id)
         await user.responce_friend_request(id, bool(accept))
-        return await success("ok")
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return await error("Invalid id")
+        return error("Invalid id")
 
     except user.exc.UserNotInGroup:
-        return await error("This user isn't pending your responce on friendship")
+        return error("This user isn't pending your responce on friendship")
 
 
 #? blocked users
@@ -206,7 +216,7 @@ async def responce_friend_request(user: UserView, id: str, accept: int):
 async def blocked_users(user: UserView):
     #TODO: optimize this one too
     blocked_repr = await user.batch_get_blocked()
-    return await success(blocked_repr)
+    return success(blocked_repr)
 
 
 @app.route("/api/users/my/blocked/<string:id>", methods=["POST"])
@@ -216,13 +226,13 @@ async def block_user(user: UserView, id: str):
     try:
         id = ObjectId(id)
         await user.block_user(id)
-        return await success("ok")
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return await error("No user with this id")
+        return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return await error("User is blocked already")
+        return error("User is blocked already")
 
 
 @app.route("/api/users/my/blocked/<string:id>", methods=["DELETE"])
@@ -234,12 +244,12 @@ async def unblock_user(user: UserView, id: str):
         await user.unblock_user(id)
 
     except bson_errors.InvalidId:
-        return await error("No user with this id")
+        return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return await error("User isn't blocked")
+        return error("User isn't blocked")
 
     else:
-        return await success("ok")
+        return success("ok")
 
 #TODO: add setting users things

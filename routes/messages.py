@@ -26,18 +26,18 @@ async def get_messages_latest(user: UserView, endpoint_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid id")
+        return error("Invalid id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         messages = await endpoint.get_messages(user._id, endpoint.last_message)
         # resend to all members
-        return await success({"messages":[message.__dict__ for message in messages]})
+        return success({"messages":[message.__dict__ for message in messages]})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>")
@@ -49,22 +49,22 @@ async def get_messages_from(user: UserView, endpoint_id: str, message_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         messages = await endpoint.get_messages(user._id, endpoint.last_message)
         # resend to all members
-        return await success({"messages":[message.__dict__ for message in messages]})
+        return success({"messages":[message.__dict__ for message in messages]})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>")
@@ -76,22 +76,22 @@ async def get_message(user: UserView, endpoint_id: str, message_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         message = await endpoint.get_message(user._id, message_id)
         # resend to all members
-        return await success({"message":message.__dict__})
+        return success({"message":message.__dict__})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>", methods=["PATCH"])
@@ -105,22 +105,22 @@ async def edit_message(user: UserView, endpoint_id: str, message_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         message_modified = await endpoint.edit_message(user._id, message_id, content)
         # resend to all members that message updated
-        return await success({"message_edited": message_modified})
+        return success({"message_edited": message_modified})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>&pin=<int:pinned>", methods=["PATCH"])
@@ -132,26 +132,26 @@ async def set_pin_state_message(user: UserView, endpoint_id: str, message_id: st
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         message_pinned = await endpoint.pin_message(user._id, message_id, bool(pinned))
         # resend to all members that message updated
         if message_pinned:
-            return await success({"message_pinned": message_id})
+            return success({"message_pinned": message_id})
 
         else:
-            return await error("Nothing was pinned")
+            return error("Nothing was pinned")
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages", methods=["POST"])
@@ -165,21 +165,21 @@ async def post_message(user: UserView, endpoint_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message = await endpoint.send_message(user._id, **data)
         # resend to all members
-        return await success({"message":message.__dict__})
+        return success({"message":message.__dict__})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except ValueError:
-        return await error("Too long message")
+        return error("Too long message")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>", methods=["DELETE"])
@@ -191,22 +191,22 @@ async def delete_message(user: UserView, endpoint_id: str, message_id: str):
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         message = await endpoint.delete_message(user._id, message_id)
         # resend to all members
-        return await success({"deleted": message})
+        return success({"deleted": message})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
 
 @app.route("/api/users/me/endpoints/<string:endpoint_id>/messages/<string:message_id>&force", methods=["DELETE"])
@@ -218,22 +218,22 @@ async def force_delete_message(user: UserView, endpoint_id: str, message_id: str
         endpoint = await user.small_endpoint(endpoint_id)
 
     except bson_errors.InvalidId:
-        return await error("Invalid endpoint id")
+        return error("Invalid endpoint id")
 
     except ValueError:
-        return await error("No such endpoint")
+        return error("No such endpoint")
 
     try:
         message_id = ObjectId(message_id)
         message = await endpoint.force_delete(user._id, message_id)
         # resend to all members
-        return await success({"deleted": message})
+        return success({"deleted": message})
 
     except TextEndpoint.exc.NotGroupMember:
-        return await error("you aren't a group member")
+        return error("you aren't a group member")
 
     except bson_errors.InvalidId:
-        return await error("Invalid message id")
+        return error("Invalid message id")
 
     except TextEndpoint.exc.UnsupprotedMethod:
-        return await error("This method unsupproted by this endpoint")
+        return error("This method unsupproted by this endpoint")

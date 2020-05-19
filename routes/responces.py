@@ -1,13 +1,18 @@
 from quart import Response, request, jsonify
 
-
-async def error(description: str="Not found", code: int = 404):
-    return Response(description, code)
-
-
-async def warning(description: str):
-    return Response(description, 405)
+def error(description: str="Not found", code: int = 404):
+    responce = jsonify(description=description)
+    responce.status_code = code
+    return responce
 
 
-async def success(data: object, code: int = 200):
-    return jsonify({"responce": data, "code": code})
+def warning(description: str):
+    responce = jsonify(warning=description)
+    responce.status_code = 405
+    return responce
+
+
+def success(data: object, code: int = 200):
+    responce = jsonify(responce=data, status_code=code)
+    responce.status_code = code
+    return responce

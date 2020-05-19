@@ -1,24 +1,26 @@
-import os
-import asyncio
-from models import *
-from bson import ObjectId
+import requests
 
-os.system('cls')
+s = requests.session()
+s2 = requests.session()
+link = "http://localhost:5000"
+headers = {
+    "api_version": "1.0.0",
+}
 
-async def main():
-    print("begin")
-    user = await User.authorize('hello_bbbbbbbbb12', 'World_bbbbbbbbb12')
-    chats = await user.small_endpoints()
+def authorize_user(login, pwd, sess):
+    auth = {
+        "login": login,
+        "password": pwd
+    }
+    r = sess.post(link+"/api/users/login", json=auth, headers=headers)
+    print(r.status_code)
+    return r.json()
 
-    dm = chats[0]
-    await dm.send_message(user._id, "Sorting test")
-    await dm.send_message(user._id, "Lets see how it works")
-    message = await dm.send_message(user._id, "Testing again")
-    print("from message: ", message._id)
-    messages_list = await dm.get_messages(user._id, message._id)
+def send_friend_request(sess):
+    r = sess.post(link+"/api/users/my/friends/5ebd4f331d4cd5908f3d192d", headers=headers, cookies=dict(sess.cookies))
+    print(r.text)
 
-    for msg in messages_list:
-        print(msg)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+user = authorize_user("hello_world1234", "hello_world123456", s)
+user_2 = authorize_user("hello_bbbbbbbbb12", "World_bbbbbbbbb12", s2)
+# send_friend_request(s)
