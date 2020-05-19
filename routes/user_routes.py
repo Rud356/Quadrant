@@ -193,11 +193,12 @@ async def cancel_friend_request(user: UserView, id: str):
         return error("User wasn't sent a friend request")
 
 
-@app.route("/api/users/my/pendings/<string:id>?=<int:accept>", methods=["POST"])
+@app.route("/api/users/my/pendings/<string:id>", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
-async def responce_friend_request(user: UserView, id: str, accept: int):
+async def responce_friend_request(user: UserView, id: str):
     try:
+        accept = bool(request.args.get('accept', 1))
         id = ObjectId(id)
         await user.responce_friend_request(id, bool(accept))
         return success("ok")
