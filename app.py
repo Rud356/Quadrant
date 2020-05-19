@@ -1,3 +1,4 @@
+import asyncio
 from quart import Quart
 from quart.json import JSONEncoder
 from datetime import datetime
@@ -20,6 +21,10 @@ class CustomJSONEncoder(JSONEncoder):
 app = Quart(__name__)
 app.json_encoder = CustomJSONEncoder
 server_api_version = APIVersion.from_str("1.0.0b")
+def conn_mongo(loop):
+    client = motor_asyncio.AsyncIOMotorClient('localhost', 27017, io_loop=loop)
+    db = client['chat_app']
+    return db, client
 
-client = motor_asyncio.AsyncIOMotorClient('localhost', 27017)
-db = client['chat_app']
+loop = asyncio.get_event_loop()
+db, client = conn_mongo(loop)

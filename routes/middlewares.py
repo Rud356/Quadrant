@@ -12,6 +12,7 @@ def authorized(f):
     async def wraps(*args, **kwargs):
         if not request.cookies.get('token'):
             print(request.cookies)
+            #TODO: fix this part
             return """
             Before going to this page you have to visit <a href="/set_name/sample"></a>
             """
@@ -20,7 +21,7 @@ def authorized(f):
             user = await UserView.authorize(token=request.cookies.get('token'))
 
         except TypeError:
-            return error("User unauthorized", 401)
+            return await error("User unauthorized", 401)
 
         return await f(*args, user=user, **kwargs)
 
@@ -34,16 +35,16 @@ def validate_api_version(required: str):
     def wrapper(f):
         async def wraps(*args, **kwargs):
             if not request.headers.get('api_version'):
-                return error("To be able to use api you have to set its version", 400)
+                return await error("To be able to use api you have to set its version", 400)
 
             try:
                 api_users = APIVersion.from_str(request.headers.get('api_version'))
 
             except ValueError:
-                return error("Invalid api version", 405)
+                return await error("Invalid api version", 405)
 
             if required > api_users:
-                return warning("Your api version is unsupproted by this method")
+                return await warning("Your api version is unsupproted by this method")
 
             return await f(*args, **kwargs)
 
@@ -57,15 +58,15 @@ def validate_schema(schema: object):
     def wrapper(f):
         async def wraps(*args, **kwargs):
             try:
-                schema.valate(await request.json())
+                schema(await request.json)
 
             except fastjsonschema.JsonSchemaException:
-                return error("You sent invalid json", 400)
+                return await error("You sent invalid json", 400)
 
             else:
                 return await f(*args, **kwargs)
 
-        wrapper.__name__ = f.__name__
+        wraps.__name__ = f.__name__
         return wraps
 
     return wrapper

@@ -1,5 +1,5 @@
 from bson import ObjectId
-from typing import List, Dict, overload, final
+from typing import List, Dict, overload
 from datetime import datetime
 from dataclasses import dataclass, field
 
@@ -109,7 +109,7 @@ class TextEndpoint:
         class UnsupprotedMethod(EndpointException): ...
         class NoPermissionForAction(EndpointException): ...
 
-@final
+
 @dataclass
 class DMchannel(TextEndpoint):
     async def create_invite(self, *args, **kwargs):
@@ -117,10 +117,7 @@ class DMchannel(TextEndpoint):
 
     @classmethod
     async def create_endpoint(cls, user_init: ObjectId, user_accept: ObjectId):
-        if not (
-            await check_valid_user(user_accept) and
-            await check_valid_user(user_init)
-            ):
+        if not await check_valid_user(user_accept):
             raise ValueError("One of two users is invalid")
 
         new_dm = {
@@ -133,8 +130,9 @@ class DMchannel(TextEndpoint):
         new_dm["_id"] = id.inserted_id
         return cls(**new_dm)
 
+    async def send_message(self, author: ObjectId, content: str, files: List[str]=[], **kwargs):
+        await super().send_message(author, content, files)
 
-@final
 class MetaEndpoint:
     @staticmethod
     async def get_small_endpoints_from_id(requester: ObjectId) -> Dict[ObjectId, TextEndpoint]:
@@ -170,6 +168,8 @@ class MetaEndpoint:
                 [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
             }}
         ]})
+        if not users_endpoint:
+            raise ValueError("Invalid endpoint")
 
         if users_endpoint['_type'] == ChannelType.dm:
             return DMchannel(**users_endpoint)
@@ -177,3 +177,5 @@ class MetaEndpoint:
         elif users_endpoint['_type'] == ChannelType.group:
             # TODO: later change builder to group dms
             return DMchannel(**users_endpoint)
+
+        raise ValueError("Invalid endpoint")

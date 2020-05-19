@@ -171,6 +171,9 @@ class User:
             }
             id = await users_db.insert_one(user)
             user['_id'] = id.inserted_id
+            # clearing invalid keys
+            user.pop("login")
+            user.pop("password")
             return cls(**user)
 
         else:
@@ -335,8 +338,6 @@ class User:
         Returns one small endpoint with given id
         """
         endpoint = await MetaEndpoint.get_small_endpoint(self._id, endpoint_id)
-        if not endpoint:
-            raise ValueError("User isn't a part of endpoint")
 
         return endpoint
 

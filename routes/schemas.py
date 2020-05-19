@@ -21,3 +21,23 @@ registrate = fastjsonschema.compile({
     },
     "required": ["nick", "bot"]
 })
+
+
+message = fastjsonschema.compile({
+    "type": "object",
+    "properties": {
+        "content": {"type": "string"},
+        "user_mentions": {"type": "array"},
+        "files": {"type": "array"}
+    },
+    "required": ["content"]
+})
+
+
+dm_endpoint = fastjsonschema.compile({
+    "type": "object",
+    "properties": {
+        "with": {"type": "string"}
+    },
+    "required": ["with"]
+})

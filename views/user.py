@@ -16,7 +16,7 @@ users_connected_ids = {}
 class UserView(UserModel):
     # TODO: maybe add saving of users states
     status: int = Status.online
-    connected: list = []
+    connected: list = field(default_factory=list)
 
     async def set_status(self, status: int):
         if status not in list(Status):
@@ -41,6 +41,7 @@ class UserView(UserModel):
 
         view_user = cls(**user.__dict__)
         users_connected_ids[user._id] = view_user
+        return view_user
 
     @classmethod
     async def from_id(cls, user_id: ObjectId):

@@ -28,7 +28,7 @@ class Message:
     async def send_message(
         cls, author: ObjectId, endpoint: ObjectId, content: str,
         files: List[str] = [], user_mentions: List[ObjectId] = []
-    ):
+        ):
         if len(content) > 3000:
             raise ValueError("Too long message")
 
