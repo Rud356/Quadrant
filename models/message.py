@@ -26,6 +26,7 @@ class Message:
     pin: bool = False
     edited: bool = False
 
+    #TODO: add reactions and other mentions
     @classmethod
     async def send_message(
         cls, author: ObjectId, endpoint: ObjectId, content: str,
@@ -76,7 +77,7 @@ class Message:
             {"endpoint": from_channel},
             {"_id": {"$lt": from_message}}
             ]}
-        ).sort("_id", 1).limit(100)
+        ).sort("_id", -1).limit(100)
 
         async for message in msg_query:
             message = cls(**message)
