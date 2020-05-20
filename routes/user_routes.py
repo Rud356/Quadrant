@@ -25,7 +25,7 @@ async def user_login():
     try:
         user = await UserView.authorize(auth['login'], auth['password'])
     except:
-        return error("Invalid credentials")
+        return error("Invalid credentials", 401)
     else:
         responce = success({"user": user.private_dict})
         responce.set_cookie("token", user.token, secure=True, max_age=48*60*60)
@@ -51,7 +51,7 @@ async def user_create():
         return responce
 
     except ValueError as ve:
-        return error(ve)
+        return error(ve, 403)
 
 
 @app.route("/api/users/me")
@@ -71,7 +71,7 @@ async def set_nickname(user: UserView):
         return success(nickname)
 
     except ValueError:
-        return error("Incorrect nickname length (should be in range from 1 to 50)")
+        return error("Incorrect nickname length (should be in range from 1 to 50)", 400)
 
 
 @app.route("/api/me/friendcode", methods=["POST"])
@@ -84,7 +84,7 @@ async def set_friendcode(user: UserView):
         return success(friendcode)
 
     except ValueError as ve:
-        return error(ve)
+        return error(ve, 400)
 
 
 @app.route("/api/me/text_status", methods=["POST"])
@@ -97,7 +97,7 @@ async def set_text_status(user: UserView):
         await user.set_text_status(text_status)
         return success("ok")
     except ValueError:
-        return error("Too long text status")
+        return error("Too long text status", 400)
 
 
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
@@ -109,7 +109,7 @@ async def set_status(user: UserView, new_status):
         return success("ok")
 
     except ValueError:
-        return error("Invalid status")
+        return error("Invalid status", 400)
 
 
 @app.route("/api/users/me/logout")
@@ -157,10 +157,10 @@ async def user_from_friends(user: UserView, id: str):
         return success(user_repr.public_dict)
 
     except (UserView.exc.InvalidUser, bson_errors.InvalidId):
-        return error("Invalid user id", 400)
+        return error("Invalid user id")
 
     except ValueError:
-        return error("User isn't your friend")
+        return error("User isn't your friend", 400)
 
 
 @app.route("/api/friends/<string:id>", methods=["DELETE"])
@@ -176,7 +176,7 @@ async def delete_friend(user: UserView, id: str):
         return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return error("User isn't your friend")
+        return error("User isn't your friend", 400)
 
 
 ##? friends requests and all related
@@ -193,7 +193,7 @@ async def send_friend_request(user: UserView, id: str):
         return error("Invalid id")
 
     except user.exc.InvalidUser:
-        return error("You can't send friend request to this user")
+        return error("You can't send friend request to this user", 403)
 
 
 @app.route("/api/friends", methods=["POST"])
@@ -209,10 +209,10 @@ async def send_friend_request_code(user: UserView):
         return success("ok")
 
     except ValueError:
-        return error("Invalid friend code")
+        return error("Invalid friend code", 400)
 
     except user.exc.InvalidUser:
-        return error("You can't send friend request to this user")
+        return error("You can't send friend request to this user", 403)
 
 
 #TODO: add batches to two bethods below
@@ -243,7 +243,7 @@ async def cancel_friend_request(user: UserView, id: str):
         return error("Invalid id")
 
     except user.exc.UserNotInGroup:
-        return error("User wasn't sent a friend request")
+        return error("User wasn't sent a friend request", 400)
 
 
 @app.route("/api/pending_requests/<string:id>", methods=["POST"])
@@ -262,10 +262,10 @@ async def responce_friend_request(user: UserView, id: str):
         return error("Invalid id")
 
     except user.exc.UserNotInGroup:
-        return error("This user isn't pending your responce on friendship")
+        return error("This user isn't pending your responce on friendship", 400)
 
     except ValueError:
-        return error("Invalid accept parameter in url")
+        return error("Invalid accept parameter in url", 400)
 
 #? blocked users
 @app.route("/api/blocked")
@@ -290,7 +290,7 @@ async def block_user(user: UserView, id: str):
         return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return error("User is blocked already")
+        return success("User is blocked already", 204)
 
 
 @app.route("/api/blocked/<string:id>", methods=["DELETE"])
@@ -305,7 +305,7 @@ async def unblock_user(user: UserView, id: str):
         return error("No user with this id")
 
     except UserView.exc.UserNotInGroup:
-        return error("User isn't blocked")
+        return success("User isn't blocked", 204)
 
     else:
         return success("ok")

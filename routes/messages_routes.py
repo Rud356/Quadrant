@@ -36,7 +36,7 @@ async def get_messages_latest(user: UserView, endpoint_id: str):
         return success({"messages":[message.__dict__ for message in messages]})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/from/<string:message_id>")
@@ -59,7 +59,7 @@ async def get_messages_from(user: UserView, endpoint_id: str, message_id: str):
         return success({"messages":[message.__dict__ for message in messages]})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("You aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
@@ -86,7 +86,7 @@ async def get_message(user: UserView, endpoint_id: str, message_id: str):
         return success({"message":message.__dict__})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
@@ -116,7 +116,7 @@ async def edit_message(user: UserView, endpoint_id: str, message_id: str):
         return success({"message_edited": message_modified})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
@@ -146,10 +146,10 @@ async def set_pin_state_message(user: UserView, endpoint_id: str, message_id: st
             return success({"message_pinned": message_id})
 
         else:
-            return error("Nothing was pinned")
+            return error("Nothing was pinned, no permissions", 403)
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
@@ -185,10 +185,10 @@ async def post_message(user: UserView, endpoint_id: str):
         return success({"message":message.__dict__})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
     except ValueError:
-        return error("Too long message")
+        return error("Too long message", 400)
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", methods=["DELETE"])
@@ -205,7 +205,7 @@ async def delete_message(user: UserView, endpoint_id: str, message_id: str):
         return error("Invalid endpoint id")
 
     except ValueError:
-        return error("No such endpoint or incorrect ")
+        return error("No such endpoint or incorrect id", 400)
 
     try:
         message_id = ObjectId(message_id)
@@ -217,10 +217,10 @@ async def delete_message(user: UserView, endpoint_id: str, message_id: str):
         return success({"deleted": message})
 
     except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member")
+        return error("you aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
 
     except endpoint.exc.EndpointException:
-        return error("You can't force delete this message")
+        return error("You can't force delete this message", 403)

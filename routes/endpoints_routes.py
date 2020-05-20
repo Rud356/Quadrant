@@ -54,6 +54,6 @@ async def create_dm(user: UserView):
         return error("Invalid user with id")
 
     except ValueError as ve:
-        return error(ve)
+        return error(ve, 409)
 
 #TODO: create invites
