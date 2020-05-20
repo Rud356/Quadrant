@@ -1,4 +1,4 @@
-from app import app
+from app import app, config
 from bson import ObjectId
 from bson import errors as  bson_errors
 from quart import Response, request, jsonify
@@ -28,7 +28,11 @@ async def user_login():
         return error("Invalid credentials", 401)
     else:
         responce = success({"user": user.private_dict})
-        responce.set_cookie("token", user.token, secure=True, max_age=48*60*60)
+        responce.set_cookie(
+            "token", user.token,
+            secure=not config['debug'], max_age=48*60*60,
+            path='/api'
+        )
         return responce
 
 
@@ -47,7 +51,7 @@ async def user_create():
     try:
         new_user = await UserView.create_user(**reg)
         responce = success({"user": new_user.private_dict})
-        responce.set_cookie("token", new_user.token, secure=True, max_age=48*60*60)
+        responce.delete_cookie('token', '/api')
         return responce
 
     except ValueError as ve:
@@ -60,14 +64,14 @@ async def user_create():
 async def about_me(user: UserView):
     return success(user.private_dict())
 
-
+#TODO: maybe add get routes for those?
 @app.route("/api/me/nick", methods=["POST"])
 @validate_api_version("1.0.0")
 @authorized
 async def set_nickname(user: UserView):
     nickname = request.args.get('new_nick', '')
     try:
-        user.set_nickname(nickname)
+        await user.set_nickname(nickname)
         return success(nickname)
 
     except ValueError:

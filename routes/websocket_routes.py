@@ -36,7 +36,7 @@ class WSMessage:
             self.user.to_clear_connections.append(self.index)
 
 
-@app.websocket('/api/ws/add')
+@app.websocket('/api/ws')
 @auth_websocket
 async def add_websocket(user: UserView):
     new_ws = WSMessage(user)

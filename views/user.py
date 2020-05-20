@@ -101,6 +101,8 @@ class UserView(UserModel):
             for clearing_index in self.to_clear_connections:
                 self.connected.pop(clearing_index)
 
+        users_connected_ids.pop(self._id)
+
     def logout(self):
         self.connected.clear()
         self.message_queue.clear()
@@ -121,6 +123,8 @@ class UserView(UserModel):
     def private_dict(self):
         # making sure that our object is new one
         output = dict(self.__dict__)
-        output.pop('connected', None)
         output.pop('token', None)
+        output.pop('connected', None)
+        output.pop('message_queue', None)
+        output.pop('to_clear_connections', None)
         return output

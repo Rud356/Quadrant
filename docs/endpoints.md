@@ -35,7 +35,7 @@ Resend updates to users (nicknames, endpoints properties, message properties (ex
 | /api/blocked | GET | none | returns all users blocked by you |
 | /api/blocked/< string:id > | POST | none | can throw code 204 if user is already blocked, if not - adding to blocked |
 | /api/endpoints | GET | none | returns all small endpoints (dms, groputs) as json |
-| /api/endpoints/< string:endpoint_id > | GET | none | returns specific endpoint |
+| /api/endpoints/< string:endpoint_id > | GET | none | returns specific endpoint (may throw code 409 if already exists) |
 | /api/endpoints/create_endpoint?=dm | POST | with: str (another user id) | creates new endpoint for users |
 | /api/endpoints/< string:endpoint_id >/messages | GET | none | returns 100 fresh messages |
 | /api/endpoints/< string:endpoint_id >/messages/from/< string:message_id > | GET | none | returns 100 mesages that was before one with given id |
@@ -45,4 +45,4 @@ Resend updates to users (nicknames, endpoints properties, message properties (ex
 | /api/endpoints/< string:endpoint_id >/messages | POST | content: str (must be) | posting new message to endpoint (more details later) |
 | /api/endpoints/< string:endpoint_id >/messages/< string:message_id > | DELETE | none | deleting your message |
 | /api/endpoints/< string:endpoint_id >/messages/< string:message_id >?force=True | DELETE | none | trying to delete others message (checks permissions) |
-| /api/ws/add | WebSocket | token: str | adding your websocket to your user and letting you catch messages and updates in real time |
+| /api/ws | WebSocket | token: str | adding your websocket to your user and letting you catch messages and updates in real time |

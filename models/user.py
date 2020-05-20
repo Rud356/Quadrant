@@ -182,7 +182,7 @@ class User:
             #? not enough data
             raise ValueError("Not enough data")
 
-    async def batch_get_friends(self, friends_getting=[]):
+    def batch_get_friends(self, friends_getting=[]):
         """
         Returns an async iterable to fetch friends from list of ids or all
         """
