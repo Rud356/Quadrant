@@ -15,7 +15,6 @@ Resend updates to users (nicknames, endpoints properties, message properties (ex
 
 | endpoint | method | required as json | description |
 | :--- | :---: | :---: | :--- |
-## Users routes
 | /api/users/login | POST | login: str, password: str | logging in as normal user and getting in return user object as json |
 | /api/users/reistrate | POST | nick: str, bot: bool, parent: str OR login + password | registrates new user |
 | /api/users/me/logout | GET | none | logs out you from account |
@@ -35,11 +34,9 @@ Resend updates to users (nicknames, endpoints properties, message properties (ex
 | /api/pending_requests/<string:id>?accept=False | POST | none | respond to friend request by denying it |
 | /api/blocked | GET | none | returns all users blocked by you |
 | /api/blocked/<string:id> | POST | none | can throw code 204 if user is already blocked, if not - adding to blocked |
-## Endpoints routes
 | /api/endpoints | GET | none | returns all small endpoints (dms, groputs) as json |
 | /api/endpoints/<string:endpoint_id> | GET | none | returns specific endpoint |
 | /api/endpoints/create_endpoint?=dm | POST | with: str (another user id) | creates new endpoint for users |
-## Message related
 | /api/endpoints/<string:endpoint_id>/messages | GET | none | returns 100 fresh messages |
 | /api/endpoints/<string:endpoint_id>/messages/from/<string:message_id> | GET | none | returns 100 mesages that was before one with given id |
 | /api/endpoints/<string:endpoint_id>/messages/<string:message_id> | GET | none | returns exact message |
