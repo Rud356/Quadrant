@@ -24,7 +24,6 @@ async def get_endpoints(user: UserView):
     endpoints = list(map(lambda endpoint: endpoint.__dict__, await user.endpoint()))
     return success(endpoints)
 
-
 @app.route("/api/endpoints/<string:endpoint_id>")
 @validate_api_version("1.0.0")
 @authorized
@@ -39,7 +38,7 @@ async def get_endpoint(user: UserView, endpoint_id: str):
         return error("Invalid id")
 
 
-@app.route("/api/endpoints/create_endpoint?=dm")
+@app.route("/api/endpoints/create_endpoint?=dm", methods=["POST"])
 @validate_api_version("1.0.0")
 @validate_schema(dm_endpoint)
 @authorized
@@ -49,6 +48,8 @@ async def create_dm(user: UserView):
         new_endpoint = await DMchannel.create_endpoint(user._id, with_user)
         # send to second user if online info about new endpoint
         return success({"endpoint":new_endpoint.__dict__})
+
+    #TODO: add rules to not allow blocked users send messages to each other
 
     except bson_errors.InvalidId:
         return error("Invalid user with id")

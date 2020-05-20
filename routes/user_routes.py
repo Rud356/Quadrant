@@ -92,7 +92,7 @@ async def set_friendcode(user: UserView):
 @validate_schema(text_status)
 @authorized
 async def set_text_status(user: UserView):
-    text_status = await request.get('text_status')
+    text_status = await request.json.get('text_status')
     try:
         await user.set_text_status(text_status)
         return success("ok")
@@ -201,7 +201,7 @@ async def send_friend_request(user: UserView, id: str):
 @authorized
 async def send_friend_request_code(user: UserView):
     try:
-        code = request.args.get('code')
+        code = request.args.get('code', None)
         if not code:
             raise ValueError("Too short code")
 
@@ -309,4 +309,3 @@ async def unblock_user(user: UserView, id: str):
 
     else:
         return success("ok")
-
