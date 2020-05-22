@@ -30,8 +30,7 @@ async def user_login():
         responce = success({"user": user.private_dict})
         responce.set_cookie(
             "token", user.token,
-            secure=not config['debug'], max_age=48*60*60,
-            path='/api'
+            max_age=48*60*60
         )
         return responce
 
@@ -63,6 +62,7 @@ async def user_create():
 @authorized
 async def about_me(user: UserView):
     return success(user.private_dict())
+
 
 #TODO: maybe add get routes for those?
 @app.route("/api/me/nick", methods=["POST"])

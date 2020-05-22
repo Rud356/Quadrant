@@ -12,7 +12,6 @@ from .responces import success, warning, error
 def authorized(f):
     async def wraps(*args, **kwargs):
         if not request.cookies.get('token'):
-            print(request.cookies)
             return error("You have to authorize first", 401)
 
         try:
