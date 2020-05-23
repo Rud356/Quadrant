@@ -183,10 +183,9 @@ class UserModel:
             )
         ])
 
-    async def get_friends(self, exclude_friends=set()):
-        _get_friends = set(self.friends) - set(exclude_friends)
+    async def get_friends(self, fetch_friends: list):
         users = users_db.find(
-            {"_id": {"$in": _get_friends}},
+            {"_id": {"$in": list(fetch_friends)}},
             public_exclude
         )
 
@@ -194,7 +193,7 @@ class UserModel:
 
         async for user in users:
             user = UserModel(**user)
-            users_objects.append(user)
+            users_objects.append(user.public_dict)
 
         return users_objects
 
@@ -254,10 +253,9 @@ class UserModel:
             {'$pull': {'blocked': unblocking}}
         )
 
-    async def get_blocked(self, exclude_blocked=set()):
-        _get_blocked = set(self.blocked) - set(exclude_blocked)
+    async def get_blocked(self, fetch_blocked=set()):
         users = users_db.find(
-            {"_id": {"$in": _get_blocked}},
+            {"_id": {"$in": list(fetch_blocked)}},
             public_exclude
         )
 
@@ -265,7 +263,7 @@ class UserModel:
 
         async for user in users:
             user = UserModel(**user)
-            users_objects.append(user)
+            users_objects.append(user.public_dict)
 
         return users_objects
 
@@ -277,6 +275,27 @@ class UserModel:
     async def get_endpoint(self, endpoint_id: ObjectId):
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
+
+    @property
+    def public_dict(self):
+        return {
+            '_id': self._id,
+            "status": self.status,
+            "text_status": self.text_status,
+            "bot": self.bot,
+            "nick": self.nick,
+            "created_at": self.created_at,
+        }
+
+    @property
+    def private_dict(self):
+        # making sure that our object is new one
+        output = dict(self.__dict__)
+        exclude_keys(output, [
+            'token', 'connected', 'message_queue',
+            'connections_to_clear'
+        ])
+        return output
 
     @classmethod
     async def authorize(cls, login='', password='', token=''):
@@ -322,6 +341,7 @@ class UserModel:
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
         new_user = {
+            'bot': False,
             'nick': nick,
             'login': login,
             'password': password,
@@ -360,6 +380,14 @@ class UserModel:
             {"code": code}
         )
         return not bool(same_codes)
+
+    @staticmethod
+    async def _friend_code_owner(code):
+        user_id = await users_db.find_one(
+            {"code": code},
+            {"_id": 1, "total": 1}
+        )
+        return user_id.get('_id')
 
     @staticmethod
     async def _valid_user_id(user_id: ObjectId, bot=False) -> bool:
