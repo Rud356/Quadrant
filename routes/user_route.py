@@ -62,7 +62,7 @@ async def user_create():
         )
 
     except ValueError:
-        return error("Login is already in use")
+        return error("Login is already in use", 403)
 
     response = success(user.private_dict)
     response.set_cookie(
@@ -96,6 +96,55 @@ async def self_info(user: User):
 
 #? Other endpoints
 ## Setters
+@app.route("/api/me/nick", methods=["POST"])
+@authorized
+async def set_nickname(user: User):
+    nickname = request.args.get('new_nick', '')
+    try:
+        await user.set_nickname(nickname)
+
+    except ValueError:
+        return error("Invalid nick", 400)
+
+    return success(nickname)
+
+
+@app.route("/api/me/nick", methods=["POST"])
+@authorized
+async def set_friend_code(user: User):
+    friendcode = request.args.get('code', '')
+    try:
+        await user.set_friend_code(friendcode)
+        return success(friendcode)
+
+    except ValueError as ve:
+        return error(ve, 400)
+
+
+
+@app.route("/api/me/status/<int:new_status>", methods=["POST"])
+@authorized
+async def set_status(user: User, new_status: int):
+    try:
+        await user.set_status(new_status)
+        return success("ok")
+
+    except ValueError:
+        return error("Wrong status code", 400)
+
+
+@app.route("/api/me/text_status", methods=["POST"])
+@authorized
+@validate_schema(text_status)
+async def set_text_status(user: User):
+    text_status = await request.json.get('text_status')
+    try:
+        await user.set_text_status(text_status)
+        return success('ok')
+
+    except ValueError:
+        return error("Invalid text status", 400)
+
 
 ## Friends
 @app.route("/api/friends")
