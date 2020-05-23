@@ -1,6 +1,4 @@
 __pycache__
 .vs
 .idea
-*.sqlite
-old_models/
-models/endpoints_old.py
+old/

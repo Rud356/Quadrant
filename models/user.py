@@ -1,34 +1,47 @@
-from random import choices
-from datetime import datetime
-
 from typing import List
 from bson import ObjectId
+from random import choices
+from datetime import datetime
+from string import ascii_letters, digits
 from dataclasses import dataclass, field
 
-# my modules
-from app import db
-from motor.motor_asyncio import AsyncIOMotorCollection
 from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
-from .status_enum import Status
-from .endpoint import MetaEndpoint, DMchannel
+from .enums import Status
+from .endpoint import MetaEndpoint
 
-users_db: AsyncIOMotorCollection = db['chat_users']
+from app import db
+from utils import exclude_keys
+
+
+users_db = db.chat_users
+public_exclude = {
+    "code": 0,
+    "blocked": 0,
+    "friends": 0,
+    "pendings_outgoing": 0,
+    "pendings_incoming": 0,
+    "status": 0,
+    "login": 0,
+    "password": 0,
+    "parent": 0,
+    "token": 0
+}
+#TODO: add some method to reset passwords
 
 
 @dataclass
-class User:
+class UserModel:
     _id: ObjectId
-    created_at: datetime
     nick: str
+    created_at: datetime
 
     bot: bool = False
-    token: str = None
+    token: str = field(default=None, repr=False)
     status: int = Status.offline
-    code: str = field(repr=False, default=None)
-    parent: int = None
-    text_status: str = None
-
+    text_status: str = ''
+    code: str = field(default=None, repr=False)
+    parent: int = field(default=None, repr=False)
 
     blocked: List[ObjectId] = field(default_factory=list, repr=False)
     friends: List[ObjectId] = field(default_factory=list, repr=False)
@@ -36,216 +49,92 @@ class User:
     pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
     pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
 
+    #? Setters
+    async def set_nick(self, new_nick):
+        if len(new_nick) in range(1, 25+1):
+            raise ValueError("Too long nickname")
 
-    @staticmethod
-    def create_token():
-        letters_set = '1234567890abcdef'
-        token = ''.join(choices(letters_set, k=64))
-        return token
-
-    @staticmethod
-    async def valid_user_id(user_id: ObjectId, bot=False) -> bool:
-        user = await users_db.count_documents( {"$and": [{'_id': user_id}, {'bot': bot}]} )
-        return bool(user)
-
-    @staticmethod
-    async def check_blocked(users_block_list: ObjectId, user_checking: ObjectId):
-        is_blocked = await users_db.count_documents(
-            {"$and": [{"_id": users_block_list}, {"blocked": {"$in": [user_checking]}}]}
+        await users_db.update_one(
+            {"_id": self._id},
+            {"$set": {"nick": new_nick}}
         )
-        return bool(is_blocked)
+        self.nick = new_nick
 
-    @staticmethod
-    async def avaliable_friend_code(code: str):
-        same_codes = await users_db.count_documents(
-            {"code": code}
+    async def set_status(self, status: int):
+        if status not in list(Status):
+            raise ValueError("Wrong status")
+
+        await users_db.update_one(
+            {"_id": self._id},
+            {"$set": {"status": status}}
         )
-        return not bool(same_codes)
+        self.status = status
 
-    @staticmethod
-    async def friendcodes_owner(code: str) -> ObjectId:
-        user_id = await users_db.find_one({"code": code}, {"_id": 1, "total": 1})
-        return user_id.get('_id')
+    async def set_text_status(self, text_status: str):
+        if len(text_status) > 256:
+            raise ValueError("Too long status")
 
-    @classmethod
-    async def from_id(cls, user_id: str):
-        # likely raises bson.errors.InvalidId
-        user_id = ObjectId(user_id)
-        user = await users_db.find_one(
-            {'_id': user_id},
-            {
-                "code": 0,
-                "blocked": 0,
-                "friends": 0,
-                "pendings_outgoing": 0,
-                "pendings_incoming": 0,
-                "status": 0,
-                "login": 0,
-                "password": 0,
-                "parent": 0,
-                "token": 0
-            }
+        await users_db.update_one(
+            {"_id": self._id},
+            {"$set": {"text_status": text_status}}
+        )
+        self.text_status = text_status
+
+    async def set_friend_code(self, new_code: str):
+        if len(new_code) not in range(3, 51):
+            raise ValueError("Too long friend code")
+
+        is_avaliable = await self._avaliable_friend_code(new_code)
+
+        if not is_avaliable:
+            raise ValueError("Code is already used")
+
+        await users_db.update_one(
+            {"_id": self._id},
+            {"$set": {"code": new_code}}
+        )
+        self.code = new_code
+
+    #? Friends related
+    async def send_friend_request(self, to_user_id: ObjectId):
+        valid_user = await self._valid_user_id(to_user_id)
+
+        if not valid_user:
+            raise self.exc.InvalidUser("User isn't valid or is bot")
+
+        is_blocked = await UserModel._check_blocked(to_user_id, self._id)
+
+        if is_blocked:
+            raise self.exc.InvalidUser("User blocked you")
+
+        blocked_by_self = to_user_id in self.blocked
+
+        if blocked_by_self:
+            raise self.exc.InvalidUser("You blocked user yourself")
+
+        in_other_relations = (
+            to_user_id in self.pendings_incoming and
+            to_user_id in self.pendings_outgoing and
+            to_user_id in self.friends
         )
 
-        if not user:
-            raise cls.exc.InvalidUser("User id doesn't exists")
-
-        return cls(**user)
-
-    @classmethod
-    async def authorize(cls, login='', password='', token=''):
-        if token:
-            user = await users_db.find_one(
-                {'token': token},
-                {
-                    "login": 0,
-                    "password": 0,
-                }
-            )
-
-            if user is None:
-                raise ValueError('No such token')
-
-            return cls(**user)
-
-        elif login and password:
-            user = await users_db.find_one(
-                {'login': login, 'password': password},
-                {
-                    "login": 0,
-                    "password": 0,
-                }
-            )
-            if user is None:
-                raise ValueError('No such user')
-
-            return cls(**user)
-
-        else:
-            raise cls.exc.InvalidUser('No such user')
-
-    @classmethod
-    async def create_user(
-        cls,
-        nick: str, bot=False,
-        login: str = '', password: str = '',
-        parent: ObjectId = None, **_
-        ):
-        if bot and parent:
-            if cls.valid_user_id(parent):
-                token = cls.create_token()
-
-                user = {
-                    'bot': bot,
-                    'nick': nick,
-                    'token': token,
-                    'parent': parent,
-                    'created_at': datetime.utcnow()
-                }
-                id = await users_db.insert_one(user)
-                user['_id'] = id.inserted_id
-                return cls(**user)
-
-            else:
-                raise cls.exc.InvalidUser("User doesn't exits")
-
-        elif login and password:
-            #TODO: idk how to make sure that this is unique info faster
-            if await users_db.find_one({'login': login}):
-                raise ValueError("Disallowed registration")
-
-            if len(login) < 5 or len(password) < 10:
-                raise ValueError("Too short password or login")
-
-            token = cls.create_token()
-
-            user = {
-                'bot': False,
-                'nick': nick,
-                'login': login,
-                'password': password,
-                'token': token,
-                'blocked': [],
-                'friends': [],
-                'pendings_outgoing': [],
-                'pendings_incoming': [],
-                'created_at': datetime.utcnow()
-            }
-            id = await users_db.insert_one(user)
-            user['_id'] = id.inserted_id
-            # clearing invalid keys
-            user.pop("login")
-            user.pop("password")
-            return cls(**user)
-
-        else:
-            #? not enough data
-            raise ValueError("Not enough data")
-
-    def batch_get_friends(self, friends_getting=[]):
-        """
-        Returns an async iterable to fetch friends from list of ids or all
-        """
-        not_fetching = {
-                    "code": 0,
-                    "blocked": 0,
-                    "friends": 0,
-                    "pendings_outgoing": 0,
-                    "pendings_incoming": 0,
-                    "status": 0,
-                    "login": 0,
-                    "password": 0,
-                    "parent": 0,
-                    "token": 0
-                }
-
-        if not friends_getting:
-            users = users_db.find(
-                {"_id": {"$in": self.friends}},
-                not_fetching
-            )
-
-        else:
-            users = users_db.find(
-                {"_id": {"$in": friends_getting}},
-                not_fetching
-            )
-
-        return users
-
-    async def send_friend_request(self, user_id: ObjectId) -> bool:
-        if (
-            (
-                await self.valid_user_id(user_id) and not
-                await self.check_blocked(self._id, user_id)
-            ) and
-
-                not self.bot and
-
-            (
-                user_id not in self.blocked and
-                user_id not in self.pendings_incoming and
-                user_id not in self.pendings_outgoing and
-                user_id not in self.friends
-            )
-        ):
-            await users_db.bulk_write([
-                UpdateOne({"_id": self._id}, {"$push": {"pendings_outgoing": user_id}}),
-                UpdateOne({"_id": user_id}, {"$push": {"pendings_incoming": self._id}})
-            ])
-
-        raise self.exc.InvalidUser("You can't sent friend request to this user")
-
-    async def cancel_friend_request(self, user_id: ObjectId):
-        if user_id not in self.pendings_outgoing:
-            raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
+        if in_other_relations:
+            raise self.exc.InvalidUser("User is in some relations with you already")
 
         await users_db.bulk_write([
-                UpdateOne({"_id": self._id}, {"$pull": {"pendings_outgoing": user_id}}),
-                UpdateOne({"_id": user_id}, {"$pull": {"pendings_incoming": self._id}})
-            ])
+            # Adding outgoing pending to user
+            UpdateOne(
+                {"_id": self._id},
+                {"$push": {"pendings_outgoing": to_user_id}}
+            ),
+            # Adding incoming pending to other user
+            UpdateOne(
+                {"_id": to_user_id},
+                {"$push": {"pendings_incoming": self._id}}
+            )
+        ])
 
-    async def responce_friend_request(self, user_id: ObjectId, confirm=True):
+    async def response_friend_request(self, user_id: ObjectId, confirm=True):
         if user_id not in self.pendings_incoming:
             raise self.exc.UserNotInGroup("User isn't in incoming pendings")
 
@@ -262,118 +151,237 @@ class User:
 
         await users_db.bulk_write(operations)
 
-    async def delete_friend(self, user_id: ObjectId):
-        if user_id not in self.friends:
-            raise self.exc.UserNotInGroup("User isn't in friend list")
+    async def cancel_friend_request(self, user_id: ObjectId):
+        if user_id not in self.pendings_outgoing:
+            raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
 
         await users_db.bulk_write([
-            UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
-            UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
+                # Deleting outgoing pending from list
+                UpdateOne(
+                    {"_id": self._id},
+                    {"$pull": {"pendings_outgoing": user_id}}
+                ),
+                # Deleting our user from incoming pendings
+                UpdateOne(
+                    {"_id": user_id},
+                    {"$pull": {"pendings_incoming": self._id}}
+                )
+            ])
+
+    async def delete_friend(self, user_id: ObjectId):
+        if user_id not in self.friends:
+            raise self.exc.UserNotInGroup("User isn't a friend")
+
+        await users_db.bulk_write([
+            UpdateOne(
+                {'_id': self._id},
+                {'$pull': {'friends': user_id}}
+            ),
+            UpdateOne(
+                {'_id': user_id},
+                {'$pull': {'friends': self._id}}
+            )
         ])
 
-    async def batch_get_blocked(self):
-        not_fetching = {
-                    "code": 0,
-                    "blocked": 0,
-                    "friends": 0,
-                    "pendings_outgoing": 0,
-                    "pendings_incoming": 0,
-                    "status": 0,
-                    "login": 0,
-                    "password": 0,
-                    "parent": 0,
-                    "token": 0
-                }
-
+    async def get_friends(self, exclude_friends=set()):
+        _get_friends = set(self.friends) - set(exclude_friends)
         users = users_db.find(
-                {"_id": {"$in": self.blocked}},
-                not_fetching
-            )
+            {"_id": {"$in": _get_friends}},
+            public_exclude
+        )
 
-        return users
+        users_objects = []
 
-    async def block_user(self, user_id: ObjectId):
-        if not await self.valid_user_id(user_id) or (user_id in self.blocked):
+        async for user in users:
+            user = UserModel(**user)
+            users_objects.append(user)
+
+        return users_objects
+
+    #? Blocked users related
+    async def block_user(self, blocking: ObjectId):
+        if not await self._valid_user_id(blocking) or (blocking in self.blocked):
             raise self.exc.InvalidUser("User is already blocked or invalid")
 
         operations = [
-            UpdateOne({'_id': self._id}, {'$push': {'blocked': user_id}})
+            UpdateOne({'_id': self._id}, {'$push': {'blocked': blocking}})
         ]
 
-        if user_id in self.pendings_incoming:
+        if blocking in self.pendings_incoming:
             operations += [
-                UpdateOne({"_id": self._id}, {"$pull": {"pendings_outgoing": user_id}}),
-                UpdateOne({"_id": user_id}, {"$pull": {"pendings_incoming": self._id}})
+                UpdateOne(
+                    {"_id": self._id},
+                    {"$pull": {"pendings_outgoing": blocking}}
+                ),
+                UpdateOne(
+                    {"_id": blocking},
+                    {"$pull": {"pendings_incoming": self._id}}
+                )
             ]
 
-        if user_id in self.pendings_outgoing:
+        if blocking in self.pendings_outgoing:
             operations += [
-                UpdateOne({'_id': user_id}, {'$pull': {'pendings_outgoing': self._id}}),
-                UpdateOne({'_id': self._id}, {'$pull': {'pendings_incoming': user_id}})
+                UpdateOne(
+                    {'_id': blocking},
+                    {'$pull': {'pendings_outgoing': self._id}}
+                ),
+                UpdateOne(
+                    {'_id': self._id},
+                    {'$pull': {'pendings_incoming': blocking}}
+                )
             ]
 
-        if user_id in self.friends:
+        if blocking in self.friends:
             operations += [
-                UpdateOne({'_id': self._id}, {'$pull': {'friends': user_id}}),
-                UpdateOne({'_id': user_id}, {'$pull': {'friends': self._id}})
+                UpdateOne(
+                    {'_id': self._id},
+                    {'$pull': {'friends': blocking}}
+                ),
+                UpdateOne(
+                    {'_id': blocking},
+                    {'$pull': {'friends': self._id}}
+                )
             ]
 
         await users_db.bulk_write(operations)
 
-    async def unblock_user(self, user_id: ObjectId):
-        if user_id not in self.blocked:
+    async def unblock_user(self, unblocking: ObjectId):
+        if unblocking not in self.blocked:
             raise self.exc.UserNotInGroup("User isn't blocked")
 
-        await users_db.update_one({'_id': self._id}, {'$pull': {'blocked': user_id}})
+        await users_db.update_one(
+            {'_id': self._id},
+            {'$pull': {'blocked': unblocking}}
+        )
 
-    # For now those are only dms
-    async def small_endpoints(self) -> List[DMchannel]:
-        """
-        Retruns channels like dms and group dms
-        """
-        endpoints = await MetaEndpoint.get_small_endpoints_from_id(self._id)
+    async def get_blocked(self, exclude_blocked=set()):
+        _get_blocked = set(self.blocked) - set(exclude_blocked)
+        users = users_db.find(
+            {"_id": {"$in": _get_blocked}},
+            public_exclude
+        )
 
+        users_objects = []
+
+        async for user in users:
+            user = UserModel(**user)
+            users_objects.append(user)
+
+        return users_objects
+
+    #? Endpoints related
+    async def get_endpoints(self):
+        endpoints = await MetaEndpoint.get_endpoints(self._id)
         return endpoints
 
-    async def small_endpoint(self, endpoint_id: ObjectId):
-        """
-        Returns one small endpoint with given id
-        """
-        endpoint = await MetaEndpoint.get_small_endpoint(self._id, endpoint_id)
-
+    async def get_endpoint(self, endpoint_id: ObjectId):
+        endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
 
-    async def set_nickname(self, new_nickname: str):
-        if len(new_nickname) in range(1, 50):
-            raise ValueError("Too long nickname")
+    @classmethod
+    async def authorize(cls, login='', password='', token=''):
+        user = None
+        exclude = {
+            'login': 0,
+            'password': 0
+        }
+        if token:
+            user = await users_db.find_one(
+                {'token': token},
+                exclude
+            )
 
-        await users_db.update_one({"_id": self._id}, {"$set": {"nick": new_nickname}})
-        self.nick = new_nickname
+        elif login and password:
+            user = await users_db.find_one(
+                {'login': login, 'password': password},
+                exclude
+            )
 
-    async def set_text_status(self, new_status: str):
-        if len(new_status) > 256:
-            raise ValueError("Too long status")
+        else:
+            raise ValueError("Not enough auth info")
 
-        await users_db.update_one({"_id": self._id}, {"$set": {"text_status": new_status}})
-        self.text_status = new_status
+        if not user:
+            raise cls.exc.InvalidUser("No such user")
 
-    async def set_friend_code(self, new_code):
-        if len(new_code) in range(3, 51):
-            raise ValueError("Too long friend code")
+        return cls(**user)
 
-        is_avaliable = await self.avaliable_friend_code(new_code)
-        if not is_avaliable:
-            raise ValueError("Code is already used")
+    @classmethod
+    async def from_id(cls, user_id: str):
+        # likely raises bson.errors.InvalidId
+        user_id = ObjectId(user_id)
+        user = await users_db.find_one(
+            {'_id': user_id},
+            public_exclude
+        )
 
-        await users_db.update_one({"_id": self._id}, {"$set": {"code": new_code}})
-        self.code = new_code
+        if not user:
+            raise cls.exc.InvalidUser("User id doesn't exists")
 
-    async def set_status(self, status: int):
-        if status not in list(Status):
-            raise ValueError("Wrong status")
+        return cls(**user)
 
-        self.status = status
-        await users_db.update_one({"_id": self._id}, {"$set": {"status": status}})
+    @classmethod
+    async def registrate(cls, nick: str, login: str, password: str):
+        new_user = {
+            'nick': nick,
+            'login': login,
+            'password': password,
+            'status': Status.online,
+            'token': cls.generate_token(),
+            'blocked': [],
+            'friends': [],
+            'pendings_outgoing': [],
+            'pendings_incoming': [],
+            'created_at': datetime.utcnow()
+        }
+
+        if await users_db.find_one({'login': login}):
+            raise ValueError("Disallowed registration")
+
+        inserted = await users_db.insert_one()
+        new_user['_id'] = inserted.inserted_id
+        exclude_keys(new_user, ['password', 'login'])
+        return cls(**new_user)
+
+    @classmethod
+    async def registrate_bot(cls):
+        #TODO: finish this method later
+        ...
+
+    @staticmethod
+    def generate_token() -> str:
+        #TODO: choose some other way of generating tokens
+        letters_set = digits + ascii_letters
+        token = ''.join(choices(letters_set, k=64))
+        return token
+
+    @staticmethod
+    async def _avaliable_friend_code(code: str) -> bool:
+        same_codes = await users_db.count_documents(
+            {"code": code}
+        )
+        return not bool(same_codes)
+
+    @staticmethod
+    async def _valid_user_id(user_id: ObjectId, bot=False) -> bool:
+        user = await users_db.count_documents(
+                {
+                "$and":
+                [{'_id': user_id}, {'bot': bot}]
+                }
+            )
+        return bool(user)
+
+    @staticmethod
+    async def _check_blocked(check_user_id: ObjectId, is_blocked: ObjectId) -> bool:
+        is_blocked = await users_db.count_documents(
+            {"$and":
+                [
+                    {"_id": check_user_id},
+                    {"blocked": {"$in": [is_blocked]}}
+                ]
+            }
+        )
+        return bool(is_blocked)
 
     class exc:
         class UserNotInGroup(ValueError): ...

@@ -1,17 +1,15 @@
 from random import choices
 
 from bson import ObjectId
-from string import ascii_letters, digits
-from typing import List, Dict
 from datetime import datetime
+from string import ascii_letters, digits
 from dataclasses import dataclass, field
 
-# my modules
 from app import db
-from .enums import ChannelType
-from motor.motor_asyncio import AsyncIOMotorCollection
 
-invites_db: AsyncIOMotorCollection = db.invites
+from .enums import ChannelType
+
+invites_db = db.invites
 
 
 def generate_code():
@@ -74,6 +72,10 @@ class Invite:
 
         raise ValueError("No such invite existing")
 
+    async def add_passed(self):
+        await invites_db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
+        self.users_passed += 1
+
     @property
     def is_finite(self):
         return self.users_limit > 0
@@ -86,7 +88,3 @@ class Invite:
                     return True
 
         return False
-
-    async def add_passed(self):
-        await invites_db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
-        self.users_passed += 1
