@@ -1,1 +1,1 @@
-from .user_view import User
+from .user_view import User, connected_users

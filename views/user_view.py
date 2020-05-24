@@ -72,9 +72,17 @@ class User(UserModel):
         view_user = cls(**user.__dict__)
 
         if view_user._id in connected_users:
-            view_user.status = connected_users[view_user._id].status
+            connected = connected_users[view_user._id]
 
-        connected_users[user._id] = view_user
+            for k in connected.__dict__:
+                if k in {'connected', 'message_queue', 'connections_to_clear'}:
+                    continue
+
+                connected.__dict__[k] = view_user.__dict__[k]
+
+        else:
+            connected_users[user._id] = view_user
+
         return view_user
 
     @classmethod

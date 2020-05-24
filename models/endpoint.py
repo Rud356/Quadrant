@@ -230,7 +230,7 @@ class MetaEndpoint:
     async def get_endpoints(requester: ObjectId) -> Dict[ObjectId, TextEndpoint]:
         dict_endpoints = {}
         endpoints = endpoints_db.find({"$and": [
-            {"members": requester},
+            {"members": {"$in": [requester]}},
             {"_type": {"$nin":
                 [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
             }}
@@ -244,10 +244,10 @@ class MetaEndpoint:
         return dict_endpoints
 
     @staticmethod
-    async def get_endpoint(requester: ObjectId, endpoint_id: ObjectId):
+    async def get_endpoint(requester: ObjectId, endpoint_id: ObjectId) -> TextEndpoint:
         users_endpoint = await endpoints_db.find_one({"$and": [
             {"_id": endpoint_id},
-            {"members": requester},
+            {"members": {"$in": [requester]}},
             {"_type": {"$nin":
                 [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
             }}
