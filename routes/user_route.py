@@ -121,7 +121,6 @@ async def set_friend_code(user: User):
         return error(ve, 400)
 
 
-
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
 @authorized
 async def set_status(user: User, new_status: int):

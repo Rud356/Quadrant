@@ -367,7 +367,7 @@ class UserModel:
         if await users_db.find_one({'login': login}):
             raise ValueError("Disallowed registration")
 
-        inserted = await users_db.insert_one()
+        inserted = await users_db.insert_one(new_user)
         new_user['_id'] = inserted.inserted_id
         exclude_keys(new_user, ['password', 'login'])
         return cls(**new_user)

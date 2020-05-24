@@ -44,4 +44,28 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.post("/user/me/nick", params={"new_nick": ''})
         self.assertEqual(r.status_code, 400)
 
-    
+    def test_set_friendcode(self):
+        r = self.sess.post("/user/me/friend_code", params={"code": "hello world"})
+        self.assertEqual(r.status_code, 200)
+
+    def test_set_invalid_friendcode(self):
+        r = self.sess.post("/user/me/friend_code", params={"code": "b"*51})
+        self.assertEqual(r.status_code, 400)
+
+    def test_set_text_status(self):
+        r = self.sess.post("/user/me/text_status", json={
+            "text_status": "hello and welcome to the tests"
+        })
+        self.assertEqual(r.status_code, 200)
+
+    def test_set_invalid_text_status(self):
+        r = self.sess.post("/user/me/text_status", json={
+            "text_status": "1"*256
+        })
+        self.assertEqual(r.status_code, 400)
+
+    def test_set_empty_text_status(self):
+        r = self.sess.post("/user/me/text_status", json={
+            "text_status": ""
+        })
+        self.assertEqual(r.status_code, 200)
