@@ -31,7 +31,7 @@ app = Quart(__name__)
 app.json_encoder = CustomJSONEncoder
 
 loop = asyncio.get_event_loop()
-
+app.config['UPLOAD_FOLDER'] = "resources/"
 client = motor_asyncio.AsyncIOMotorClient(config['mongo_conn_string'], io_loop=loop)
 
 if not config['DEBUG']:

@@ -53,7 +53,7 @@ class UserModel:
 
     #? Setters
     async def set_nick(self, new_nick):
-        if len(new_nick) in range(1, 25+1):
+        if len(new_nick) not in range(1, 25+1):
             raise ValueError("Invalid nickname")
 
         await users_db.update_one(

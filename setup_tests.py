@@ -13,11 +13,11 @@ second_auth_credentials = {
 
 # Switch server to debug mode
 async def setup_for_tests():
-    await UserModel.registrate(
+    print(await UserModel.registrate(
         "Tester1", **auth_credentials
-    )
-    await UserModel.registrate(
+    ))
+    print(await UserModel.registrate(
         "Tester2", **second_auth_credentials
-    )
+    ))
 
 loop.run_until_complete(setup_for_tests())

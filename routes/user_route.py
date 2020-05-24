@@ -18,7 +18,6 @@ from .schemas import (
     login, registrate, text_status
 )
 
-
 #? Users most important endpoints
 @app.route("/api/user/login", methods=["POST"])
 @validate_schema(login)
@@ -82,7 +81,7 @@ async def user_from_id(user: User, id: str):
         id = ObjectId(id)
         user_repr = await User.from_id(id)
 
-    except User.exc.InvalidUser:
+    except (User.exc.InvalidUser, bson_errors.InvalidId):
         return error("Invalid user id", 400)
 
     return success(user_repr.public_dict)
@@ -101,7 +100,7 @@ async def self_info(user: User):
 async def set_nickname(user: User):
     nickname = request.args.get('new_nick', '')
     try:
-        await user.set_nickname(nickname)
+        await user.set_nick(nickname)
 
     except ValueError:
         return error("Invalid nick", 400)
@@ -118,7 +117,7 @@ async def set_friend_code(user: User):
         return success(friendcode)
 
     except ValueError as ve:
-        return error(ve, 400)
+        return error(str(ve), 400)
 
 
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
@@ -136,7 +135,8 @@ async def set_status(user: User, new_status: int):
 @authorized
 @validate_schema(text_status)
 async def set_text_status(user: User):
-    text_status = await request.json.get('text_status')
+    text_status = await request.json
+    text_status = text_status.get('text_status')
     try:
         await user.set_text_status(text_status)
         return success('ok')
