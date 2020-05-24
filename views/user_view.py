@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import sleep
 
 from bson import ObjectId
 from datetime import datetime
@@ -12,6 +13,7 @@ from models import Message
 from models import UserModel
 from models import MetaEndpoint, TextEndpoint
 
+#TODO: add auto cleaner of inactive users
 connected_users = {}
 
 
@@ -64,6 +66,31 @@ class User(UserModel):
         batched_blocked = await super().get_blocked(offline_blocked)
 
         return blocked_users + batched_blocked
+
+    async def add_message(self, message):
+        self.message_queue.append(message)
+
+    async def add_ws(self, ws):
+        self.connected.append(ws)
+
+        # The first connected websocket
+        if len(self.connected) == 1:
+            asyncio.ensure_future(self.run_websocket())
+
+
+    async def run_websocket(self):
+        while len(self.connected):
+
+            await sleep(0.1)
+            messages_queue_len = len(self.message_queue)
+
+            for _ in range(messages_queue_len):
+                message = self.message_queue.pop(0)
+
+                for ws in self.connected:
+                    ws.message_pool.append(message)
+
+        connected_users.pop(self._id)
 
     @classmethod
     async def authorize(cls, login='', password='', token=''):

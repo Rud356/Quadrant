@@ -1,8 +1,8 @@
+import ujson
 import asyncio
 from quart import Quart
 from motor import motor_asyncio
 from quart.json import JSONEncoder
-
 from bson import ObjectId
 from config import config
 from datetime import datetime
@@ -20,6 +20,7 @@ class CustomJSONEncoder(JSONEncoder):
             iterable = iter(obj)
         except TypeError:
             pass
+
         else:
             return list(iterable)
 

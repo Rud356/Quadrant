@@ -9,12 +9,14 @@ from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
 
 from .enums import Status
 from .endpoint import MetaEndpoint
+from .file_model import FileModel
 
 from app import db
 from utils import exclude_keys
 
 
 users_db = db.chat_users
+
 public_exclude = {
     "code": 0,
     "blocked": 0,
@@ -275,6 +277,14 @@ class UserModel:
     async def get_endpoint(self, endpoint_id: ObjectId):
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
+
+    #? Files related
+    async def create_file(self, filename: str, systems_name: str):
+        return await FileModel.create_file(self._id, filename, systems_name)
+
+    @staticmethod
+    async def get_file(file_id: ObjectId):
+        return await FileModel.get_file(file_id)
 
     @property
     def public_dict(self):

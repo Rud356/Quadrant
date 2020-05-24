@@ -5,7 +5,8 @@ from typing import List, Dict
 from datetime import datetime
 from dataclasses import dataclass, field
 
-from app import db
+from functools import lru_cache
+from app import db, CustomJSONEncoder
 
 messages_db = db.messages
 
@@ -168,8 +169,29 @@ class Message:
 
         return bool(result.deleted_count)
 
+    @lru_cache(10)
     def __str__(self):
-        return json.dumps(self.__dict__)
+        return json.dumps(
+            self.__dict__,
+            ensure_ascii=False,
+            cls=CustomJSONEncoder
+        )
 
-    def __bytes__(self):
-        return bytes(str(self), 'utf-8')
+class UpdateMessage:
+    def __init__(self, updated_fields, upd_type):
+        self.type = upd_type
+        self.updated_fields = updated_fields
+        self.cached = None
+
+    def __str__(self):
+        if self.cached is None:
+            self.cached = json.dumps(
+                {
+                    "type": self.type,
+                    "updated": self.updated_fields
+                },
+                ensure_ascii=False,
+                cls=CustomJSONEncoder
+            )
+
+        return self.cached

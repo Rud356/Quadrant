@@ -14,3 +14,10 @@ class Status(IntEnum):
     asleep = 2
     away = 3
     dnd = 4
+
+
+class UpdateType(IntEnum):
+    deleted_message = 0
+    edited_message = 1
+    pinned_message = 2
+    unpinned_message = 3

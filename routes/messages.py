@@ -4,7 +4,10 @@ from bson import errors as  bson_errors
 from quart import Response, request, jsonify
 
 from views import User, connected_users
-from models import MetaEndpoint, ChannelType, TextEndpoint
+from models import (
+    MetaEndpoint, ChannelType, TextEndpoint,
+    Message, UpdateMessage, UpdateType
+)
 
 from .middlewares import (
     validate_schema,
@@ -16,6 +19,14 @@ from .responces import (
 from .schemas import (
     message
 )
+
+
+async def broadcast_message(endpoint: TextEndpoint, message: Message):
+    members = endpoint.members
+
+    for member in members:
+        await member.add_message(message)
+
 
 #? Fetching messages
 @app.route("/api/endpoints/<string:endpoint_id>/messages")
@@ -169,9 +180,9 @@ async def post_message(user: User, endpoint_id: str):
             if not user:
                 continue
 
-            user.message_queue.append(message)
+            await broadcast_message(endpoint, message)
 
-        return success({"message":message.__dict__})
+        return success("ok")
 
     except TextEndpoint.exc.NotGroupMember:
         return error("you aren't a group member", 403)
@@ -204,8 +215,18 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
         else:
             message = await endpoint.force_delete_message(user._id, message_id)
 
-        #TODO: resend to all members
-        return success({"deleted": message})
+        if message:
+            update_message = UpdateMessage(
+                {
+                    "deleted_message": message_id
+                },
+                UpdateType.deleted_message
+            )
+            await broadcast_message(endpoint, update_message)
+            return success("ok")
+
+        else:
+            return success("Not deleted", 204)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
@@ -215,6 +236,9 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
 
     except NotImplementedError:
         return error("You can't force delete this message", 403)
+
+    except TextEndpoint.exc.NoPermission:
+        return error("You can't perform this action", 403)
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", methods=["PATCH"])
@@ -236,15 +260,26 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
         message_id = ObjectId(message_id)
         message_modified = await endpoint.edit_message(user._id, message_id, content)
 
-        #TODO resend to all members that message updated
-        return success({"message_edited": message_modified})
+        if message_modified:
+            update_message = UpdateMessage(
+                {
+                    "edited_message": message_id,
+                    "new_content": content
+                },
+                UpdateType.edited_message
+            )
+            await broadcast_message(endpoint, update_message)
+            return success("ok")
+
+        else:
+            return success("Nothing to modify", 204)
+
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
-
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/pin", methods=["PATCH"])
@@ -264,14 +299,25 @@ async def pin_message(user: User, endpoint_id: str, message_id: str):
         message_id = ObjectId(message_id)
         message_pinned = await endpoint.pin_message(user._id, message_id)
 
-        #TODO resend to all members that message updated
-        return success({"message_pinned": message_pinned})
+        if message_pinned:
+            update_message = UpdateMessage(
+                {
+                    "pinned_message": message_id
+                },
+                UpdateType.pinned_message
+            )
+            await broadcast_message(endpoint, update_message)
+            return success("ok")
+
+        else:
+            return success("Nothing pinned", 204)
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")
+
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/unpin", methods=["PATCH"])
 @authorized
@@ -290,8 +336,18 @@ async def unpin_message(user: User, endpoint_id: str, message_id: str):
         message_id = ObjectId(message_id)
         message_unpinned = await endpoint.unpin_message(user._id, message_id)
 
-        #TODO resend to all members that message updated
-        return success({"message_unpinned": message_unpinned})
+        if message_unpinned:
+            update_message = UpdateMessage(
+                {
+                    "unpinned_message": message_id
+                },
+                UpdateType.unpinned_message
+            )
+            await broadcast_message(endpoint, update_message)
+            return success("ok")
+
+        else:
+            return success("Nothing pinned", 204)
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
