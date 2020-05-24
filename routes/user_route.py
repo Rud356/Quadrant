@@ -109,7 +109,7 @@ async def set_nickname(user: User):
     return success(nickname)
 
 
-@app.route("/api/me/nick", methods=["POST"])
+@app.route("/api/me/friend_code", methods=["POST"])
 @authorized
 async def set_friend_code(user: User):
     friendcode = request.args.get('code', '')
