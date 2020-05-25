@@ -58,6 +58,11 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.post(base_url+"/me/friend_code", params={"code": ''.join(choices(ascii_letters, k=25))})
         self.assertEqual(r.status_code, 200)
 
+    def test_set_friendcode_second(self):
+        code = ''.join(choices(ascii_letters, k=25))
+        r = self.sess2.post(base_url+"/me/friend_code", params={"code": code})
+        self.assertEqual(r.status_code, 200)
+
     def test_set_invalid_friendcode(self):
         r = self.sess.post(base_url+"/me/friend_code", params={"code": "b"*51})
         self.assertEqual(r.status_code, 400)
@@ -104,57 +109,57 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.get(base_url+f"/endpoints")
         self.assertEqual(r.status_code, 200)
 
-    def create_dm(self):
+    def test_create_dm(self):
         with_user = self.val2['response']['user']['_id']
         payload = {
             'with_user': with_user
         }
-        r = self.sess.post(base_url+"/api/endpoint/create_endpoint/dm", json=payload)
+        r = self.sess.post(base_url+"/endpoints/create_endpoint/dm", json=payload)
         self.assertEqual(r.status_code, 200)
 
-    def create_invalid_dm(self):
+    def test_create_invalid_dm(self):
         with_user = '12w123213232'
         payload = {
-            'with_user': with_user
+            'with': with_user
         }
-        r = self.sess.post(base_url+"/api/endpoints/create_endpoint/dm", json=payload)
+        r = self.sess.post(base_url+"/endpoints/create_endpoint/dm", json=payload)
         self.assertEqual(r.status_code, 404)
 
     @unittest.expectedFailure
-    def test_create_dm_again(self):
+    def test_a_creating_dm_again(self):
         with_user = self.val2['response']['user']['_id']
         payload = {
             'with_user': with_user
         }
-        r = self.sess.post(base_url+"/api/endpoints/create_endpoint/dm", json=payload)
+        r = self.sess.post(base_url+"/endpoints/create_endpoint/dm", json=payload)
         self.assertEqual(r.status_code, 200)
 
     def test_get_endpoint(self):
-        r = self.sess.post(base_url+"/api/endpoints")
+        r = self.sess.get(base_url+"/endpoints")
         self.assertEqual(r.status_code, 200)
 
     def test_get_exact_endpoint(self):
-        r = self.sess.post(base_url+"/api/endpoints").json()
+        r = self.sess.get(base_url+"/endpoints").json()
         endpoints = r['response']
-        r = self.sess.post(base_url+f"/api/endpoints/{endpoints[0]}")
+        r = self.sess.get(base_url+f"/endpoints/{endpoints[0]}")
         self.assertEqual(r.status_code, 200)
 
     def test_post_message(self):
-        r = self.sess.post(base_url+"/api/endpoints").json()
+        r = self.sess.get(base_url+"/endpoints").json()
         endpoints = r['response']
         endpoint = endpoints[0]
         msg = {
             "content": "Hello world!"
         }
-        r = self.sess.post(base_url+f"/api/endpoints/{endpoint['_id']}/messages", json=msg)
+        r = self.sess.post(base_url+f"/endpoints/{endpoint['_id']}/messages", json=msg)
         self.assertEqual(r.status_code, 200)
 
     def test_get_messages(self):
-        r = self.sess.post(base_url+"/api/endpoints").json()
+        r = self.sess.get(base_url+"/endpoints").json()
         endpoints = r['response']
         endpoint = endpoints[0]
 
-        r = self.sess.get(base_url+f"/api/endpoints/{endpoint['_id']}/messages")
+        r = self.sess.get(base_url+f"/endpoints/{endpoint['_id']}/messages")
         self.assertEqual(r.status_code, 200)
 
     def test_send_friend_request(self):
@@ -171,7 +176,7 @@ class TestUserRoutes(unittest.TestCase):
 
     def test_cancel_outgoing_request(self):
         r = self.sess.get(base_url+"/outgoing_requests").json()
-        r = self.sess.delete(base_url+f"/outgoing_requests/{self.val2['response']['user']['id']}")
+        r = self.sess.delete(base_url+f"/outgoing_requests/{self.val2['response']['user']['_id']}")
         self.assertEqual(r.status_code, 200)
 
     def test_cancel_incoming_request(self):
@@ -183,21 +188,21 @@ class TestUserRoutes(unittest.TestCase):
         })
         self.assertEqual(r.status_code, 200)
 
-    def test_cancel_not_requested_incoming(self):
+    def test_cancel_incoming_not_requested(self):
 
-        r = self.sess2.post(base_url+f"/incoming_requests/{self.val2['response']['user']['id']}", params={
+        r = self.sess2.post(base_url+f"/incoming_requests/{self.val2['response']['user']['_id']}", params={
             "accept": False
         })
         self.assertEqual(r.status_code, 404)
 
-    def test_invalid_id_cancel(self):
+    def test_cancel_invalid_id(self):
         r = self.sess2.post(base_url+f"/incoming_requests/2332123213", params={
             "accept": False
         })
         self.assertEqual(r.status_code, 400)
 
     def test_send_friendcode_request(self):
-        r = self.sess.post(base_url + "/api/friends/request", params={
+        r = self.sess.post(base_url + "/friends/request", params={
             "code": self.val2['response']['user']['code']
         })
         self.assertEqual(r.status_code, 200)
@@ -217,41 +222,41 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.delete(base_url+f"/friends/{friend['_id']}")
         self.assertEqual(r.status_code, 200)
 
-    def test_delete_not_friend(self):
+    def test_delete_friend_already(self):
         r = self.sess.get(base_url+f"/friends").json()
         friend = r['response'][0]
         r = self.sess.delete(base_url+f"/friends/{friend['_id']}")
         self.assertEqual(r.status_code, 400)
 
-    def test_delete_invalid_id_friend(self):
+    def test__delete_friend_invalid_id(self):
         r = self.sess.delete(base_url+f"/friends/21873782136")
         self.assertEqual(r.status_code, 404)
 
-    def test_blocked_route(self):
+    def test__blocked_route(self):
         r = self.sess.get(base_url + "/blocked")
         self.assertEqual(r.status_code, 200)
 
-    def test_block_friend(self):
-        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+    def test__block_friend(self):
+        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['_id']}")
         self.assertEqual(r.status_code, 200)
 
-    def test_again_blocking(self):
-        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+    def test__blocking_again(self):
+        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['_id']}")
         self.assertEqual(r.status_code, 204)
 
-    def test_invalid_user_blocking(self):
+    def test_user_blocking_ivalid(self):
         r = self.sess.post(base_url+"/blocked/12323144321")
         self.assertEqual(r.status_code, 400)
 
-    def test_unblock_user(self):
-        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+    def test__unblock_user(self):
+        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['_id']}")
         self.assertEqual(r.status_code, 200)
 
-    def test_unblock_again_user(self):
-        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+    def test__unblock_user_again(self):
+        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['_id']}")
         self.assertEqual(r.status_code, 204)
 
-    def test_unblock_invalid_user(self):
+    def test__unblock_user_invalid(self):
         r = self.sess.delete(base_url+"/blocked/12323144321")
         self.assertEqual(r.status_code, 400)
 
@@ -264,4 +269,5 @@ class TestUserRoutes(unittest.TestCase):
         loop.run_until_complete(drop_db())
 
 if __name__ == "__main__":
+    unittest.defaultTestLoader.sortTestMethodsUsing = None
     unittest.main()

@@ -201,6 +201,7 @@ async def delete_friend(user: User, id: str):
 @authorized
 async def send_code_friend_request(user: User):
     try:
+        print(request.url)
         code = request.args.get('code', '')
         if not len(code) or len(code) > 50:
             raise ValueError("Invalid code", 400)
@@ -218,7 +219,7 @@ async def send_code_friend_request(user: User):
 @authorized
 async def response_friend_request(user: User, id: str):
     try:
-        accept = request.args.get('accept', 'True') == 'True'
+        accept = request.args.get('accept', True, bool)
         id = ObjectId(id)
         await user.response_friend_request(id, bool(accept))
 

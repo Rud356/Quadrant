@@ -202,7 +202,7 @@ class UserModel:
     #? Blocked users related
     async def block_user(self, blocking: ObjectId):
         if not await self._valid_user_id(blocking) or (blocking in self.blocked):
-            raise self.exc.InvalidUser("User is already blocked or invalid")
+            raise self.exc.UserNotInGroup("User is already blocked or invalid")
 
         operations = [
             UpdateOne({'_id': self._id}, {'$push': {'blocked': blocking}})

@@ -45,9 +45,11 @@ async def get_endpoint(user: User, endpoint_id):
 
 @app.route("/api/endpoints/create_endpoint/dm", methods=["POST"])
 @authorized
+@validate_schema(dm_endpoint)
 async def create_dm(user: User):
     try:
-        with_user = ObjectId(await request.json['with'])
+        with_user = await request.json
+        with_user = ObjectId(with_user['with'])
         new_endpoint = await DMChannel.create_endpoint(user._id, with_user)
         # Send to second user if online info about new endpoint
         return success({"endpoint": new_endpoint.__dict__})
