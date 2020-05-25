@@ -26,7 +26,6 @@ def create_authorized_session(auth):
     return sess, r.json()
 
 
-
 class TestUserRoutes(unittest.TestCase):
     def setUp(self):
         self.sess, self.val = create_authorized_session(auth_credentials)
@@ -101,7 +100,160 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.get(base_url+f"/user/313342313213")
         self.assertEqual(r.status_code, 400)
 
-    
+    def test_get_endpoints(self):
+        r = self.sess.get(base_url+f"/endpoints")
+        self.assertEqual(r.status_code, 200)
+
+    def create_dm(self):
+        with_user = self.val2['response']['user']['_id']
+        payload = {
+            'with_user': with_user
+        }
+        r = self.sess.post(base_url+"/api/endpoint/create_endpoint/dm", json=payload)
+        self.assertEqual(r.status_code, 200)
+
+    def create_invalid_dm(self):
+        with_user = '12w123213232'
+        payload = {
+            'with_user': with_user
+        }
+        r = self.sess.post(base_url+"/api/endpoints/create_endpoint/dm", json=payload)
+        self.assertEqual(r.status_code, 404)
+
+    @unittest.expectedFailure
+    def test_create_dm_again(self):
+        with_user = self.val2['response']['user']['_id']
+        payload = {
+            'with_user': with_user
+        }
+        r = self.sess.post(base_url+"/api/endpoints/create_endpoint/dm", json=payload)
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_endpoint(self):
+        r = self.sess.post(base_url+"/api/endpoints")
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_exact_endpoint(self):
+        r = self.sess.post(base_url+"/api/endpoints").json()
+        endpoints = r['response']
+        r = self.sess.post(base_url+f"/api/endpoints/{endpoints[0]}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_post_message(self):
+        r = self.sess.post(base_url+"/api/endpoints").json()
+        endpoints = r['response']
+        endpoint = endpoints[0]
+        msg = {
+            "content": "Hello world!"
+        }
+        r = self.sess.post(base_url+f"/api/endpoints/{endpoint['_id']}/messages", json=msg)
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_messages(self):
+        r = self.sess.post(base_url+"/api/endpoints").json()
+        endpoints = r['response']
+        endpoint = endpoints[0]
+
+        r = self.sess.get(base_url+f"/api/endpoints/{endpoint['_id']}/messages")
+        self.assertEqual(r.status_code, 200)
+
+    def test_send_friend_request(self):
+        r = self.sess.post(base_url+f"/friends/{self.val2['response']['user']['_id']}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_outgoing_requests(self):
+        r = self.sess.get(base_url+"/outgoing_requests")
+        self.assertEqual(r.status_code, 200)
+
+    def test_get_incoming_requests(self):
+        r = self.sess2.get(base_url+"/incoming_requests")
+        self.assertEqual(r.status_code, 200)
+
+    def test_cancel_outgoing_request(self):
+        r = self.sess.get(base_url+"/outgoing_requests").json()
+        r = self.sess.delete(base_url+f"/outgoing_requests/{self.val2['response']['user']['id']}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_cancel_incoming_request(self):
+        r = self.sess2.get(base_url+"/incoming_requests").json()
+        friend = r['response'][0]
+
+        r = self.sess2.post(base_url+f"/incoming_requests/{friend}", params={
+            "accept": False
+        })
+        self.assertEqual(r.status_code, 200)
+
+    def test_cancel_not_requested_incoming(self):
+
+        r = self.sess2.post(base_url+f"/incoming_requests/{self.val2['response']['user']['id']}", params={
+            "accept": False
+        })
+        self.assertEqual(r.status_code, 404)
+
+    def test_invalid_id_cancel(self):
+        r = self.sess2.post(base_url+f"/incoming_requests/2332123213", params={
+            "accept": False
+        })
+        self.assertEqual(r.status_code, 400)
+
+    def test_send_friendcode_request(self):
+        r = self.sess.post(base_url + "/api/friends/request", params={
+            "code": self.val2['response']['user']['code']
+        })
+        self.assertEqual(r.status_code, 200)
+
+    def test_accept_friend_request(self):
+        r = self.sess2.get(base_url+"/incoming_requests").json()
+        friend = r['response'][0]
+        r = self.sess2.post(base_url+f"/incoming_requests/{friend}", params={
+            "accept": "True"
+        })
+
+        self.assertEqual(r.status_code, 200)
+
+    def test_delete_friend(self):
+        r = self.sess.get(base_url+f"/friends").json()
+        friend = r['response'][0]
+        r = self.sess.delete(base_url+f"/friends/{friend['_id']}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_delete_not_friend(self):
+        r = self.sess.get(base_url+f"/friends").json()
+        friend = r['response'][0]
+        r = self.sess.delete(base_url+f"/friends/{friend['_id']}")
+        self.assertEqual(r.status_code, 400)
+
+    def test_delete_invalid_id_friend(self):
+        r = self.sess.delete(base_url+f"/friends/21873782136")
+        self.assertEqual(r.status_code, 404)
+
+    def test_blocked_route(self):
+        r = self.sess.get(base_url + "/blocked")
+        self.assertEqual(r.status_code, 200)
+
+    def test_block_friend(self):
+        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_again_blocking(self):
+        r = self.sess.post(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+        self.assertEqual(r.status_code, 204)
+
+    def test_invalid_user_blocking(self):
+        r = self.sess.post(base_url+"/blocked/12323144321")
+        self.assertEqual(r.status_code, 400)
+
+    def test_unblock_user(self):
+        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+        self.assertEqual(r.status_code, 200)
+
+    def test_unblock_again_user(self):
+        r = self.sess.delete(base_url+f"/blocked/{self.val2['response']['user']['id']}")
+        self.assertEqual(r.status_code, 204)
+
+    def test_unblock_invalid_user(self):
+        r = self.sess.delete(base_url+"/blocked/12323144321")
+        self.assertEqual(r.status_code, 400)
 
     def tearDown(self):
         self.sess.close()

@@ -223,7 +223,7 @@ async def response_friend_request(user: User, id: str):
         await user.response_friend_request(id, bool(accept))
 
     except bson_errors.InvalidId:
-        return error("Invalid id")
+        return error("Invalid id", 400)
 
     except User.exc.UserNotInGroup:
         return error("User isn't in incoming requesters")
@@ -263,7 +263,7 @@ async def block_user(user: User, id: str):
         await user.block_user(id)
 
     except bson_errors.InvalidId:
-        return error("No user with this id")
+        return error("Invalid id", 400)
 
     except User.exc.UserNotInGroup:
         return success("User is blocked already", 204)
@@ -279,7 +279,7 @@ async def unblock_user(user: User, id: str):
         await user.unblock_user(id)
 
     except bson_errors.InvalidId:
-        return error("No user with this id")
+        return error("Invalid id", 400)
 
     except User.exc.UserNotInGroup:
         return success("User isn't blocked", 204)

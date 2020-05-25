@@ -49,7 +49,7 @@ class TextEndpoint:
 
     async def send_message(
         self,
-        author: ObjectId, content: str, files: List[str],
+        author: ObjectId, content: str, files: List[str]=[],
         mentions: List[str] = [], **_
         ) -> Message:
         if author not in self.members:

@@ -24,7 +24,7 @@ async def get_endpoints(user: User):
     endpoints = await user.get_endpoints()
     endpoints_views = [endpoint.__dict__ for endpoint in endpoints]
 
-    return endpoints_views
+    return success(endpoints_views)
 
 
 @app.route("/api/endpoints/<string:endpoint_id>")
@@ -43,7 +43,7 @@ async def get_endpoint(user: User, endpoint_id):
         return error("Invalid endpoint")
 
 
-@app.route("/api/endpoint/create_endpoint/dm", methods=["POST"])
+@app.route("/api/endpoints/create_endpoint/dm", methods=["POST"])
 @authorized
 async def create_dm(user: User):
     try:
