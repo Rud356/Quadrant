@@ -1,6 +1,7 @@
-from app import loop
+from app import loop, client
 from models import UserModel
 from config import tests_config
+
 
 auth_credentials = {
     'login':tests_config['login'],
@@ -13,11 +14,12 @@ second_auth_credentials = {
 
 # Switch server to debug mode
 async def setup_for_tests():
-    print(await UserModel.registrate(
+    await UserModel.registrate(
         "Tester1", **auth_credentials
-    ))
-    print(await UserModel.registrate(
+    )
+    await UserModel.registrate(
         "Tester2", **second_auth_credentials
-    ))
+    )
 
-loop.run_until_complete(setup_for_tests())
+async def drop_db():
+    await client.drop_database("debug_chat")

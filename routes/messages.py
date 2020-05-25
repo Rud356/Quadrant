@@ -24,7 +24,12 @@ from .schemas import (
 async def broadcast_message(endpoint: TextEndpoint, message: Message):
     members = endpoint.members
 
-    for member in members:
+    for member_id in members:
+        member = connected_users.get(member_id)
+
+        if member is None:
+            continue
+
         await member.add_message(message)
 
 

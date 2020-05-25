@@ -1,6 +1,7 @@
 import requests
 import unittest
 
+from setup_tests import loop, setup_for_tests, drop_db
 from os import system
 from random import choices
 from config import tests_config
@@ -25,10 +26,18 @@ def create_authorized_session(auth):
     return sess, r.json()
 
 
+
 class TestUserRoutes(unittest.TestCase):
     def setUp(self):
         self.sess, self.val = create_authorized_session(auth_credentials)
         self.sess2, self.val2 = create_authorized_session(second_auth_credentials)
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            loop.run_until_complete(setup_for_tests())
+        except ValueError:
+            pass
 
     def test_about_me(self):
         r = self.sess.get(base_url+"/user/me")
@@ -92,9 +101,15 @@ class TestUserRoutes(unittest.TestCase):
         r = self.sess.get(base_url+f"/user/313342313213")
         self.assertEqual(r.status_code, 400)
 
+    
+
     def tearDown(self):
         self.sess.close()
         self.sess2.close()
+
+    @classmethod
+    def tearDownClass(cls):
+        loop.run_until_complete(drop_db())
 
 if __name__ == "__main__":
     unittest.main()

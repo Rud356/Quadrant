@@ -68,7 +68,8 @@ class User(UserModel):
         return blocked_users + batched_blocked
 
     async def add_message(self, message):
-        self.message_queue.append(message)
+        if self.connected:
+            self.message_queue.append(message)
 
     async def add_ws(self, ws):
         self.connected.append(ws)
