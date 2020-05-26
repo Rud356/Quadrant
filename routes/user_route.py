@@ -150,6 +150,7 @@ async def set_text_status(user: User):
 @authorized
 async def get_users_friends(user: User):
     friends = await user.get_friends()
+    friends = [frined.__dict__ for frined in friends]
     return success(friends)
 
 
@@ -162,7 +163,8 @@ async def outgoing_requests(user: User):
 @app.route("/api/incoming_requests")
 @authorized
 async def incoming_requests(user: User):
-    return success(user.pendings_incoming)
+    incoming = [str(incoming_id) for incoming_id in user.pendings_incoming]
+    return success(incoming)
 
 
 @app.route("/api/friends/<string:id>", methods=["POST"])
@@ -213,6 +215,8 @@ async def send_code_friend_request(user: User):
 
     except ValueError:
         return error("No friend code given", 400)
+
+    return success("ok")
 
 
 @app.route("/api/incoming_requests/<string:id>", methods=["POST"])

@@ -49,8 +49,8 @@ class TextEndpoint:
 
     async def send_message(
         self,
-        author: ObjectId, content: str, files: List[str]=[],
-        mentions: List[str] = [], **_
+        author: ObjectId, content: str, files=[],
+        mentions=[], **_
         ) -> Message:
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
@@ -239,7 +239,7 @@ class MetaEndpoint:
         async for endpoint in endpoints:
             if endpoint['_type'] == ChannelType.dm:
                 endpoint = DMChannel(**endpoint)
-                endpoints[endpoint._id] = endpoint
+                dict_endpoints[endpoint._id] = endpoint
 
         return dict_endpoints
 

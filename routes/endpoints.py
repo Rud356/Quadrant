@@ -22,7 +22,7 @@ from .schemas import (
 @authorized
 async def get_endpoints(user: User):
     endpoints = await user.get_endpoints()
-    endpoints_views = [endpoint.__dict__ for endpoint in endpoints]
+    endpoints_views = [str(endpoint) for endpoint in endpoints]
 
     return success(endpoints_views)
 
@@ -58,4 +58,4 @@ async def create_dm(user: User):
         return error("Invalid user with id")
 
     except ValueError as ve:
-        return error(ve, 409)
+        return error(str(ve), 409)
