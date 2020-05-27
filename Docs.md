@@ -56,7 +56,7 @@
     "nick": "string",
     "login": "login hash",
     "password": "password hash"
-}
+}```
 
 
 /api/me/test_status
