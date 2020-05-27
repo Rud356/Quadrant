@@ -23,7 +23,7 @@ files_path = Path(app.config['UPLOAD_FOLDER'])
 async def upload_profile_pic(user: User):
     if (
         request.content_length is None or
-        request.content_length > 2 * 1024 * 1024
+        request.content_length > 4 * 1024 * 1024
     ):
         return error("Too big file", 400)
 

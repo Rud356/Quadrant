@@ -25,7 +25,6 @@ message = fastjsonschema.compile({
     "type": "object",
     "properties": {
         "content": {"type": "string"},
-        "user_mentions": {"type": "array"},
         "files": {"type": "array"}
     },
 })

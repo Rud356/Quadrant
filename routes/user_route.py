@@ -43,6 +43,7 @@ async def user_login():
     )
     return response
 
+
 @app.route("/api/user/logout", methods=["POST", "GET", "DELETE"])
 @authorized
 async def logout(user: User):
@@ -204,7 +205,6 @@ async def delete_friend(user: User, id: str):
 @authorized
 async def send_code_friend_request(user: User):
     try:
-        print(request.url)
         code = request.args.get('code', '')
         if not len(code) or len(code) > 50:
             raise ValueError("Invalid code", 400)
