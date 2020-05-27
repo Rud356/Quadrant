@@ -56,28 +56,32 @@
     "nick": "string",
     "login": "login hash",
     "password": "password hash"
-}```
+}
+```
 
 
 /api/me/test_status
 ```json
 {
     "text_status": "Some string"
-}```
+}
+```
 Max length is 256 symbols
 
 /api/endpoints/create_endpoint/dm
 ```json
 {
     "with": "user id"
-}```
+}
+```
 
 /api/endpoints/<string:endpoint_id>/messages POST
 ```json
 {
     "content": "String",
     "files": ["file_id", "file_id2", "..."]
-}```
+}
+```
 
 /api/endpoints/<endpoint_id>/messages/<message_id> PATCH
  This is about editing message content
@@ -93,3 +97,4 @@ First package should be
 {
     "token": "your token"
 }
+```
