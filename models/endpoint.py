@@ -1,4 +1,5 @@
 from bson import ObjectId
+from bson import errors as  bson_errors
 from typing import List, Dict
 from datetime import datetime
 from dataclasses import dataclass, field
@@ -50,19 +51,24 @@ class TextEndpoint:
     async def send_message(
         self,
         author: ObjectId, content: str, files=[],
-        mentions=[], **_
+        **_
         ) -> Message:
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
-        proper_mentions = []
+        files_ids = []
+        for _file in files:
+            try:
+                _file = ObjectId(_file)
+                files_ids.append(_file)
 
-        for mention in mentions:
-            # May rise bson.error.InvalidId
-            mention = ObjectId(mention)
-            proper_mentions.append(mention)
+            except bson_errors.InvalidId:
+                continue
 
-        msg = await Message.send_message(author, self._id, content, files, proper_mentions)
+        msg = await Message.send_message(
+            author, self._id, content,
+            files_ids
+        )
 
         await endpoints_db.update_one(
             {"_id": self._id},

@@ -59,6 +59,28 @@ async def get_messages_latest(user: User, endpoint_id: str):
         return error("you aren't a group member", 403)
 
 
+@app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>")
+@authorized
+async def get_message(user: User, endpoint_id: str, message_id: str):
+    try:
+        message_id = ObjectId(message_id)
+        endpoint_id = ObjectId(endpoint_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        message = await endpoint.get_message(user._id, message_id)
+        return success(message)
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/from")
 @authorized
 async def get_messages_from(user: User, endpoint_id: str, message_id: str):
@@ -251,7 +273,10 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
 @validate_schema(message)
 async def edit_message(user: User, endpoint_id: str, message_id: str):
     try:
-        content = await request.json['content']
+        content = await request.json.get('content')
+        if not content:
+            return error("No content to modify provided", 400)
+
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
 

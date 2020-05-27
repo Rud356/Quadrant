@@ -74,6 +74,7 @@ async def user_create():
 
     return response
 
+
 @app.route("/api/user/<string:id>")
 @authorized
 async def user_from_id(user: User, id: str):
@@ -223,7 +224,7 @@ async def send_code_friend_request(user: User):
 @authorized
 async def response_friend_request(user: User, id: str):
     try:
-        accept = request.args.get('accept', True, bool)
+        accept = request.args.get('accept', False, bool)
         id = ObjectId(id)
         await user.response_friend_request(id, bool(accept))
 

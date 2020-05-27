@@ -17,8 +17,7 @@ class Message:
     endpoint: ObjectId
 
     content: str
-    files: List[str]
-    mentions: List[ObjectId]
+    files: List[ObjectId]
 
     created_at: datetime
 
@@ -74,21 +73,19 @@ class Message:
     async def send_message(
         cls, author: ObjectId, endpoint: ObjectId,
         content: str,
-        files: List[str] = [],
-        mentions: List[ObjectId] = []
+        files: List[ObjectId] = [],
         ):
         if len(content) > 3000:
             raise ValueError("Too long message")
 
-        if len(mentions) > 20:
-            raise ValueError("Too many mentions")
+        if not content and not files:
+            raise ValueError("No content provided")
 
         new_message = {
             "author": author,
             "endpoint": endpoint,
             "content": content,
             "files": files,
-            "mentions": mentions,
             "created_at": datetime.utcnow(),
         }
 

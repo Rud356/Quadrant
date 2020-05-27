@@ -28,7 +28,6 @@ message = fastjsonschema.compile({
         "user_mentions": {"type": "array"},
         "files": {"type": "array"}
     },
-    "required": ["content"]
 })
 
 
