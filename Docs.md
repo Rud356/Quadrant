@@ -16,7 +16,8 @@
 | /api/friends/<user_id> | POST |
 | /api/friends/<user_id> | DELETE |
 | /api/friends/request?code=<friendcode> | POST |
-| /api/incoming_requests/<user_id>?accept=<Bool> | POST |
+| /api/incoming_requests/<user_id>?accept=True | POST |
+| /api/incoming_requests/<user_id> | False> | POST |
 | /api/outgoing_requests/<user_id> | DELETE |
 | /api/blocked | GET |
 | /api/blocked/<user_id> | POST |
