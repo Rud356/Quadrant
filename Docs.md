@@ -36,7 +36,7 @@
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>>/unpin | PATCH |
 | /api/ws | WebSocket |
 | /api/user/set_image | POST |
-| /api/user/<<user_id>>/profile_pic | GET |
+| /api/user/<user_id>/profile_pic | GET |
 | /api/files/upload | POST |
 | /api/files/<<file_id>> | GET |
 
