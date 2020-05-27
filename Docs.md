@@ -1,5 +1,4 @@
 # Routes
-| ----- | ------ |
 | route | method |
 | ----- | ------ |
 | /api/user/login | POST |
@@ -22,11 +21,9 @@
 | /api/blocked | GET |
 | /api/blocked/<<user_id>> | POST |
 | /api/blocked/<<user_id>> | DELETE |
-| ----- | ------ |
 | /api/endpoints | GET |
 | /api/endpoints/<<endpoint_id>> | GET |
 | /api/endpoints/create_endpoint/dm | POST |
-| ----- | ------ |
 | /api/endpoints/<<endpoint_id>>/messages | GET POST |
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>> | GET DELETE PATCH |
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>>?force=True | DELETE |
@@ -37,9 +34,7 @@
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>>/pinned/after | GET |
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>>/pin | PATCH |
 | /api/endpoints/<<endpoint_id>>/messages/<<message_id>>/unpin | PATCH |
-| ----- | ------ |
 | /api/ws | WebSocket |
-| ----- | ------ |
 | /api/user/set_image | POST |
 | /api/user/<<user_id>>/profile_pic | GET |
 | /api/files/upload | POST |
