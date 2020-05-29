@@ -101,6 +101,12 @@ async def self_info(user: User):
     return success(user.private_dict)
 
 
+@app.route("/api/user/keep-alive")
+@authorized
+async def keep_alive(user: User):
+    return success("ok")
+
+
 # ? Other endpoints
 # Setters
 @app.route("/api/me/nick", methods=["POST"])

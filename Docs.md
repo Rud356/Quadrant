@@ -4,6 +4,7 @@
 | /api/user/login | POST |
 | /api/user/logout | GET POST DELETE |
 | /api/user/register | POST |
+| /api/user/keep-alive | GET |
 | /api/user/<user_id> | GET |
 | /api/user/me | GET |
 | /api/me/nick?new_nick=<new_nick> | POST |

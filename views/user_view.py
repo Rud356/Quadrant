@@ -45,6 +45,10 @@ class User(UserModel):
             if ticks == TTK:
                 break
 
+            api_usage_gap = time() - self.last_used_api_timestamp
+            if api_usage_gap > TTK*60 and not len(self.connected):
+                break
+
             await sleep(60)
 
         self.logout()
@@ -248,8 +252,13 @@ class User(UserModel):
             )
 
             user_view = cls(**user.__dict__)
-            connected_users[user_view._id] = user_view
-            tokenized_connected_users[user_view.token] = user_view
+
+            if user_view._id not in connected_users:
+                connected_users[user_view._id] = user_view
+                tokenized_connected_users[user_view.token] = user_view
+
+            else:
+                user_view = connected_users.get(user_view._id)
 
         elif token:
             user_view: User = tokenized_connected_users.get(token)
