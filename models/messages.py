@@ -1,14 +1,15 @@
 import json
 
 from bson import ObjectId
-from typing import List, Dict
+from typing import List
 from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from functools import lru_cache
 from app import db, CustomJSONEncoder
 
 messages_db = db.messages
+
 
 @dataclass
 class Message:
@@ -39,7 +40,11 @@ class Message:
         return cls(**msg)
 
     @classmethod
-    async def get_messages_from(cls, from_message: ObjectId, endpoint_id: ObjectId):
+    async def get_messages_from(
+        cls,
+        from_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
         msg_query = messages_db.find({"$and": [
             {"endpoint": endpoint_id},
             {"_id": {"$lt": from_message}}
@@ -54,7 +59,11 @@ class Message:
         return messages
 
     @classmethod
-    async def get_messages_after(cls, after_message: ObjectId, endpoint_id: ObjectId):
+    async def get_messages_after(
+        cls,
+        after_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
         msg_query = messages_db.find({"$and": [
             {"endpoint": endpoint_id},
             {"_id": {"$gt": after_message}}
@@ -73,7 +82,7 @@ class Message:
         cls, author: ObjectId, endpoint: ObjectId,
         content: str,
         files: List[ObjectId] = [],
-        ):
+    ):
         if len(content) > 3000:
             raise ValueError("Too long message")
 
@@ -94,7 +103,11 @@ class Message:
         return cls(**new_message)
 
     @staticmethod
-    async def edit_message(author_id: ObjectId, message_id: str, new_content: str):
+    async def edit_message(
+        author_id: ObjectId,
+        message_id: str,
+        new_content: str
+    ):
         if len(new_content) > 3000:
             raise ValueError("Too long message")
 
@@ -123,9 +136,10 @@ class Message:
     @staticmethod
     async def pin_message(from_endpoint: ObjectId, message_id: ObjectId):
         result = await messages_db.update_one(
-            {"$and": [
-                {"_id": message_id},
-                {"endpoint": from_endpoint}
+            {
+                "$and": [
+                    {"_id": message_id},
+                    {"endpoint": from_endpoint}
                 ]
             }, {"$set": {"pin": True}}
         )
@@ -134,16 +148,21 @@ class Message:
     @staticmethod
     async def unpin_message(from_endpoint: ObjectId, message_id: ObjectId):
         result = await messages_db.update_one(
-            {"$and": [
-                {"_id": message_id},
-                {"endpoint": from_endpoint}
+            {
+                "$and": [
+                    {"_id": message_id},
+                    {"endpoint": from_endpoint}
                 ]
             }, {"$set": {"pin": False}}
         )
         return bool(result.modified_count)
 
     @staticmethod
-    async def delete_message(requester: ObjectId, message_id: ObjectId, endpoint_id: ObjectId):
+    async def delete_message(
+        requester: ObjectId,
+        message_id: ObjectId,
+        endpoint_id: ObjectId
+    ):
         result = await messages_db.delete_one(
             {"$and": [
                 {"_id": message_id},
@@ -172,6 +191,7 @@ class Message:
             ensure_ascii=False,
             cls=CustomJSONEncoder
         )
+
 
 class UpdateMessage:
     def __init__(self, updated_fields, upd_type):

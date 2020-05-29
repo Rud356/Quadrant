@@ -1,7 +1,8 @@
 from app import app
+from typing import List
 from bson import ObjectId
-from bson import errors as  bson_errors
-from quart import Response, request, jsonify
+from bson import errors as bson_errors
+from quart import request
 
 from views import User
 from models import TextEndpoint, DMChannel
@@ -11,7 +12,7 @@ from .middlewares import (
     authorized
 )
 from .responces import (
-    success, warning, error
+    success, error
 )
 from .schemas import (
     dm_endpoint
@@ -21,7 +22,7 @@ from .schemas import (
 @app.route("/api/endpoints")
 @authorized
 async def get_endpoints(user: User):
-    endpoints = await user.get_endpoints()
+    endpoints: List[ObjectId] = await user.get_endpoints()
     endpoints_views = [str(endpoint) for endpoint in endpoints]
 
     return success(endpoints_views)
@@ -32,7 +33,7 @@ async def get_endpoints(user: User):
 async def get_endpoint(user: User, endpoint_id):
     try:
         endpoint = ObjectId(endpoint_id)
-        endpoint = await user.get_endpoint(endpoint)
+        endpoint: TextEndpoint = await user.get_endpoint(endpoint)
 
         return success(endpoint.__dict__)
 
@@ -50,7 +51,10 @@ async def create_dm(user: User):
     try:
         with_user = await request.json
         with_user = ObjectId(with_user['with'])
-        new_endpoint = await DMChannel.create_endpoint(user._id, with_user)
+        new_endpoint: DMChannel = await DMChannel.create_endpoint(
+            user._id,
+            with_user
+        )
         # Send to second user if online info about new endpoint
         return success({"endpoint": new_endpoint.__dict__})
 

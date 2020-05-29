@@ -3,11 +3,9 @@ from random import choices
 from bson import ObjectId
 from datetime import datetime
 from string import ascii_letters, digits
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app import db
-
-from .enums import ChannelType
 
 invites_db = db.invites
 
@@ -29,7 +27,12 @@ class Invite:
     users_passed: int = 0
 
     @staticmethod
-    async def create_invite(endpoint: ObjectId, created_by: ObjectId, users_limit: int, expires_at: datetime):
+    async def create_invite(
+        endpoint: ObjectId,
+        created_by: ObjectId,
+        users_limit: int,
+        expires_at: datetime
+    ):
         if not users_limit:
             raise ValueError("Can't make empty invite")
 
@@ -73,7 +76,10 @@ class Invite:
         raise ValueError("No such invite existing")
 
     async def add_passed(self):
-        await invites_db.update_one({"_id": self._id}, {"$inc": {"users_passed": 1}})
+        await invites_db.update_one(
+            {"_id": self._id},
+            {"$inc": {"users_passed": 1}}
+        )
         self.users_passed += 1
 
     @property

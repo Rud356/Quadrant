@@ -1,9 +1,5 @@
-import json
-
 from bson import ObjectId
-from typing import List, Dict
-from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app import db
 
@@ -18,9 +14,11 @@ class FileModel:
     filename: str
     systems_name: str
 
-
     @classmethod
-    async def create_file(cls, file_owner: ObjectId, filename: str, systems_name: str):
+    async def create_file(
+        cls, file_owner: ObjectId,
+        filename: str, systems_name: str
+    ):
         new_file = {
             "file_owner": file_owner,
             "filename": filename,

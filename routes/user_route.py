@@ -1,10 +1,10 @@
-from app import app, config
+from app import app, server_config
 from bson import ObjectId
-from config import config
-from bson import errors as  bson_errors
-from quart import Response, request, jsonify
+from app_config import server_config  # noqa: F811
+from bson import errors as bson_errors
+from quart import request
 
-from views import User, TTK
+from views import User
 from models import UpdateMessage, UpdateType
 
 from .middlewares import (
@@ -13,14 +13,15 @@ from .middlewares import (
 )
 
 from .responces import (
-    success, warning, error
+    success, error
 )
 
 from .schemas import (
     login, registrate, text_status
 )
 
-#? Users most important endpoints
+
+# ? Users most important endpoints
 @app.route("/api/user/login", methods=["POST"])
 @validate_schema(login)
 async def user_login():
@@ -32,7 +33,7 @@ async def user_login():
             auth['password']
         )
 
-    except:
+    except ValueError:
         return error("Invalid credentials", 401)
 
     response = success({"user": user.private_dict})
@@ -41,7 +42,7 @@ async def user_login():
         max_age=48*60*60,
         # Patch for testing locally
         # If setted to secure - cookies can be used only via https
-        secure=not config['DEBUG']
+        secure=not server_config['DEBUG']
     )
     return response
 
@@ -58,7 +59,7 @@ async def logout(user: User):
 @validate_schema(registrate)
 async def user_create():
     reg = await request.json
-    if not config['allow_registration']:
+    if not server_config['allow_registration']:
         return error("Sorry, but you can't register", 403)
 
     try:
@@ -75,7 +76,7 @@ async def user_create():
         max_age=48*60*60,
         # Patch for testing locally
         # If setted to secure - cookies can be used only via https
-        secure=not config['DEBUG']
+        secure=not server_config['DEBUG']
     )
 
     return response
@@ -100,8 +101,8 @@ async def self_info(user: User):
     return success(user.private_dict)
 
 
-#? Other endpoints
-## Setters
+# ? Other endpoints
+# Setters
 @app.route("/api/me/nick", methods=["POST"])
 @authorized
 async def set_nickname(user: User):
@@ -178,7 +179,7 @@ async def set_text_status(user: User):
     return success('ok')
 
 
-## Friends
+# Friends
 @app.route("/api/friends")
 @authorized
 async def get_users_friends(user: User):
@@ -284,7 +285,7 @@ async def cancel_friend_request(user: User, id: str):
     return success("ok")
 
 
-## Blocked users
+# Blocked users
 @app.route("/api/blocked")
 @authorized
 async def blocked_users(user: User):

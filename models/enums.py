@@ -8,6 +8,7 @@ class ChannelType(IntEnum):
     server_voice = 3
     server_category = 4
 
+
 class Status(IntEnum):
     offline = 0
     online = 1

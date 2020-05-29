@@ -3,23 +3,19 @@ from time import time
 from asyncio import sleep
 
 from bson import ObjectId
-from config import config
-from typing import List, Dict
-from datetime import datetime
+from app_config import server_config
 from dataclasses import dataclass, field
 
-from utils import exclude_keys
-
-from models import Status
-from models import Message
 from models import UserModel
-from models import MetaEndpoint, TextEndpoint
 from models import UpdateMessage, UpdateType
 
 
 connected_users = {}
 tokenized_connected_users = {}
-TTK = int(config['ticks_to_kill']) if int(config['ticks_to_kill']) > 5 else 5
+
+TTK = int(server_config['ticks_to_kill'])
+if TTK < 5:
+    TTK = 5
 
 
 @dataclass
@@ -247,7 +243,9 @@ class User(UserModel):
     @classmethod
     async def authorize(cls, login='', password='', token=''):
         if login and password:
-            user: UserModel = await super().authorize(login, password, token)
+            user: UserModel = await super().authorize(
+                login, password, token
+            )
 
             user_view = cls(**user.__dict__)
             connected_users[user_view._id] = user_view
@@ -257,7 +255,9 @@ class User(UserModel):
             user_view: User = tokenized_connected_users.get(token)
 
             if not user_view:
-                user_view: UserModel = await super().authorize(login, password, token)
+                user_view: UserModel = await super().authorize(
+                    login, password, token
+                )
 
                 user_view = cls(**user.__dict__)
                 connected_users[user_view._id] = user_view

@@ -5,7 +5,7 @@ from datetime import datetime
 from string import ascii_letters, digits
 from dataclasses import dataclass, field
 
-from pymongo import InsertOne, DeleteMany, ReplaceOne, UpdateOne
+from pymongo import UpdateOne
 
 from .enums import Status
 from .endpoint import MetaEndpoint
@@ -29,7 +29,7 @@ public_exclude = {
     "parent": 0,
     "token": 0
 }
-#TODO: add some method to reset passwords
+# TODO: add some method to reset passwords
 
 
 @dataclass
@@ -51,7 +51,7 @@ class UserModel:
     pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
     pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
 
-    #? Setters
+    # ? Setters
     async def set_nick(self, new_nick):
         if len(new_nick) not in range(1, 25+1):
             raise ValueError("Invalid nickname")
@@ -97,7 +97,7 @@ class UserModel:
         )
         self.code = new_code
 
-    #? Friends related
+    # ? Friends related
     async def send_friend_request(self, to_user_id: ObjectId):
         valid_user = await self._valid_user_id(to_user_id)
 
@@ -121,7 +121,9 @@ class UserModel:
         )
 
         if in_other_relations:
-            raise self.exc.InvalidUser("User is in some relations with you already")
+            raise self.exc.InvalidUser(
+                "User is in some relations with you already"
+            )
 
         await users_db.bulk_write([
             # Adding outgoing pending to user
@@ -141,8 +143,14 @@ class UserModel:
             raise self.exc.UserNotInGroup("User isn't in incoming pendings")
 
         operations = [
-            UpdateOne({'_id': user_id}, {'$pull': {'pendings_outgoing': self._id}}),
-            UpdateOne({'_id': self._id}, {'$pull': {'pendings_incoming': user_id}})
+            UpdateOne(
+                {'_id': user_id},
+                {'$pull': {'pendings_outgoing': self._id}}
+            ),
+            UpdateOne(
+                {'_id': self._id},
+                {'$pull': {'pendings_incoming': user_id}}
+            )
         ]
 
         if confirm:
@@ -199,9 +207,12 @@ class UserModel:
 
         return users_objects
 
-    #? Blocked users related
+    # ? Blocked users related
     async def block_user(self, blocking: ObjectId):
-        if not await self._valid_user_id(blocking) or (blocking in self.blocked):
+        if (
+            not await self._valid_user_id(blocking) or
+            (blocking in self.blocked)
+        ):
             raise self.exc.UserNotInGroup("User is already blocked or invalid")
 
         operations = [
@@ -269,7 +280,7 @@ class UserModel:
 
         return users_objects
 
-    #? Endpoints related
+    # ? Endpoints related
     async def get_endpoints(self):
         endpoints = await MetaEndpoint.get_endpoints(self._id)
         return endpoints
@@ -278,7 +289,7 @@ class UserModel:
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
 
-    #? Files related
+    # ? Files related
     async def create_file(self, filename: str, systems_name: str):
         return await FileModel.create_file(self._id, filename, systems_name)
 
@@ -374,12 +385,12 @@ class UserModel:
 
     @classmethod
     async def registrate_bot(cls):
-        #TODO: finish this method later
+        # TODO: finish this method later
         ...
 
     @staticmethod
     def generate_token() -> str:
-        #TODO: choose some other way of generating tokens
+        # TODO: choose some other way of generating tokens
         letters_set = digits + ascii_letters
         token = ''.join(choices(letters_set, k=64))
         return token
@@ -403,16 +414,20 @@ class UserModel:
     async def _valid_user_id(user_id: ObjectId, bot=False) -> bool:
         user = await users_db.count_documents(
                 {
-                "$and":
-                [{'_id': user_id}, {'bot': bot}]
+                    "$and":
+                    [{'_id': user_id}, {'bot': bot}]
                 }
             )
         return bool(user)
 
     @staticmethod
-    async def _check_blocked(check_user_id: ObjectId, is_blocked: ObjectId) -> bool:
+    async def _check_blocked(
+        check_user_id: ObjectId,
+        is_blocked: ObjectId
+    ) -> bool:
         is_blocked = await users_db.count_documents(
-            {"$and":
+            {
+                "$and":
                 [
                     {"_id": check_user_id},
                     {"blocked": {"$in": [is_blocked]}}
@@ -422,5 +437,8 @@ class UserModel:
         return bool(is_blocked)
 
     class exc:
-        class UserNotInGroup(ValueError): ...
-        class InvalidUser(ValueError): ...
+        class UserNotInGroup(ValueError):
+            ...
+
+        class InvalidUser(ValueError):
+            ...

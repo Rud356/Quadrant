@@ -5,7 +5,7 @@ from app import app
 from quart import send_file, request
 from pathlib import Path
 from bson import ObjectId
-from bson import errors as  bson_errors
+from bson import errors as bson_errors
 from werkzeug.utils import secure_filename
 
 from views import User

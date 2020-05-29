@@ -1,13 +1,12 @@
 from bson import ObjectId
-from bson import errors as  bson_errors
+from bson import errors as bson_errors
 from typing import List, Dict
 from datetime import datetime
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app import db
 from .enums import ChannelType
 from .messages import Message
-from .invite import Invite
 
 endpoints_db = db.endpoints
 
@@ -19,10 +18,15 @@ async def validate_user(user_id: ObjectId) -> bool:
     user = await users_db.count_documents({'_id': user_id})
     return bool(user)
 
-async def _check_blocked(check_user_id: ObjectId, is_blocked: ObjectId) -> bool:
+
+async def _check_blocked(
+    check_user_id: ObjectId,
+    is_blocked: ObjectId
+) -> bool:
     users_db = db.chat_users
     is_blocked = await users_db.count_documents(
-        {"$and":
+        {
+            "$and":
             [
                 {"_id": check_user_id},
                 {"blocked": {"$in": [is_blocked]}}
@@ -52,7 +56,7 @@ class TextEndpoint:
         self,
         author: ObjectId, content: str, files=[],
         **_
-        ) -> Message:
+    ) -> Message:
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
@@ -78,9 +82,16 @@ class TextEndpoint:
 
         return msg
 
-    async def edit_message(self, requester: ObjectId, message_id: ObjectId, content: str):
+    async def edit_message(
+        self,
+        requester: ObjectId,
+        message_id: ObjectId,
+        content: str
+    ):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to edit message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to edit message in invalid group"
+            )
 
         if not content:
             raise ValueError("Should give at least some content")
@@ -89,7 +100,9 @@ class TextEndpoint:
 
     async def pin_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to pin message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to pin message in invalid group"
+            )
 
         result = await Message.pin_message(requester, message_id)
         if result:
@@ -102,27 +115,39 @@ class TextEndpoint:
 
     async def unpin_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to unpin message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to unpin message in invalid group"
+            )
 
         return await Message.unpin_message(requester, message_id)
 
     async def get_pinned_messages(self, requester: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch pinned messages in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch pinned messages in invalid group"
+            )
 
         pinned_msgs = await Message.batch_pinned(self.last_pinned, self._id)
         return pinned_msgs
 
-    async def get_pinned_messages_from(self, requester: ObjectId, message_id: ObjectId):
+    async def get_pinned_messages_from(
+        self,
+        requester: ObjectId,
+        message_id: ObjectId
+    ):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch pinned messages in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch pinned messages in invalid group"
+            )
 
         pinned_msgs = await Message.batch_pinned(message_id, self._id)
         return pinned_msgs
 
     async def get_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch message in invalid group"
+            )
 
         msg = await Message.get_message(message_id, self._id)
 
@@ -133,42 +158,69 @@ class TextEndpoint:
 
     async def get_messages(self, requester: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch messages in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch messages in invalid group"
+            )
 
         msgs = await Message.get_messages_from(self.last_message, self._id)
         return msgs
 
-    async def get_messages_from(self, requester: ObjectId, from_message: ObjectId):
+    async def get_messages_from(
+        self,
+        requester: ObjectId,
+        from_message: ObjectId
+    ):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch messages in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch messages in invalid group"
+            )
 
         msgs = await Message.get_messages_from(from_message, self._id)
         return msgs
 
-    async def get_messages_after(self, requester: ObjectId, after_message: ObjectId):
+    async def get_messages_after(
+        self,
+        requester: ObjectId,
+        after_message: ObjectId
+    ):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to fetch messages in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to fetch messages in invalid group"
+            )
 
         msgs = await Message.get_messages_after(after_message, self._id)
         return msgs
 
     async def delete_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to delete message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to delete message in invalid group"
+            )
 
         return Message.delete_message(requester, message_id, self._id)
 
-    async def force_delete_message(self, requester: ObjectId, message_id: ObjectId):
+    async def force_delete_message(
+        self,
+        requester: ObjectId,
+        message_id: ObjectId
+    ):
         if requester not in self.members:
-            raise self.exc.NotGroupMember("User trying to delete message in invalid group")
+            raise self.exc.NotGroupMember(
+                "User trying to delete message in invalid group"
+            )
 
-        #! Check permissions before deleting
+        # ! Check permissions before deleting
         return Message.force_delete(message_id, self._id)
 
     class exc:
-        class EndpointException(Exception): ...
-        class NotGroupMember(EndpointException): ...
-        class NoPermission(EndpointException): ...
+        class EndpointException(Exception):
+            ...
+
+        class NotGroupMember(EndpointException):
+            ...
+
+        class NoPermission(EndpointException):
+            ...
 
 
 @dataclass
@@ -184,12 +236,20 @@ class DMChannel(TextEndpoint):
         )
 
         if blocked_eachother:
-            raise ValueError("Sorry, but one of users blocked each other and cant start dm")
+            raise ValueError(
+                "Sorry, but one of users blocked each other and cant start dm"
+            )
 
         existing_endpoint = await endpoints_db.count_documents({"$and": [
             {"members": [user_init, user_accept]},
-            {"_type": {"$nin":
-                [ChannelType.group, ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            {"_type": {
+                "$nin":
+                [
+                    ChannelType.group,
+                    ChannelType.server_text,
+                    ChannelType.server_category,
+                    ChannelType.server_voice
+                ]
             }}
         ]})
 
@@ -212,7 +272,7 @@ class DMChannel(TextEndpoint):
         self,
         author: ObjectId, content: str, files: List[str],
         mentions: List[str] = [], **_
-        ):
+    ):
 
         blocked_eachother = (
             await _check_blocked(*self.members) or
@@ -233,12 +293,19 @@ class DMChannel(TextEndpoint):
 
 class MetaEndpoint:
     @staticmethod
-    async def get_endpoints(requester: ObjectId) -> Dict[ObjectId, TextEndpoint]:
+    async def get_endpoints(requester: ObjectId) -> Dict[
+        ObjectId, TextEndpoint
+    ]:
         dict_endpoints = {}
         endpoints = endpoints_db.find({"$and": [
             {"members": {"$in": [requester]}},
-            {"_type": {"$nin":
-                [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            {"_type": {
+                "$nin":
+                [
+                    ChannelType.server_text,
+                    ChannelType.server_category,
+                    ChannelType.server_voice
+                ]
             }}
         ]})
 
@@ -250,12 +317,20 @@ class MetaEndpoint:
         return dict_endpoints
 
     @staticmethod
-    async def get_endpoint(requester: ObjectId, endpoint_id: ObjectId) -> TextEndpoint:
+    async def get_endpoint(
+        requester: ObjectId,
+        endpoint_id: ObjectId
+    ) -> TextEndpoint:
         users_endpoint = await endpoints_db.find_one({"$and": [
             {"_id": endpoint_id},
             {"members": {"$in": [requester]}},
-            {"_type": {"$nin":
-                [ChannelType.server_text, ChannelType.server_category, ChannelType.server_voice]
+            {"_type": {
+                "$nin":
+                [
+                    ChannelType.server_text,
+                    ChannelType.server_category,
+                    ChannelType.server_voice
+                ]
             }}
         ]})
 

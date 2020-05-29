@@ -1,10 +1,9 @@
-import ujson
 import asyncio
 from quart import Quart
 from motor import motor_asyncio
 from quart.json import JSONEncoder
 from bson import ObjectId
-from config import config
+from app_config import server_config
 from datetime import datetime
 
 
@@ -32,10 +31,13 @@ app.json_encoder = CustomJSONEncoder
 
 loop = asyncio.get_event_loop()
 app.config['UPLOAD_FOLDER'] = "resources/"
-client = motor_asyncio.AsyncIOMotorClient(config['mongo_conn_string'], io_loop=loop)
+client = motor_asyncio.AsyncIOMotorClient(
+    server_config['mongo_conn_string'],
+    io_loop=loop
+)
 
-if not config['DEBUG']:
-    db = client[config['database_name']]
+if not server_config['DEBUG']:
+    db = client[server_config['database_name']]
 
 else:
     db = client['debug_chat']
