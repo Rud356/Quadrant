@@ -12,9 +12,12 @@ from models import Status
 from models import Message
 from models import UserModel
 from models import MetaEndpoint, TextEndpoint
+from models import UpdateMessage, UpdateType
+
 
 #TODO: add auto cleaner of inactive users
 connected_users = {}
+tokenized_connected_users = {}
 
 
 @dataclass
@@ -30,8 +33,7 @@ class User(UserModel):
 
     async def friend_code_request(self, code: str):
         user_id = await self._friend_code_owner(code)
-
-        return await self.send_friend_request(user_id)
+        await self.send_friend_request(user_id)
 
     async def get_friends(self):
         friend_users = []
@@ -78,7 +80,6 @@ class User(UserModel):
         if len(self.connected) == 1:
             asyncio.ensure_future(self.run_websocket())
 
-
     async def run_websocket(self):
         while len(self.connected):
 
@@ -91,27 +92,158 @@ class User(UserModel):
                 for ws in self.connected:
                     ws.message_pool.append(message)
 
-        connected_users.pop(self._id)
+        self.logout()
+
+    async def breadcast_to_friends(self, update_message):
+        for friend_id in self.friends:
+            friend = connected_users.get(friend_id)
+
+            # If user is offline
+            if not friend:
+                continue
+
+            await friend.add_message(update_message)
+
+    # Redefining methods to have caching
+    async def send_friend_request(self, to_user_id: ObjectId):
+        await super().send_friend_request(to_user_id)
+        self.pendings_outgoing.append(to_user_id)
+
+        requested: User = connected_users.get(to_user_id)
+        requested.pendings_incoming.append(self._id)
+
+        friend_request = UpdateMessage(
+            {
+                "user_id": self._id
+            },
+            UpdateType.new_friend_request
+        )
+        await requested.add_message(friend_request)
+
+    async def response_friend_request(self, user_id: ObjectId, confirm=True):
+        await super().response_friend_request(user_id, confirm)
+
+        self.pendings_incoming.remove(user_id)
+
+        responding_to_user: User = connected_users.get(user_id)
+
+        if not responding_to_user:
+            return
+
+        responding_to_user.pendings_outgoing.remove(self._id)
+
+        if confirm:
+            responding_to_user.friends.append(self._id)
+            self.friends.append(user_id)
+
+            new_friend = UpdateMessage(
+                {
+                    "user_id": self._id
+                },
+                UpdateType.new_friend
+            )
+            await responding_to_user.add_message(new_friend)
+
+        else:
+            responding_to_user.friends.append(self._id)
+            self.friends.append(user_id)
+
+            rejected_friend_request = UpdateMessage(
+                {
+                    "user_id": self._id
+                },
+                UpdateType.friend_request_rejected
+            )
+            await responding_to_user.add_message(rejected_friend_request)
+
+    async def cancel_friend_request(self, user_id: ObjectId):
+        await super().cancel_friend_request(user_id)
+        self.pendings_outgoing.remove(user_id)
+
+        canceled_to_user: User = connected_users.get(user_id)
+
+        if canceled_to_user:
+            canceled_to_user.pendings_incoming.remove(self._id)
+            cancel_friend_request = UpdateMessage(
+                {
+                    "user_id": self._id
+                },
+                UpdateType.friend_request_canceled
+            )
+            await canceled_to_user.add_message(cancel_friend_request)
+
+    async def delete_friend(self, user_id: ObjectId):
+        await super().delete_friend(user_id)
+        self.friends.remove(user_id)
+
+        deleted_friend: User = connected_users.get(user_id)
+
+        if deleted_friend:
+            deleted_friend.friends.remove(self._id)
+
+            update_friend_removed = UpdateMessage(
+                {
+                    "user_id": self._id
+                },
+                UpdateType.friend_deleted
+            )
+            await deleted_friend.add_message(update_friend_removed)
+
+    async def block_user(self, blocking: ObjectId):
+        await super().block_user(blocking)
+
+        blocked_user = connected_users.get(blocking)
+
+        if not blocked_user:
+            return
+
+        if blocking in self.friends:
+            self.friends.remove(blocking)
+            blocked_user.friends.remove(self._id)
+
+        elif blocking in self.pendings_incoming:
+            self.pendings_incoming.remove(blocking)
+            blocked_user.pendings_outgoing.remove(self._id)
+
+        elif blocking in self.pendings_outgoing:
+            self.pendings_outgoing.remove(blocking)
+            blocked_user.pendings_incoming.remove(self._id)
+
+        got_blocked_by = UpdateMessage(
+            {
+                "user_id": self._id
+            },
+            UpdateType.got_blocked
+        )
+        await blocked_user.add_message(got_blocked_by)
+
+    async def unblock_user(self, unblocking: ObjectId):
+        await super().unblock_user(unblocking)
+        self.blocked.remove(unblocking)
 
     @classmethod
     async def authorize(cls, login='', password='', token=''):
-        user: UserModel = await super().authorize(login, password, token)
+        if login and password:
+            user: UserModel = await super().authorize(login, password, token)
 
-        view_user = cls(**user.__dict__)
+            user_view = cls(**user.__dict__)
+            connected_users[user_view._id] = user_view
+            tokenized_connected_users[user_view.token] = user_view
 
-        if view_user._id in connected_users:
-            connected = connected_users[view_user._id]
+        elif token:
+            user_view: User = tokenized_connected_users.get(token)
 
-            for k in connected.__dict__:
-                if k in {'connected', 'message_queue', 'connections_to_clear'}:
-                    continue
+            if not user_view:
+                user_view: UserModel = await super().authorize(login, password, token)
 
-                connected.__dict__[k] = view_user.__dict__[k]
+                user_view = cls(**user.__dict__)
+                connected_users[user_view._id] = user_view
+                tokenized_connected_users[user_view.token] = user_view
 
         else:
-            connected_users[user._id] = view_user
+            raise ValueError("Not enough auth info")
 
-        return view_user
+        return user_view
 
     @classmethod
     async def from_id(cls, user_id: ObjectId):

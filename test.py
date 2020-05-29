@@ -37,19 +37,6 @@ class TestUserRoutes(unittest.TestCase):
         except ValueError:
             pass
 
-    def test_000_mass_register(self):
-        for _ in range(100):
-            login = ''.join(choices(ascii_letters, k=50))
-            password = ''.join(choices(ascii_letters, k=50))
-            nick = ''.join(choices(ascii_letters, k=20))
-            pkg = {
-                "login": login,
-                "password": password,
-                "nick": nick
-            }
-            r = requests.post(base_url + "/user/register", json=pkg)
-            self.assertEqual(r.status_code, 200)
-
     def test_001_about_me(self):
         r = self.sess.get(base_url+"/user/me")
         self.assertEqual(r.status_code, 200)

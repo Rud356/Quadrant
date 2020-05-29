@@ -1,9 +1,11 @@
 from app import app, config
 from bson import ObjectId
+from config import config
 from bson import errors as  bson_errors
 from quart import Response, request, jsonify
 
 from views import User
+from models import UpdateMessage, UpdateType
 
 from .middlewares import (
     validate_schema,
@@ -56,6 +58,9 @@ async def logout(user: User):
 @validate_schema(registrate)
 async def user_create():
     reg = await request.json
+    if not config['allow_registration']:
+        return error("Sorry, but you can't register", 403)
+
     try:
         user = await User.registrate(
             reg['nick'], reg['login'], reg['password']
@@ -107,7 +112,15 @@ async def set_nickname(user: User):
     except ValueError:
         return error("Invalid nick", 400)
 
-    return success(nickname)
+    updated_nick = UpdateMessage(
+        {
+            "user_id": user._id,
+            "nick": nickname
+        },
+        UpdateType.updated_nick
+    )
+    await user.breadcast_to_friends(updated_nick)
+    return success("ok")
 
 
 @app.route("/api/me/friend_code", methods=["POST"])
@@ -127,10 +140,19 @@ async def set_friend_code(user: User):
 async def set_status(user: User, new_status: int):
     try:
         await user.set_status(new_status)
-        return success("ok")
 
     except ValueError:
         return error("Wrong status code", 400)
+
+    updated_status = UpdateMessage(
+        {
+            "user_id": user._id,
+            "status": new_status
+        },
+        UpdateType.updated_status
+    )
+    await user.breadcast_to_friends(updated_status)
+    return success("ok")
 
 
 @app.route("/api/me/text_status", methods=["POST"])
@@ -141,10 +163,19 @@ async def set_text_status(user: User):
     text_status = text_status.get('text_status')
     try:
         await user.set_text_status(text_status)
-        return success('ok')
 
     except ValueError:
         return error("Invalid text status", 400)
+
+    updated_text_status = UpdateMessage(
+        {
+            "user_id": user._id,
+            "status": text_status
+        },
+        UpdateType.updated_status
+    )
+    await user.breadcast_to_friends(updated_text_status)
+    return success('ok')
 
 
 ## Friends

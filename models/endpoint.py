@@ -222,7 +222,7 @@ class DMChannel(TextEndpoint):
         if blocked_eachother:
             raise self.exc.NoPermission("Channel blocked")
 
-        await super().send_message(author, content, files, mentions)
+        await super().send_message(author, content, files)
 
     async def create_invite(self, *args, **kwargs):
         raise NotImplementedError()
