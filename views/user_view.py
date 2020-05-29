@@ -20,7 +20,7 @@ from models import UpdateMessage, UpdateType
 #TODO: add auto cleaner of inactive users
 connected_users = {}
 tokenized_connected_users = {}
-TTK = config['ticks_to_kill'] if config['ticks_to_kill'] > 5 else 5
+TTK = int(config['ticks_to_kill']) if int(config['ticks_to_kill']) > 5 else 5
 
 @dataclass
 class User(UserModel):
