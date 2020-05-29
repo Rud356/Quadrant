@@ -192,7 +192,8 @@ class User(UserModel):
     async def block_user(self, blocking: ObjectId):
         await super().block_user(blocking)
 
-        blocked_user = connected_users.get(blocking)
+        self.blocked.append(blocking)
+        blocked_user: User = connected_users.get(blocking)
 
         if not blocked_user:
             return
