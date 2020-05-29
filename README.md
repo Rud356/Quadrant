@@ -6,8 +6,8 @@ Yet to add:
 - [ ] Group DMs
 - [ ] Voice calls
 - [ ] Servers, roles, emojis, etc.
-- [ ] Updates notification
+- [x] Updates notification
 - [ ] Better files uploading
 - [ ] Optmizate logging in
-- [ ] Add autocleaner of inactive users  
-- [ ] add some users updates notification system
+- [x] Add autocleaner of inactive users
+- [x] Add some users updates notification system

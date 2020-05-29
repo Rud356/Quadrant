@@ -17,10 +17,10 @@ from models import MetaEndpoint, TextEndpoint
 from models import UpdateMessage, UpdateType
 
 
-#TODO: add auto cleaner of inactive users
 connected_users = {}
 tokenized_connected_users = {}
 TTK = int(config['ticks_to_kill']) if int(config['ticks_to_kill']) > 5 else 5
+
 
 @dataclass
 class User(UserModel):
