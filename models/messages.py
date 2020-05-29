@@ -68,7 +68,6 @@ class Message:
 
         return messages
 
-    #TODO: add mentions length checking and validation
     @classmethod
     async def send_message(
         cls, author: ObjectId, endpoint: ObjectId,
