@@ -303,7 +303,7 @@ class UserModel:
         output = dict(self.__dict__)
         exclude_keys(output, [
             'token', 'connected', 'message_queue',
-            'connections_to_clear'
+            'last_used_api_timestamp'
         ])
         return output
 

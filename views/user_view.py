@@ -1,9 +1,11 @@
 import asyncio
+from time import time
 from asyncio import sleep
 
 from bson import ObjectId
-from datetime import datetime
+from config import config
 from typing import List, Dict
+from datetime import datetime
 from dataclasses import dataclass, field
 
 from utils import exclude_keys
@@ -18,18 +20,38 @@ from models import UpdateMessage, UpdateType
 #TODO: add auto cleaner of inactive users
 connected_users = {}
 tokenized_connected_users = {}
-
+TTK = config['ticks_to_kill'] if config['ticks_to_kill'] > 5 else 5
 
 @dataclass
 class User(UserModel):
     connected: list = field(default_factory=list)
     message_queue: list = field(default_factory=list)
-    connections_to_clear: list = field(default_factory=list)
+    last_used_api_timestamp: float = time()
 
     def logout(self):
         self.connected.clear()
         self.message_queue.clear()
         connected_users.pop(self._id)
+
+    def __post_init__(self):
+        asyncio.ensure_future(self.check_user_alive())
+
+    async def check_user_alive(self):
+        ticks = 0
+
+        while True:
+            if len(self.connected):
+                ticks = 0
+
+            else:
+                ticks += 1
+
+            if ticks == TTK:
+                break
+
+            await sleep(60)
+
+        self.logout()
 
     async def friend_code_request(self, code: str):
         user_id = await self._friend_code_owner(code)
@@ -244,6 +266,7 @@ class User(UserModel):
         else:
             raise ValueError("Not enough auth info")
 
+        user_view.last_used_api_timestamp = time()
         return user_view
 
     @classmethod

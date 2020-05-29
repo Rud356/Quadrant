@@ -4,7 +4,7 @@ from config import config
 from bson import errors as  bson_errors
 from quart import Response, request, jsonify
 
-from views import User
+from views import User, TTK
 from models import UpdateMessage, UpdateType
 
 from .middlewares import (
