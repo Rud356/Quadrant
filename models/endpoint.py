@@ -1,10 +1,12 @@
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List
+
 from bson import ObjectId
 from bson import errors as bson_errors
-from typing import List, Dict
-from datetime import datetime
-from dataclasses import dataclass
 
 from app import db
+
 from .enums import ChannelType
 from .messages import Message
 
@@ -60,18 +62,9 @@ class TextEndpoint:
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
-        files_ids = []
-        for _file in files:
-            try:
-                _file = ObjectId(_file)
-                files_ids.append(_file)
-
-            except bson_errors.InvalidId:
-                continue
-
         msg = await Message.send_message(
             author, self._id, content,
-            files_ids
+            files
         )
 
         await endpoints_db.update_one(
@@ -282,7 +275,7 @@ class DMChannel(TextEndpoint):
         if blocked_eachother:
             raise self.exc.NoPermission("Channel blocked")
 
-        await super().send_message(author, content, files)
+        return await super().send_message(author, content, files)
 
     async def create_invite(self, *args, **kwargs):
         raise NotImplementedError()

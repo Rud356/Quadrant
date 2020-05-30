@@ -167,9 +167,6 @@ class User(UserModel):
             await responding_to_user.add_message(new_friend)
 
         else:
-            responding_to_user.friends.append(self._id)
-            self.friends.append(user_id)
-
             rejected_friend_request = UpdateMessage(
                 {
                     "user_id": self._id

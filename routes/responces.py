@@ -1,7 +1,7 @@
-from quart import Response, request, jsonify
+from quart import jsonify
 
 
-def error(description: str="Not found", code: int = 404):
+def error(description: str = "Not found", code: int = 404):
     responce = jsonify(description=description)
     responce.status_code = code
     return responce

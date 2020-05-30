@@ -1,9 +1,9 @@
+from dataclasses import dataclass
+from datetime import datetime
 from random import choices
+from string import ascii_letters, digits
 
 from bson import ObjectId
-from datetime import datetime
-from string import ascii_letters, digits
-from dataclasses import dataclass
 
 from app import db
 

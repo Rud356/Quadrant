@@ -1,19 +1,18 @@
-from typing import List
-from bson import ObjectId
-from random import choices
-from datetime import datetime
-from string import ascii_letters, digits
 from dataclasses import dataclass, field
+from datetime import datetime
+from random import choices
+from string import ascii_letters, digits
+from typing import List
 
+from bson import ObjectId
 from pymongo import UpdateOne
-
-from .enums import Status
-from .endpoint import MetaEndpoint
-from .file_model import FileModel
 
 from app import db
 from utils import exclude_keys
 
+from .endpoint import MetaEndpoint
+from .enums import Status
+from .file_model import FileModel
 
 users_db = db.chat_users
 
@@ -115,8 +114,8 @@ class UserModel:
             raise self.exc.InvalidUser("You blocked user yourself")
 
         in_other_relations = (
-            to_user_id in self.pendings_incoming and
-            to_user_id in self.pendings_outgoing and
+            to_user_id in self.pendings_incoming or
+            to_user_id in self.pendings_outgoing or
             to_user_id in self.friends
         )
 

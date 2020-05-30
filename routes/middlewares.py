@@ -1,15 +1,16 @@
 import json
+
 import fastjsonschema
 from quart import request, websocket
 
 from views import User
+
 from .responces import error
 
 
 def authorized(f):
     async def wraps(*args, **kwargs):
         if not request.cookies.get('token'):
-            print(request.cookies)
             return error("You have to authorize first", 401)
 
         try:
@@ -29,7 +30,8 @@ def validate_schema(schema: object):
     def wrapper(f):
         async def wraps(*args, **kwargs):
             try:
-                schema(await request.json)
+                json_data = await request.json
+                schema(json_data)
 
             except fastjsonschema.JsonSchemaException:
                 return error("You sent invalid json", 400)

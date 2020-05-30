@@ -1,17 +1,21 @@
-import os
 import imghdr
-from time import time
-from app import app
-from quart import send_file, request
+import os
 from pathlib import Path
+from random import choices
+from string import ascii_letters
+from time import time
+
 from bson import ObjectId
 from bson import errors as bson_errors
+from quart import request, send_file
 from werkzeug.utils import secure_filename
 
-from views import User
+from app import app
 from models.file_model import FileModel
+from views import User
+
 from .middlewares import authorized
-from .responces import success, error
+from .responces import error, success
 
 allowed_formats = {'gif', 'jpeg', 'png', 'webp'}
 profile_pics_folder = Path(app.config['UPLOAD_FOLDER']) / 'profile_pics'
@@ -28,7 +32,7 @@ async def upload_profile_pic(user: User):
         return error("Too big file", 400)
 
     files = await request.files
-    profile_img = files['file']
+    profile_img = files['image']
 
     if profile_img.filename == '':
         return error("None image selected", 400)
@@ -36,7 +40,7 @@ async def upload_profile_pic(user: User):
     if imghdr.what(profile_img) not in allowed_formats:
         return error("Incorrect file format", 400)
 
-    profile_img.save(profile_pics_folder, user._id)
+    profile_img.save(profile_pics_folder / user._id)
     return success("Profile image updated!")
 
 
@@ -63,38 +67,41 @@ async def get_profile_pic(user: User, user_id: str):
 @app.route("/api/files/upload", methods=["POST"])
 @authorized
 async def upload_file(user: User):
-    users_path = files_path / str(user._id)
-    if not os.path.isdir(users_path):
-        os.mkdir(users_path)
-
     files = await request.files
-    regular_file = files['upload_files']
+    files_ids = []
 
-    if regular_file.filename == '':
-        return error("None file selected", 400)
+    for file_name in files:
+        file = files[file_name]
+        if file.filename == '':
+            continue
 
-    system_filename = str(time())
-    with open(users_path / system_filename, 'wb') as f:
-        regular_file.save(f)
+        rand_part = ''.join(choices(ascii_letters, k=12))
 
-    file_id = await user.create_file(
-        secure_filename(regular_file.filename),
-        users_path / system_filename
-    )
+        system_file_name = f"{time()}_{user._id}_{rand_part}"
+        with open(files_path / system_file_name, 'wb') as f:
+            file.save(f)
 
-    return success(f"/api/files/{file_id._id}")
+            await FileModel.create_file(
+                secure_filename(file.filename),
+                system_file_name
+            )
+
+        files_ids.append(system_file_name)
+
+    return success(files_ids)
 
 
-@app.route("/api/files/<string:file_id>")
+@app.route("/api/files/<string:file_name>")
 @authorized
-async def get_file(user: User, file_id: str):
+async def get_file(user: User, file_name: str):
     try:
-        file_id = ObjectId(file_id)
-        file_info: FileModel = await user.get_file(file_id)
+        file_name = files_path / file_name
 
-        with open(file_info.systems_name, 'rb') as f:
+        with open(file_name, 'rb') as f:
             response = await send_file(f)
-        response.headers['x-filename'] = file_info.filename
+
+        file_record = FileModel.get_file(file_name)
+        response.headers['x-filename'] = file_record.file_name
 
         return response
 

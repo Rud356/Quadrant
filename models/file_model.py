@@ -1,8 +1,8 @@
-from bson import ObjectId
 from dataclasses import dataclass
 
-from app import db
+from bson import ObjectId
 
+from app import db
 
 files_db = db.files_db
 
@@ -10,19 +10,14 @@ files_db = db.files_db
 @dataclass
 class FileModel:
     _id: ObjectId
-    file_owner: ObjectId
-    filename: str
-    systems_name: str
+    file_name: str
+    system_name: str
 
     @classmethod
-    async def create_file(
-        cls, file_owner: ObjectId,
-        filename: str, systems_name: str
-    ):
+    async def create_file(cls, file_name: str, system_name: str):
         new_file = {
-            "file_owner": file_owner,
-            "filename": filename,
-            "systems_name": systems_name
+            "file_name": file_name,
+            "system_name": system_name
         }
 
         inserted = await files_db.insert_one(new_file)
@@ -31,8 +26,10 @@ class FileModel:
         return cls(**new_file)
 
     @classmethod
-    async def get_file(cls, file_id: ObjectId):
-        file_record = await files_db.find_one(file_id)
+    async def get_file(cls, system_name: str):
+        file_record = await files_db.find_one(
+            {"system_name": system_name}
+        )
         if file_record is None:
             raise ValueError("No such file")
 

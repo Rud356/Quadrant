@@ -1,24 +1,15 @@
-from app import app, server_config
 from bson import ObjectId
-from app_config import server_config  # noqa: F811
 from bson import errors as bson_errors
 from quart import request
 
-from views import User
+from app import app, server_config
+from app_config import server_config  # noqa: F811
 from models import UpdateMessage, UpdateType
+from views import User
 
-from .middlewares import (
-    validate_schema,
-    authorized
-)
-
-from .responces import (
-    success, error
-)
-
-from .schemas import (
-    login, registrate, text_status
-)
+from .middlewares import authorized, validate_schema
+from .responces import error, success
+from .schemas import login, registrate, text_status
 
 
 # ? Users most important endpoints
@@ -262,7 +253,7 @@ async def send_code_friend_request(user: User):
 @authorized
 async def response_friend_request(user: User, id: str):
     try:
-        accept = request.args.get('accept', False, bool)
+        accept = request.args.get('accept', False) == "True"
         id = ObjectId(id)
         await user.response_friend_request(id, bool(accept))
 

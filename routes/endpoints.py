@@ -1,22 +1,16 @@
-from app import app
 from typing import List
+
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
 
+from app import app
+from models import DMChannel, TextEndpoint
 from views import User
-from models import TextEndpoint, DMChannel
 
-from .middlewares import (
-    validate_schema,
-    authorized
-)
-from .responces import (
-    success, error
-)
-from .schemas import (
-    dm_endpoint
-)
+from .middlewares import authorized, validate_schema
+from .responces import error, success
+from .schemas import dm_endpoint
 
 
 @app.route("/api/endpoints")

@@ -1,12 +1,13 @@
-import requests
-import unittest
 import asyncio
-
-from os import system
+import unittest
+from os import system, mkdir, unlink
 from random import choices
-from app_config import tests_config
-from setup_tests import setup_for_tests, drop_db
 from string import ascii_letters
+
+import requests
+
+from app_config import tests_config
+from setup_tests import drop_db, setup_for_tests
 
 system('cls')
 
@@ -174,7 +175,6 @@ class TestUserRoutes(unittest.TestCase):
         endpoint = endpoints[0]
         msg = {
             "content": "Hello world!",
-            "files": []
         }
         r = self.sess.post(
             base_url+f"/endpoints/{endpoint}/messages",
@@ -307,6 +307,34 @@ class TestUserRoutes(unittest.TestCase):
     def test_042_unblock_user_invalid(self):
         r = self.sess.delete(base_url+"/blocked/12323144321")
         self.assertEqual(r.status_code, 400)
+
+    def test_043_send_message_with_file(self):
+        try:
+            mkdir('temp/')
+        except FileExistsError:
+            ...
+
+        with open('temp/text.txt', 'w') as f:
+            f.write("A"*42)
+
+        r = self.sess.get(base_url+"/endpoints").json()
+        endpoints = r['response']
+        endpoint = endpoints[0]
+
+        with open("temp/text.txt", 'rb') as f:
+            send_files = {"file_1": f}
+            r = self.sess.post(base_url+"/files/upload", files=send_files)
+        r = r.json()
+        msg = {
+            "content": "Hello world with files!",
+            "files": r['response']
+        }
+        r = self.sess.post(
+            base_url+f"/endpoints/{endpoint}/messages",
+            json=msg
+        )
+
+        self.assertEqual(r.status_code, 200)
 
     def tearDown(self):
         self.sess.close()

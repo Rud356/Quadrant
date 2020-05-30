@@ -1,11 +1,8 @@
-import json
-import asyncio
 from asyncio import CancelledError, sleep
 
+from quart import copy_current_websocket_context, websocket
+
 from app import app
-from bson import ObjectId
-from bson import errors as  bson_errors
-from quart import websocket, copy_current_websocket_context
 from views import User
 
 from .middlewares import auth_websocket
@@ -38,5 +35,6 @@ class WebsocketNotifier:
 @auth_websocket
 async def add_websocket(user: User):
     new_ws_user = WebsocketNotifier(user)
+    new_ws_user = copy_current_websocket_context(new_ws_user)
     await websocket.send("Authorized!")
     await user.add_ws(new_ws_user)
