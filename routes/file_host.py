@@ -73,12 +73,13 @@ async def upload_file(user: User):
     if regular_file.filename == '':
         return error("None file selected", 400)
 
-    system_filename = f"{int(time())}_{user._id}"
+    system_filename = str(time())
     with open(users_path / system_filename, 'wb') as f:
         regular_file.save(f)
+
     file_id = await user.create_file(
         secure_filename(regular_file.filename),
-        system_filename
+        users_path / system_filename
     )
 
     return success(f"/api/files/{file_id._id}")
@@ -89,9 +90,10 @@ async def upload_file(user: User):
 async def get_file(user: User, file_id: str):
     try:
         file_id = ObjectId(file_id)
-        file_info: FileModel = user.get_file(file_id)
+        file_info: FileModel = await user.get_file(file_id)
 
-        response = await send_file(file_info.systems_name)
+        with open(file_info.systems_name, 'rb') as f:
+            response = await send_file(f)
         response.headers['x-filename'] = file_info.filename
 
         return response
