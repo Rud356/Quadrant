@@ -288,13 +288,9 @@ class UserModel:
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
 
-    # ? Files related
-    async def create_file(self, filename: str, systems_name: str):
-        return await FileModel.create_file(self._id, filename, systems_name)
-
     @staticmethod
-    async def get_file(file_id: ObjectId):
-        return await FileModel.get_file(file_id)
+    async def get_file(file_name):
+        return await FileModel.get_file(file_name)
 
     @property
     def public_dict(self):
