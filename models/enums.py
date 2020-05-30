@@ -31,3 +31,4 @@ class UpdateType(IntEnum):
     friend_request_canceled = 10
     friend_deleted = 11
     got_blocked = 12
+    image_updated = 13

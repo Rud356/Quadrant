@@ -11,6 +11,7 @@ from quart import request, send_file
 from werkzeug.utils import secure_filename
 
 from app import app
+from models import UpdateMessage, UpdateType
 from models.file_model import FileModel
 from views import User
 
@@ -40,7 +41,16 @@ async def upload_profile_pic(user: User):
     if imghdr.what(profile_img) not in allowed_formats:
         return error("Incorrect file format", 400)
 
-    profile_img.save(profile_pics_folder / user._id)
+    with open(profile_pics_folder / user._id, "wb") as f:
+        profile_img.save(f)
+
+    update_message = UpdateMessage(
+        {
+            "user_id": user._id,
+        },
+        UpdateType.image_updated
+    )
+    await user.breadcast_to_friends(update_message)
     return success("Profile image updated!")
 
 
