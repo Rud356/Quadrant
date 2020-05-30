@@ -264,7 +264,7 @@ class User(UserModel):
             user_view: User = tokenized_connected_users.get(token)
 
             if not user_view:
-                user_view: UserModel = await super().authorize(
+                user: UserModel = await super().authorize(
                     login, password, token
                 )
 

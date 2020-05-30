@@ -63,24 +63,25 @@ async def get_profile_pic(user: User, user_id: str):
 @app.route("/api/files/upload", methods=["POST"])
 @authorized
 async def upload_file(user: User):
-    if not os.path.isdir(files_path / str(user._id)):
-        os.mkdir(files_path / str(user._id))
+    users_path = files_path / str(user._id)
+    if not os.path.isdir(users_path):
+        os.mkdir(users_path)
 
     files = await request.files
-    regular_file = files['file']
+    regular_file = files['upload_files']
 
     if regular_file.filename == '':
         return error("None file selected", 400)
 
     system_filename = f"{int(time())}_{user._id}"
-    regular_file.save(files_path, system_filename)
-
+    with open(users_path / system_filename, 'wb') as f:
+        regular_file.save(f)
     file_id = await user.create_file(
         secure_filename(regular_file.filename),
         system_filename
     )
 
-    return success(f"/api/files/{file_id}")
+    return success(f"/api/files/{file_id._id}")
 
 
 @app.route("/api/files/<string:file_id>")

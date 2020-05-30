@@ -1,4 +1,5 @@
 import asyncio
+from os import mkdir
 from quart import Quart
 from motor import motor_asyncio
 from quart.json import JSONEncoder
@@ -28,9 +29,14 @@ class CustomJSONEncoder(JSONEncoder):
 
 app = Quart(__name__)
 app.json_encoder = CustomJSONEncoder
-
 loop = asyncio.get_event_loop()
-app.config['UPLOAD_FOLDER'] = "resources/"
+app.config['UPLOAD_FOLDER'] = "resourses/"
+
+try:
+    mkdir(app.config['UPLOAD_FOLDER'])
+except FileExistsError:
+    pass
+
 client = motor_asyncio.AsyncIOMotorClient(
     server_config['mongo_conn_string'],
     io_loop=loop
