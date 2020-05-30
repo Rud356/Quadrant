@@ -29,7 +29,7 @@ class User(UserModel):
         self.message_queue.clear()
         connected_users.pop(self._id)
 
-    def __post_init__(self):
+    def start_alive_checker(self):
         asyncio.ensure_future(self.check_user_alive())
 
     async def check_user_alive(self):
@@ -251,6 +251,7 @@ class User(UserModel):
             user_view = cls(**user.__dict__)
 
             if user_view._id not in connected_users:
+                user_view.start_alive_checker()
                 connected_users[user_view._id] = user_view
                 tokenized_connected_users[user_view.token] = user_view
 
@@ -266,6 +267,7 @@ class User(UserModel):
                 )
 
                 user_view = cls(**user.__dict__)
+                user_view.start_alive_checker()
                 connected_users[user_view._id] = user_view
                 tokenized_connected_users[user_view.token] = user_view
 
