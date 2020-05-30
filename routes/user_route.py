@@ -12,10 +12,59 @@ from .responces import error, success
 from .schemas import login, registrate, text_status
 
 
+"""
+All successed responses are gives inside of
+{
+    "response": ...
+}
+
+All errors having form of
+{
+    "description": "string"
+}
+
+Private user json:
+{
+    "user": {
+        "_id": "string",
+        "nick": "string",
+        "created_at": "datetime in iso format",
+        "bot": bool,
+        "status": int,
+        "text_status": "string",
+        "code": "string" or None,
+        "parent": None,
+        "blocked": [strings],
+        "friends": [strings],
+        "pendings_outgoing": [strings],
+        "pendings_incoming": [strings]
+    }
+}
+
+Public user json:
+{
+    '_id': "string",
+    "status": int,
+    "text_status": "string",
+    "bot": bool,
+    "nick": "string",
+    "created_at": "datetime in iso format"
+}
+"""
+
+
 # ? Users most important endpoints
 @app.route("/api/user/login", methods=["POST"])
 @validate_schema(login)
 async def user_login():
+    """
+    Payload:
+    {
+        "login": "string",
+        "password": "string"
+    }
+    Response: 401 or private user + token cookie
+    """
     auth = await request.json
 
     try:
@@ -30,7 +79,7 @@ async def user_login():
     response = success({"user": user.private_dict})
     response.set_cookie(
         "token", user.token,
-        max_age=48*60*60,
+        max_age=48 * 60 * 60,
         # Patch for testing locally
         # If setted to secure - cookies can be used only via https
         secure=not server_config['DEBUG']
@@ -41,6 +90,10 @@ async def user_login():
 @app.route("/api/user/logout", methods=["POST", "GET", "DELETE"])
 @authorized
 async def logout(user: User):
+    """
+    Requires authorization!
+    Response: "All is fine!" 200
+    """
     user.logout()
     request.delete_cookie('token')
     return success("All is fine!")
@@ -49,13 +102,42 @@ async def logout(user: User):
 @app.route("/api/user/register", methods=["POST"])
 @validate_schema(registrate)
 async def user_create():
+    """
+    Payload:
+    {
+        "login": "string",
+        "password": "string",
+        "nick": "string"
+    }  
+    Validations:  
+    `0 < nick length <= 25`  
+    `5 < login length <= 200`  
+    `8 < password length <= 255`  
+    If they're failed - returns code 400  
+
+    Repsonse: 400, 403 or private user + token cookie
+    """
     reg = await request.json
+
     if not server_config['allow_registration']:
         return error("Sorry, but you can't register", 403)
 
+    nick = reg['nick'].strip(' \n\t')
+    login = reg['login'].strip(' \n\t')
+    password = reg['password'].strip(' \n\t')
+
+    if len(nick) not in range(1, 25 + 1):
+        return error("Invalid nick", 400)
+
+    if len(login) not in range(5, 201):
+        return error("Invalid login length", 400)
+
+    if len(password) not in range(8, 256):
+        return error("Invalid password length", 400)
+
     try:
         user = await User.registrate(
-            reg['nick'], reg['login'], reg['password']
+            nick, login, password
         )
 
     except ValueError:
@@ -64,7 +146,7 @@ async def user_create():
     response = success(user.private_dict)
     response.set_cookie(
         "token", user.token,
-        max_age=48*60*60,
+        max_age=48 * 60 * 60,
         # Patch for testing locally
         # If setted to secure - cookies can be used only via https
         secure=not server_config['DEBUG']
@@ -76,6 +158,10 @@ async def user_create():
 @app.route("/api/user/<string:id>")
 @authorized
 async def user_from_id(user: User, id: str):
+    """
+    Requires: user id in route  
+    Response: 400 or public user
+    """
     try:
         id = ObjectId(id)
         user_repr = await User.from_id(id)
@@ -89,12 +175,18 @@ async def user_from_id(user: User, id: str):
 @app.route("/api/user/me")
 @authorized
 async def self_info(user: User):
+    """
+    Response: private user
+    """
     return success(user.private_dict)
 
 
 @app.route("/api/user/keep-alive")
 @authorized
 async def keep_alive(user: User):
+    """
+    Response: ok
+    """
     return success("ok")
 
 
@@ -103,6 +195,12 @@ async def keep_alive(user: User):
 @app.route("/api/me/nick", methods=["POST"])
 @authorized
 async def set_nickname(user: User):
+    """
+    Requires: new_nick as url parameter  
+    Validations:  
+    `0 < nick length <= 25`  
+    Responses: 200, 400
+    """
     nickname = request.args.get('new_nick', '')
     try:
         await user.set_nick(nickname)
@@ -117,13 +215,19 @@ async def set_nickname(user: User):
         },
         UpdateType.updated_nick
     )
-    await user.breadcast_to_friends(updated_nick)
+    await user.broadcast_to_friends(updated_nick)
     return success("ok")
 
 
 @app.route("/api/me/friend_code", methods=["POST"])
 @authorized
 async def set_friend_code(user: User):
+    """
+    Requires: code as url parameter  
+    Validations:  
+    `0 < code length <= 50`  
+    Responses: 200, 400
+    """
     friendcode = request.args.get('code', '')
     try:
         await user.set_friend_code(friendcode)
@@ -136,6 +240,12 @@ async def set_friend_code(user: User):
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
 @authorized
 async def set_status(user: User, new_status: int):
+    """
+    Requires: status code in url  
+    Validations:  
+    `0 <= status <= 4`  
+    Responses: 200, 400
+    """
     try:
         await user.set_status(new_status)
 
@@ -149,7 +259,7 @@ async def set_status(user: User, new_status: int):
         },
         UpdateType.updated_status
     )
-    await user.breadcast_to_friends(updated_status)
+    await user.broadcast_to_friends(updated_status)
     return success("ok")
 
 
@@ -157,6 +267,13 @@ async def set_status(user: User, new_status: int):
 @authorized
 @validate_schema(text_status)
 async def set_text_status(user: User):
+    """
+    Requries:
+    {
+        "text_status": "string" or empty string
+    }  
+    Response: 200, 400
+    """
     text_status = await request.json
     text_status = text_status.get('text_status')
     try:
@@ -172,7 +289,7 @@ async def set_text_status(user: User):
         },
         UpdateType.updated_status
     )
-    await user.breadcast_to_friends(updated_text_status)
+    await user.broadcast_to_friends(updated_text_status)
     return success('ok')
 
 
@@ -180,6 +297,9 @@ async def set_text_status(user: User):
 @app.route("/api/friends")
 @authorized
 async def get_users_friends(user: User):
+    """
+    Response: list of public users that are friends
+    """
     friends = await user.get_friends()
     friends = [frined.__dict__ for frined in friends]
     return success(friends)
@@ -188,12 +308,18 @@ async def get_users_friends(user: User):
 @app.route("/api/outgoing_requests")
 @authorized
 async def outgoing_requests(user: User):
+    """
+    Response: list of public users that are sent pendings from you
+    """
     return success(user.pendings_outgoing)
 
 
 @app.route("/api/incoming_requests")
 @authorized
 async def incoming_requests(user: User):
+    """
+    Response: list of public users that are sent pendings to you
+    """
     return success(user.pendings_incoming)
 
 

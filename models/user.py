@@ -52,7 +52,7 @@ class UserModel:
 
     # ? Setters
     async def set_nick(self, new_nick):
-        if len(new_nick) not in range(1, 25+1):
+        if len(new_nick) not in range(1, 25 + 1):
             raise ValueError("Invalid nickname")
 
         await users_db.update_one(
@@ -165,17 +165,17 @@ class UserModel:
             raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
 
         await users_db.bulk_write([
-                # Deleting outgoing pending from list
-                UpdateOne(
-                    {"_id": self._id},
-                    {"$pull": {"pendings_outgoing": user_id}}
-                ),
-                # Deleting our user from incoming pendings
-                UpdateOne(
-                    {"_id": user_id},
-                    {"$pull": {"pendings_incoming": self._id}}
-                )
-            ])
+            # Deleting outgoing pending from list
+            UpdateOne(
+                {"_id": self._id},
+                {"$pull": {"pendings_outgoing": user_id}}
+            ),
+            # Deleting our user from incoming pendings
+            UpdateOne(
+                {"_id": user_id},
+                {"$pull": {"pendings_incoming": self._id}}
+            )
+        ])
 
     async def delete_friend(self, user_id: ObjectId):
         if user_id not in self.friends:
@@ -408,11 +408,11 @@ class UserModel:
     @staticmethod
     async def _valid_user_id(user_id: ObjectId, bot=False) -> bool:
         user = await users_db.count_documents(
-                {
-                    "$and":
-                    [{'_id': user_id}, {'bot': bot}]
-                }
-            )
+            {
+                "$and":
+                [{'_id': user_id}, {'bot': bot}]
+            }
+        )
         return bool(user)
 
     @staticmethod

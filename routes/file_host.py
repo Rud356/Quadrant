@@ -26,6 +26,11 @@ files_path = Path(app.config['UPLOAD_FOLDER'])
 @app.route("/api/user/set_image", methods=["POST"])
 @authorized
 async def upload_profile_pic(user: User):
+    """
+    Payload: file ["image"]  
+    Limits: 4MB file of gif, jpeg, png, webp formats  
+    Response codes: 200, 400, 401
+    """
     if (
         request.content_length is None or
         request.content_length > 4 * 1024 * 1024
@@ -50,13 +55,17 @@ async def upload_profile_pic(user: User):
         },
         UpdateType.image_updated
     )
-    await user.breadcast_to_friends(update_message)
+    await user.broadcast_to_friends(update_message)
     return success("Profile image updated!")
 
 
 @app.route("/api/user/<string:user_id>/profile_pic")
 @authorized
 async def get_profile_pic(user: User, user_id: str):
+    """
+    Requires: user_id in route  
+    Response: 404, file
+    """
     try:
         user_id = ObjectId(ObjectId)
         user_id = str(user)
@@ -77,6 +86,10 @@ async def get_profile_pic(user: User, user_id: str):
 @app.route("/api/files/upload", methods=["POST"])
 @authorized
 async def upload_file(user: User):
+    """
+    Requires: files  
+    Response: list of files names
+    """
     files = await request.files
     files_ids = []
 
@@ -104,6 +117,10 @@ async def upload_file(user: User):
 @app.route("/api/files/<string:file_name>")
 @authorized
 async def get_file(user: User, file_name: str):
+    """
+    Requires: file name in route
+    Response: 404, file
+    """
     try:
         file_name = files_path / file_name
 
@@ -115,5 +132,5 @@ async def get_file(user: User, file_name: str):
 
         return response
 
-    except bson_errors.InvalidId:
-        return error("Invalid id")
+    except FileNotFoundError:
+        return error("Invalid file")

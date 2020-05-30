@@ -116,7 +116,7 @@ class User(UserModel):
 
         self.logout()
 
-    async def breadcast_to_friends(self, update_message):
+    async def broadcast_to_friends(self, update_message):
         for friend_id in self.friends:
             friend = connected_users.get(friend_id)
 
