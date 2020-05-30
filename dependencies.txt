@@ -1,4 +1,0 @@
-Quart
-motor
-fastjsonschema
-requests
