@@ -194,8 +194,7 @@ async def outgoing_requests(user: User):
 @app.route("/api/incoming_requests")
 @authorized
 async def incoming_requests(user: User):
-    incoming = [str(incoming_id) for incoming_id in user.pendings_incoming]
-    return success(incoming)
+    return success(user.pendings_incoming)
 
 
 @app.route("/api/friends/<string:id>", methods=["POST"])

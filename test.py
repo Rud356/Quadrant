@@ -1,6 +1,6 @@
 import asyncio
 import unittest
-from os import system, mkdir, unlink
+from os import system, mkdir
 from random import choices
 from string import ascii_letters
 

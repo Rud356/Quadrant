@@ -19,7 +19,7 @@ class CustomJSONEncoder(JSONEncoder):
             if isinstance(obj, ObjectId):
                 return str(obj)
 
-            iterable = iter(obj)
+            iterable = map(self.default, obj)
         except TypeError:
             pass
 
