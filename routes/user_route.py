@@ -70,7 +70,8 @@ async def user_login():
     try:
         user = await User.authorize(
             auth['login'],
-            auth['password']
+            auth['password'],
+            request.cookies.get('token')
         )
 
     except ValueError:
@@ -95,8 +96,9 @@ async def logout(user: User):
     Response: "All is fine!" 200
     """
     user.logout()
-    request.delete_cookie('token')
-    return success("All is fine!")
+    response = success("All is fine!")
+    response.delete_cookie('token')
+    return response
 
 
 @app.route("/api/user/register", methods=["POST"])

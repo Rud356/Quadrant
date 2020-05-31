@@ -25,9 +25,9 @@ class User(UserModel):
     last_used_api_timestamp: float = time()
 
     def logout(self):
-        self.connected.clear()
-        self.message_queue.clear()
-        connected_users.pop(self._id)
+        if connected_users.pop(self._id, False):
+            self.connected.clear()
+            self.message_queue.clear()
 
     def start_alive_checker(self):
         asyncio.ensure_future(self.check_user_alive())
@@ -46,7 +46,7 @@ class User(UserModel):
                 break
 
             api_usage_gap = time() - self.last_used_api_timestamp
-            if api_usage_gap > TTK*60 and not len(self.connected):
+            if api_usage_gap > TTK * 60 and not len(self.connected):
                 break
 
             await sleep(60)
@@ -243,7 +243,20 @@ class User(UserModel):
 
     @classmethod
     async def authorize(cls, login='', password='', token=''):
-        if login and password:
+        if token:
+            user_view: User = tokenized_connected_users.get(token)
+
+            if not user_view:
+                user: UserModel = await super().authorize(
+                    login, password, token
+                )
+
+                user_view = cls(**user.__dict__)
+                user_view.start_alive_checker()
+                connected_users[user_view._id] = user_view
+                tokenized_connected_users[user_view.token] = user_view
+
+        elif login and password:
             user: UserModel = await super().authorize(
                 login, password, token
             )
@@ -257,19 +270,6 @@ class User(UserModel):
 
             else:
                 user_view = connected_users.get(user_view._id)
-
-        elif token:
-            user_view: User = tokenized_connected_users.get(token)
-
-            if not user_view:
-                user: UserModel = await super().authorize(
-                    login, password, token
-                )
-
-                user_view = cls(**user.__dict__)
-                user_view.start_alive_checker()
-                connected_users[user_view._id] = user_view
-                tokenized_connected_users[user_view.token] = user_view
 
         else:
             raise ValueError("Not enough auth info")

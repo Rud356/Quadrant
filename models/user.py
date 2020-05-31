@@ -1,5 +1,8 @@
+from asyncio import get_running_loop
 from dataclasses import dataclass, field
 from datetime import datetime
+from hashlib import pbkdf2_hmac, sha256
+from os import urandom
 from random import choices
 from string import ascii_letters, digits
 from typing import List
@@ -26,7 +29,8 @@ public_exclude = {
     "login": 0,
     "password": 0,
     "parent": 0,
-    "token": 0
+    "token": 0,
+    "salt": 0
 }
 # TODO: add some method to reset passwords
 
@@ -318,8 +322,10 @@ class UserModel:
         user = None
         exclude = {
             'login': 0,
-            'password': 0
+            'password': 0,
+            'salt': 0
         }
+
         if token:
             user = await users_db.find_one(
                 {'token': token},
@@ -327,6 +333,17 @@ class UserModel:
             )
 
         elif login and password:
+            loop = get_running_loop()
+            login = sha256(login.encode())
+            login = login.hexdigest()
+            salt = await cls._get_salt_hashed_login(login)
+            password = await loop.run_in_executor(
+                None,
+                pbkdf2_hmac,
+                'sha256', password.encode(), salt.encode(), 100000
+            )
+            password = password.hex()
+
             user = await users_db.find_one(
                 {'login': login, 'password': password},
                 exclude
@@ -356,8 +373,19 @@ class UserModel:
 
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
+        loop = get_running_loop()
+        salt = cls.generate_salt()
+        password = await loop.run_in_executor(
+            None,
+            pbkdf2_hmac,
+            'sha256', password.encode(), salt.encode(), 100000
+        )
+        password = password.hex()
+        login = sha256(login.encode()).hexdigest()
+
         new_user = {
             'bot': False,
+            'salt': salt,
             'nick': nick,
             'login': login,
             'password': password,
@@ -367,7 +395,7 @@ class UserModel:
             'friends': [],
             'pendings_outgoing': [],
             'pendings_incoming': [],
-            'created_at': datetime.utcnow()
+            'created_at': datetime.utcnow(),
         }
 
         if await users_db.find_one({'login': login}):
@@ -375,7 +403,8 @@ class UserModel:
 
         inserted = await users_db.insert_one(new_user)
         new_user['_id'] = inserted.inserted_id
-        exclude_keys(new_user, ['password', 'login'])
+        exclude_keys(new_user, ['password', 'login', 'salt'])
+
         return cls(**new_user)
 
     @classmethod
@@ -389,6 +418,20 @@ class UserModel:
         letters_set = digits + ascii_letters
         token = ''.join(choices(letters_set, k=64))
         return token
+
+    @staticmethod
+    def generate_salt(size=32):
+        salt_origin = urandom(size)
+        hashed = sha256(salt_origin)
+        return hashed.hexdigest()
+
+    @staticmethod
+    async def _get_salt_hashed_login(login: str):
+        salt = await users_db.find_one(
+            {"login": login},
+            {"salt": 1}
+        )
+        return salt['salt']
 
     @staticmethod
     async def _avaliable_friend_code(code: str) -> bool:
