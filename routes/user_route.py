@@ -58,7 +58,7 @@ from .schemas import login, registrate, text_status
 
 # ? Users most important endpoints
 @app.route("/api/user/login", methods=["POST"])
-@rate_limit(10, timedelta(minutes=1))
+@rate_limit(10, timedelta(seconds=5))
 @validate_schema(login)
 async def user_login():
     """

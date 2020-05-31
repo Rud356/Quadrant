@@ -31,7 +31,10 @@ class CustomJSONEncoder(JSONEncoder):
 
 
 app = Quart(__name__)
-rate_limiter = RateLimiter(app)
+
+if not server_config['DEBUG']:
+    rate_limiter = RateLimiter(app)
+
 app.json_encoder = CustomJSONEncoder
 loop = asyncio.get_event_loop()
 app.config['UPLOAD_FOLDER'] = "resourses/"
