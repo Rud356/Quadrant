@@ -117,7 +117,8 @@ class User(UserModel):
         self.logout()
 
     async def broadcast_to_friends(self, update_message):
-        for friend_id in self.friends:
+        send_to_users = [self._id] + self.friends
+        for friend_id in send_to_users:
             friend = connected_users.get(friend_id)
 
             # If user is offline
