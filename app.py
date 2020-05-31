@@ -6,6 +6,7 @@ from bson import ObjectId
 from motor import motor_asyncio
 from quart import Quart
 from quart.json import JSONEncoder
+from quart_rate_limiter import RateLimiter
 
 from app_config import server_config
 
@@ -30,6 +31,7 @@ class CustomJSONEncoder(JSONEncoder):
 
 
 app = Quart(__name__)
+rate_limiter = RateLimiter(app)
 app.json_encoder = CustomJSONEncoder
 loop = asyncio.get_event_loop()
 app.config['UPLOAD_FOLDER'] = "resourses/"

@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
+from quart_rate_limiter import rate_exempt, rate_limit
 
 from app import app, server_config
 from app_config import server_config  # noqa: F811
@@ -13,48 +16,49 @@ from .schemas import login, registrate, text_status
 
 
 """
-All successed responses are gives inside of
-{
-    "response": ...
-}
+    All successed responses are gives inside of
+    {
+        "response": ...
+    }
 
-All errors having form of
-{
-    "description": "string"
-}
+    All errors having form of
+    {
+        "description": "string"
+    }
 
-Private user json:
-{
-    "user": {
-        "_id": "string",
-        "nick": "string",
-        "created_at": "datetime in iso format",
-        "bot": bool,
+    Private user json:
+    {
+        "user": {
+            "_id": "string",
+            "nick": "string",
+            "created_at": "datetime in iso format",
+            "bot": bool,
+            "status": int,
+            "text_status": "string",
+            "code": "string" or None,
+            "parent": None,
+            "blocked": [strings],
+            "friends": [strings],
+            "pendings_outgoing": [strings],
+            "pendings_incoming": [strings]
+        }
+    }
+
+    Public user json:
+    {
+        '_id': "string",
         "status": int,
         "text_status": "string",
-        "code": "string" or None,
-        "parent": None,
-        "blocked": [strings],
-        "friends": [strings],
-        "pendings_outgoing": [strings],
-        "pendings_incoming": [strings]
+        "bot": bool,
+        "nick": "string",
+        "created_at": "datetime in iso format"
     }
-}
-
-Public user json:
-{
-    '_id': "string",
-    "status": int,
-    "text_status": "string",
-    "bot": bool,
-    "nick": "string",
-    "created_at": "datetime in iso format"
-}
 """
 
 
 # ? Users most important endpoints
 @app.route("/api/user/login", methods=["POST"])
+@rate_limit(10, timedelta(minutes=1))
 @validate_schema(login)
 async def user_login():
     """
@@ -89,6 +93,7 @@ async def user_login():
 
 
 @app.route("/api/user/logout", methods=["POST", "GET", "DELETE"])
+@rate_limit(1, timedelta(seconds=30))
 @authorized
 async def logout(user: User):
     """
@@ -102,6 +107,7 @@ async def logout(user: User):
 
 
 @app.route("/api/user/register", methods=["POST"])
+@rate_limit(5, timedelta(minutes=5))
 @validate_schema(registrate)
 async def user_create():
     """
@@ -158,6 +164,7 @@ async def user_create():
 
 
 @app.route("/api/user/<string:id>")
+@rate_exempt
 @authorized
 async def user_from_id(user: User, id: str):
     """
@@ -175,6 +182,7 @@ async def user_from_id(user: User, id: str):
 
 
 @app.route("/api/user/me")
+@rate_exempt
 @authorized
 async def self_info(user: User):
     """
@@ -184,6 +192,7 @@ async def self_info(user: User):
 
 
 @app.route("/api/user/keep-alive")
+@rate_limit(1, timedelta(minutes=1))
 @authorized
 async def keep_alive(user: User):
     """
@@ -195,6 +204,7 @@ async def keep_alive(user: User):
 # ? Other endpoints
 # Setters
 @app.route("/api/me/nick", methods=["POST"])
+@rate_limit(1, timedelta(seconds=30))
 @authorized
 async def set_nickname(user: User):
     """
@@ -222,6 +232,7 @@ async def set_nickname(user: User):
 
 
 @app.route("/api/me/friend_code", methods=["POST"])
+@rate_limit(1, timedelta(seconds=30))
 @authorized
 async def set_friend_code(user: User):
     """
@@ -240,6 +251,7 @@ async def set_friend_code(user: User):
 
 
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
+@rate_exempt
 @authorized
 async def set_status(user: User, new_status: int):
     """
@@ -266,6 +278,7 @@ async def set_status(user: User, new_status: int):
 
 
 @app.route("/api/me/text_status", methods=["POST"])
+@rate_limit(1, timedelta(seconds=30))
 @authorized
 @validate_schema(text_status)
 async def set_text_status(user: User):
@@ -297,6 +310,7 @@ async def set_text_status(user: User):
 
 # Friends
 @app.route("/api/friends")
+@rate_limit(1, timedelta(seconds=30))
 @authorized
 async def get_users_friends(user: User):
     """
@@ -307,7 +321,9 @@ async def get_users_friends(user: User):
     return success(friends)
 
 
+# TODO: maybe it worth making these batch requests
 @app.route("/api/outgoing_requests")
+@rate_exempt
 @authorized
 async def outgoing_requests(user: User):
     """
@@ -317,6 +333,7 @@ async def outgoing_requests(user: User):
 
 
 @app.route("/api/incoming_requests")
+@rate_exempt
 @authorized
 async def incoming_requests(user: User):
     """
@@ -326,6 +343,7 @@ async def incoming_requests(user: User):
 
 
 @app.route("/api/friends/<string:id>", methods=["POST"])
+@rate_limit(1, timedelta(seconds=1))
 @authorized
 async def send_friend_request(user: User, id: str):
     try:
@@ -342,6 +360,7 @@ async def send_friend_request(user: User, id: str):
 
 
 @app.route("/api/friends/<string:id>", methods=["DELETE"])
+@rate_exempt
 @authorized
 async def delete_friend(user: User, id: str):
     try:
@@ -358,6 +377,7 @@ async def delete_friend(user: User, id: str):
 
 
 @app.route("/api/friends/request", methods=["POST"])
+@rate_limit(1, timedelta(seconds=1))
 @authorized
 async def send_code_friend_request(user: User):
     try:
@@ -377,6 +397,7 @@ async def send_code_friend_request(user: User):
 
 
 @app.route("/api/incoming_requests/<string:id>", methods=["POST"])
+@rate_exempt
 @authorized
 async def response_friend_request(user: User, id: str):
     try:
@@ -394,6 +415,7 @@ async def response_friend_request(user: User, id: str):
 
 
 @app.route("/api/outgoing_requests/<string:id>", methods=["DELETE"])
+@rate_exempt
 @authorized
 async def cancel_friend_request(user: User, id: str):
     try:
@@ -411,6 +433,7 @@ async def cancel_friend_request(user: User, id: str):
 
 # Blocked users
 @app.route("/api/blocked")
+@rate_limit(1, timedelta(seconds=1))
 @authorized
 async def blocked_users(user: User):
     blocked_users = await user.batch_get_blocked()
@@ -418,6 +441,7 @@ async def blocked_users(user: User):
 
 
 @app.route("/api/blocked/<string:id>", methods=["POST"])
+@rate_exempt
 @authorized
 async def block_user(user: User, id: str):
     try:
@@ -434,6 +458,7 @@ async def block_user(user: User, id: str):
 
 
 @app.route("/api/blocked/<string:id>", methods=["DELETE"])
+@rate_exempt
 @authorized
 async def unblock_user(user: User, id: str):
     try:

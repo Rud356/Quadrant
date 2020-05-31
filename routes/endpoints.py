@@ -1,8 +1,10 @@
+from datetime import timedelta
 from typing import List
 
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
+from quart_rate_limiter import rate_exempt, rate_limit
 
 from app import app
 from models import DMChannel, TextEndpoint
@@ -14,6 +16,7 @@ from .schemas import dm_endpoint
 
 
 @app.route("/api/endpoints")
+@rate_limit(2, timedelta(seconds=5))
 @authorized
 async def get_endpoints(user: User):
     endpoints: List[ObjectId] = await user.get_endpoints()
@@ -23,6 +26,7 @@ async def get_endpoints(user: User):
 
 
 @app.route("/api/endpoints/<string:endpoint_id>")
+@rate_exempt
 @authorized
 async def get_endpoint(user: User, endpoint_id):
     try:
@@ -39,6 +43,7 @@ async def get_endpoint(user: User, endpoint_id):
 
 
 @app.route("/api/endpoints/create_endpoint/dm", methods=["POST"])
+@rate_exempt
 @authorized
 @validate_schema(dm_endpoint)
 async def create_dm(user: User):
