@@ -20,6 +20,7 @@ if TTK < 5:
 class User(UserModel):
     connected: list = field(default_factory=list)
     message_queue: list = field(default_factory=list)
+    kill_websockets: list = field(default_factory=list)
     last_used_api_timestamp: float = time()
 
     def logout(self):
@@ -111,6 +112,11 @@ class User(UserModel):
 
                 for ws in self.connected:
                     ws.message_pool.append(message)
+
+            for remove_index in self.kill_websockets:
+                self.connected.pop(remove_index)
+
+            self.kill_websockets.clear()
 
         self.logout()
 

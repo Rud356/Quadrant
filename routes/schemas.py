@@ -10,6 +10,15 @@ login = fastjsonschema.compile({
 })
 
 
+registrate_bot = fastjsonschema.compile({
+    "type": "object",
+    "properties": {
+        "nick": {"type": "string"},
+    },
+    "required": ["nick"]
+})
+
+
 registrate = fastjsonschema.compile({
     "type": "object",
     "properties": {

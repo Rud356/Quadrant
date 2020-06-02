@@ -3,8 +3,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from hashlib import pbkdf2_hmac, sha256
 from os import urandom
-from random import choices
+from random import choices, randint
 from string import ascii_letters, digits
+from time import time
 from typing import List
 
 from bson import ObjectId
@@ -42,6 +43,7 @@ class UserModel:
     created_at: datetime
 
     bot: bool = False
+    deleted: bool = False
     token: str = field(default=None, repr=False)
     status: int = Status.offline
     text_status: str = ''
@@ -53,6 +55,55 @@ class UserModel:
 
     pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
     pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
+
+    # ? Dangerouts methods
+    async def update_token(self):
+        # Updating token of user
+        # Leading to log out on all devices
+        new_token = self.generate_token()
+        await users_db.update_one(
+            {'_id': self._id},
+            {'$set': {'token': new_token}}
+        )
+        self.token = new_token
+        return new_token
+
+    async def delete_user(self):
+        bulk_user_removing = (
+            UpdateOne(
+                {"_id": self._id},
+                {"$unset": {
+                    "token": "",
+                    "status": "",
+                    "text_status": "",
+                    "code": "",
+                    "parent": "",
+                    "blocked": "",
+                    "friends": "",
+                    "pendings_outgoing": "",
+                    "pendings_incoming": "",
+                }}
+            ),
+            UpdateOne(
+                {"_id": self._id},
+                {"$set": {"deleted": True}}
+            )
+        )
+
+        await users_db.bulk_write(bulk_user_removing)
+
+    # ? Get bots
+    async def get_bots(self):
+        users_bots = await users_db.find({'parent': self._id})
+        bots = []
+
+        async for bot in users_bots:
+            bot = UserModel(**bot)
+            bot_dict = bot.public_dict
+            bot_dict.update({'token': bot.token})
+            bots.append(bot_dict)
+
+        return bots
 
     # ? Setters
     async def set_nick(self, new_nick):
@@ -86,6 +137,9 @@ class UserModel:
         self.text_status = text_status
 
     async def set_friend_code(self, new_code: str):
+        if self.bot:
+            raise self.exc.UnavailableForBots()
+
         if len(new_code) not in range(3, 51):
             raise ValueError("Too long friend code")
 
@@ -102,6 +156,9 @@ class UserModel:
 
     # ? Friends related
     async def send_friend_request(self, to_user_id: ObjectId):
+        if self.bot:
+            raise self.exc.UnavailableForBots()
+
         valid_user = await self._valid_user_id(to_user_id)
 
         if not valid_user:
@@ -142,6 +199,9 @@ class UserModel:
         ])
 
     async def response_friend_request(self, user_id: ObjectId, confirm=True):
+        if self.bot:
+            raise self.exc.UnavailableForBots()
+
         if user_id not in self.pendings_incoming:
             raise self.exc.UserNotInGroup("User isn't in incoming pendings")
 
@@ -165,6 +225,9 @@ class UserModel:
         await users_db.bulk_write(operations)
 
     async def cancel_friend_request(self, user_id: ObjectId):
+        if self.bot:
+            raise self.exc.UnavailableForBots()
+
         if user_id not in self.pendings_outgoing:
             raise self.exc.UserNotInGroup("User isn't in outgoing pendings")
 
@@ -182,6 +245,9 @@ class UserModel:
         ])
 
     async def delete_friend(self, user_id: ObjectId):
+        if self.bot:
+            raise self.exc.UnavailableForBots()
+
         if user_id not in self.friends:
             raise self.exc.UserNotInGroup("User isn't a friend")
 
@@ -197,6 +263,9 @@ class UserModel:
         ])
 
     async def get_friends(self, fetch_friends: list):
+        if self.bot:
+            return []
+
         users = users_db.find(
             {"_id": {"$in": list(fetch_friends)}},
             public_exclude
@@ -298,7 +367,7 @@ class UserModel:
 
     @property
     def public_dict(self):
-        return {
+        repr = {
             '_id': self._id,
             "status": self.status,
             "text_status": self.text_status,
@@ -306,6 +375,10 @@ class UserModel:
             "nick": self.nick,
             "created_at": self.created_at,
         }
+        if self.deleted:
+            repr['deleted'] = self.deleted
+
+        return repr
 
     @property
     def private_dict(self):
@@ -313,7 +386,8 @@ class UserModel:
         output = dict(self.__dict__)
         exclude_keys(output, [
             'token', 'connected', 'message_queue',
-            "last_used_api_timestamp"
+            "last_used_api_timestamp", "deleted",
+            'kill_websockets'
         ])
         return output
 
@@ -408,15 +482,31 @@ class UserModel:
         return cls(**new_user)
 
     @classmethod
-    async def registrate_bot(cls):
-        # TODO: finish this method later
-        ...
+    async def registrate_bot(cls, nick: str, parent: ObjectId):
+        new_user = {
+            'bot': True,
+            'nick': nick,
+            'parent': parent,
+            'status': Status.online,
+            'token': cls.generate_token(),
+            'blocked': [],
+            'friends': [],
+            'pendings_outgoing': [],
+            'pendings_incoming': [],
+            'created_at': datetime.utcnow(),
+        }
+
+        inserted = await users_db.insert_one(new_user)
+        new_user['_id'] = inserted.inserted_id
+
+        return cls(**new_user)
 
     @staticmethod
     def generate_token() -> str:
-        # TODO: choose some other way of generating tokens
         letters_set = digits + ascii_letters
-        token = ''.join(choices(letters_set, k=64))
+        token = hex(int(time())) + ''.join(
+            choices(letters_set, k=randint(50, 64))
+        )
         return token
 
     @staticmethod
@@ -453,7 +543,11 @@ class UserModel:
         user = await users_db.count_documents(
             {
                 "$and":
-                [{'_id': user_id}, {'bot': bot}]
+                [
+                    {'_id': user_id},
+                    {'bot': bot},
+                    {'deleted': {'$exists': False}}
+                ]
             }
         )
         return bool(user)
@@ -479,4 +573,7 @@ class UserModel:
             ...
 
         class InvalidUser(ValueError):
+            ...
+
+        class UnavailableForBots(ValueError):
             ...

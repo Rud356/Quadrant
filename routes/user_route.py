@@ -6,7 +6,6 @@ from quart import request
 from quart_rate_limiter import rate_exempt, rate_limit
 
 from app import app, server_config
-from app_config import server_config  # noqa: F811
 from models import UpdateMessage, UpdateType
 from views import User
 
@@ -201,6 +200,28 @@ async def keep_alive(user: User):
     return success("ok")
 
 
+@app.route("/api/user/update_token")
+@rate_exempt
+@authorized
+async def update_users_token(user: User):
+    await user.update_token()
+    user.logout()
+    response = success('ok')
+    response.delete_cookie('token')
+    return response
+
+
+@app.route("/api/me", methods=['DELETE'])
+@rate_exempt
+@authorized
+async def delete_user(user: User):
+    await user.delete_user()
+    user.logout()
+    response = success('ok')
+    response.delete_cookie('token')
+    return response
+
+
 # ? Other endpoints
 # Setters
 @app.route("/api/me/nick", methods=["POST"])
@@ -248,6 +269,9 @@ async def set_friend_code(user: User):
 
     except ValueError as ve:
         return error(str(ve), 400)
+
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
 
 
 @app.route("/api/me/status/<int:new_status>", methods=["POST"])
@@ -360,6 +384,9 @@ async def send_friend_request(user: User, id: str):
     except user.exc.InvalidUser:
         return error("You can't send friend request to this user", 403)
 
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
+
     return success("ok")
 
 
@@ -381,6 +408,9 @@ async def delete_friend(user: User, id: str):
     except User.exc.UserNotInGroup:
         return error("User isn't your friend", 400)
 
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
+
     return success("ok")
 
 
@@ -401,6 +431,9 @@ async def send_code_friend_request(user: User):
 
     except User.exc.InvalidUser as err:
         return error(str(err), 403)
+
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
 
     except ValueError:
         return error("No friend code given", 400)
@@ -428,6 +461,9 @@ async def response_friend_request(user: User, id: str):
     except User.exc.UserNotInGroup:
         return error("User isn't in incoming requesters")
 
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
+
     return success("ok")
 
 
@@ -437,7 +473,7 @@ async def response_friend_request(user: User, id: str):
 async def cancel_friend_request(user: User, id: str):
     """
     Requests: id of user we sent request to cancel  
-    Response: 200, 404, 400
+    Response: 200, 400, 403, 404
     """
     try:
         id = ObjectId(id)
@@ -448,6 +484,9 @@ async def cancel_friend_request(user: User, id: str):
 
     except user.exc.UserNotInGroup:
         return error("User wasn't sent a friend request", 400)
+
+    except user.exc.UnavailableForBots:
+        return error("You are the bot user", 403)
 
     return success("ok")
 

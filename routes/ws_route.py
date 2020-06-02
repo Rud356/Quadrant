@@ -28,7 +28,8 @@ class WebsocketNotifier:
                 break
 
         # Deleting websocket from pool
-        self.user.connected.remove(self)
+        current_ws_index = self.user.connected.index(self)
+        self.user.kill_websockets(current_ws_index)
 
 
 @app.websocket('/api/ws')
