@@ -4,7 +4,7 @@ There's some problems like delivering updates of nicknames and lack of functiona
 
 Yet to add:
 - [ ] Group DMs
-- [ ] Bot users and their managment
+- [x] Bot users and their managment
 - [ ] Changing passwords
 - [ ] Voice calls
 - [ ] Servers, roles, emojis, etc.
