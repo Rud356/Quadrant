@@ -54,3 +54,5 @@ if not server_config['DEBUG']:
 
 else:
     db = client['debug_chat']
+
+connected_users = {}

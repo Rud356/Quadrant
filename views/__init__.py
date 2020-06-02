@@ -1,1 +1,1 @@
-from .user_view import User, connected_users, TTK
+from .user_view import User  # noqa: F401 E402

@@ -1,16 +1,14 @@
 import asyncio
-from time import time
 from asyncio import sleep
+from dataclasses import dataclass, field
+from time import time
 
 from bson import ObjectId
+
+from app import connected_users
 from app_config import server_config
-from dataclasses import dataclass, field
+from models import UpdateMessage, UpdateType, UserModel
 
-from models import UserModel
-from models import UpdateMessage, UpdateType
-
-
-connected_users = {}
 tokenized_connected_users = {}
 
 TTK = int(server_config['ticks_to_kill'])

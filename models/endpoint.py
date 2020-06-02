@@ -3,9 +3,8 @@ from datetime import datetime
 from typing import Dict, List
 
 from bson import ObjectId
-from bson import errors as bson_errors
 
-from app import db
+from app import db, connected_users
 
 from .enums import ChannelType
 from .messages import Message
@@ -25,16 +24,22 @@ async def _check_blocked(
     check_user_id: ObjectId,
     is_blocked: ObjectId
 ) -> bool:
-    users_db = db.chat_users
-    is_blocked = await users_db.count_documents(
-        {
-            "$and":
-            [
-                {"_id": check_user_id},
-                {"blocked": {"$in": [is_blocked]}}
-            ]
-        }
-    )
+    if check_user_id not in connected_users:
+        users_db = db.chat_users
+        is_blocked = await users_db.count_documents(
+            {
+                "$and":
+                [
+                    {"_id": check_user_id},
+                    {"blocked": {"$in": [is_blocked]}}
+                ]
+            }
+        )
+
+    else:
+        user = connected_users.get(check_user_id)
+        is_blocked = is_blocked in user.blocked
+
     return bool(is_blocked)
 
 
@@ -155,7 +160,10 @@ class TextEndpoint:
                 "User trying to fetch messages in invalid group"
             )
 
-        msgs = await Message.get_messages_from(self.last_message, self._id)
+        msgs = await Message.get_messages_from_including(
+            self.last_message,
+            self._id
+        )
         return msgs
 
     async def get_messages_from(
@@ -268,8 +276,8 @@ class DMChannel(TextEndpoint):
     ):
 
         blocked_eachother = (
-            await _check_blocked(*self.members) or
-            await _check_blocked(*self.members)
+            await _check_blocked(self.members[0], self.members[1]) or
+            await _check_blocked(self.members[1], self.members[0])
         )
 
         if blocked_eachother:

@@ -34,6 +34,13 @@ class WebsocketNotifier:
 @app.websocket('/api/ws')
 @auth_websocket
 async def add_websocket(user: User):
+    """
+    Payload: json
+    {
+        "token": "string token"
+    }
+    Response: Authorized, 401
+    """
     new_ws_user = WebsocketNotifier(user)
     new_ws_user = copy_current_websocket_context(new_ws_user)
     await websocket.send("Authorized!")

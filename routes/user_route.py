@@ -346,6 +346,10 @@ async def incoming_requests(user: User):
 @rate_limit(1, timedelta(seconds=1))
 @authorized
 async def send_friend_request(user: User, id: str):
+    """
+    Requests: id of reciever of friend request  
+    Response: 200, 403, 404
+    """
     try:
         id = ObjectId(id)
         await user.send_friend_request(id)
@@ -363,6 +367,10 @@ async def send_friend_request(user: User, id: str):
 @rate_exempt
 @authorized
 async def delete_friend(user: User, id: str):
+    """
+    Requests: id of reciever of friend request  
+    Response: 200, 400, 404
+    """
     try:
         id = ObjectId(id)
         await user.delete_friend(id)
@@ -380,6 +388,10 @@ async def delete_friend(user: User, id: str):
 @rate_limit(1, timedelta(seconds=1))
 @authorized
 async def send_code_friend_request(user: User):
+    """
+    Requests: code as url param of reciever of friend request  
+    Response: 200, 400, 404
+    """
     try:
         code = request.args.get('code', '')
         if not len(code) or len(code) > 50:
@@ -400,6 +412,11 @@ async def send_code_friend_request(user: User):
 @rate_exempt
 @authorized
 async def response_friend_request(user: User, id: str):
+    """
+    Requests: id of friend request sender we're responding to  
+    Optionally may set url param `accept` to True to accept (default: decline)  
+    Response: 200, 400, 404
+    """
     try:
         accept = request.args.get('accept', False) == "True"
         id = ObjectId(id)
@@ -418,6 +435,10 @@ async def response_friend_request(user: User, id: str):
 @rate_exempt
 @authorized
 async def cancel_friend_request(user: User, id: str):
+    """
+    Requests: id of user we sent request to cancel  
+    Response: 200, 404, 400
+    """
     try:
         id = ObjectId(id)
         await user.cancel_friend_request(id)
@@ -436,6 +457,9 @@ async def cancel_friend_request(user: User, id: str):
 @rate_limit(1, timedelta(seconds=1))
 @authorized
 async def blocked_users(user: User):
+    """
+    Response: list of public users
+    """
     blocked_users = await user.batch_get_blocked()
     return success(blocked_users)
 
@@ -444,6 +468,10 @@ async def blocked_users(user: User):
 @rate_exempt
 @authorized
 async def block_user(user: User, id: str):
+    """
+    Request: blocking user id in url  
+    Response: 200, 204 (already blocked), 400
+    """
     try:
         id = ObjectId(id)
         await user.block_user(id)
@@ -461,6 +489,10 @@ async def block_user(user: User, id: str):
 @rate_exempt
 @authorized
 async def unblock_user(user: User, id: str):
+    """
+    Request: unblocking user id in url  
+    Response: 200, 204 (already blocked), 400
+    """
     try:
         id = ObjectId(id)
         await user.unblock_user(id)

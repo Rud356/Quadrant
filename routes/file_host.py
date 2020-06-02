@@ -124,7 +124,7 @@ async def upload_file(user: User):
 @authorized
 async def get_file(user: User, file_name: str):
     """
-    Requires: file name in route
+    Requires: file name in route  
     Response: 404, file
     """
     try:

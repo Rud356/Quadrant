@@ -6,9 +6,9 @@ from bson import errors as bson_errors
 from quart import request
 from quart_rate_limiter import rate_exempt, rate_limit
 
-from app import app
+from app import app, connected_users
 from models import Message, TextEndpoint, UpdateMessage, UpdateType
-from views import User, connected_users
+from views import User
 
 from .middlewares import authorized, validate_schema
 from .responces import error, success
@@ -29,11 +29,29 @@ async def broadcast_message(endpoint: TextEndpoint, message: Message):
         await member.add_message(message)
 
 
+"""
+Message object:
+{
+    "_id": "string",
+    "author": "string _id",
+    "endpoint": "string _id",
+    "content": "string",
+    "files": ["string ids to get through files routes"]
+    "pin": bool,
+    "edited": bool
+}
+"""
+
+
 # ? Fetching messages
 @app.route("/api/endpoints/<string:endpoint_id>/messages")
 @rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_latest(user: User, endpoint_id: str):
+    """
+    Requires: endpoint id
+    Response: 100 messages from last one including it
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -61,6 +79,10 @@ async def get_messages_latest(user: User, endpoint_id: str):
 @rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 200 (message object), 403, 404
+    """
     try:
         message_id = ObjectId(message_id)
         endpoint_id = ObjectId(endpoint_id)
@@ -86,6 +108,10 @@ async def get_message(user: User, endpoint_id: str, message_id: str):
 @rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_from(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 100 messages from setted one without it
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         message_id = ObjectId(message_id)
@@ -116,6 +142,10 @@ async def get_messages_from(user: User, endpoint_id: str, message_id: str):
 @rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_after(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 100 messages after setted one without it
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         message_id = ObjectId(message_id)
@@ -144,6 +174,10 @@ async def get_messages_after(user: User, endpoint_id: str, message_id: str):
 @rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_pinned_latest(user: User, endpoint_id: str):
+    """
+    Requires: endpoint id
+    Response: 100 pinned newest messages with newest one
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -176,6 +210,10 @@ async def get_pinned_latest(user: User, endpoint_id: str):
 async def get_pinned_messages_from(
     user: User, endpoint_id: str, message_id: str
 ):
+    """
+    Requires: endpoint id, message id
+    Response: 100 pinned messages from setted one excluding it
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         message_id = ObjectId(message_id)
@@ -207,6 +245,16 @@ async def get_pinned_messages_from(
 @authorized
 @validate_schema(message)
 async def post_message(user: User, endpoint_id: str):
+    """
+    Requires: endpoint id, message id
+    Payload:
+    {
+        "content": "string",
+        "files": ["strings"]
+    }
+    Checks: message content length <= 3000 symbols
+    Response: 200, 400, 403, 404
+    """
     data = await request.json
 
     if not data['content'] and not data.get('files'):
@@ -255,6 +303,11 @@ async def post_message(user: User, endpoint_id: str):
 @rate_exempt
 @authorized
 async def delete_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id and
+    optionally can have `force` url param (default is false)
+    Response: 200, 204, 403, 404
+    """
     try:
         force_delete = bool(request.args.get('force', False))
 
@@ -309,6 +362,15 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
 @rate_limit(100, timedelta(seconds=5))
 @validate_schema(message)
 async def edit_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Payload:
+    {
+        "content": "string",
+    }
+    Checks: message content length <= 3000 symbols
+    Response: 200, 204 (if no such message from you), 400, 403, 404
+    """
     try:
         content = await request.json.get('content')
         if not content:
@@ -357,6 +419,10 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
 @rate_limit(10, timedelta(seconds=1))
 @authorized
 async def pin_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 200, 204 (if no such message), 403, 404
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -387,6 +453,9 @@ async def pin_message(user: User, endpoint_id: str, message_id: str):
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
 
+    except TextEndpoint.exc.NoPermission:
+        return error("No permission to pin message", 403)
+
     except bson_errors.InvalidId:
         return error("Invalid message id")
 
@@ -398,6 +467,10 @@ async def pin_message(user: User, endpoint_id: str, message_id: str):
 @rate_limit(10, timedelta(seconds=1))
 @authorized
 async def unpin_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 200, 204 (if no such message), 403, 404
+    """
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -427,6 +500,9 @@ async def unpin_message(user: User, endpoint_id: str, message_id: str):
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
+
+    except TextEndpoint.exc.NoPermission:
+        return error("No permission to unpin message", 403)
 
     except bson_errors.InvalidId:
         return error("Invalid message id")

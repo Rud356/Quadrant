@@ -40,6 +40,25 @@ class Message:
         return cls(**msg)
 
     @classmethod
+    async def get_messages_from_including(
+        cls,
+        from_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
+        msg_query = messages_db.find({"$and": [
+            {"endpoint": endpoint_id},
+            {"_id": {"$lte": from_message}}
+        ]}
+        ).sort("_id", -1).limit(100)
+        messages = []
+
+        async for message in msg_query:
+            message = cls(**message)
+            messages.append(message)
+
+        return messages
+
+    @classmethod
     async def get_messages_from(
         cls,
         from_message: ObjectId,
@@ -48,7 +67,7 @@ class Message:
         msg_query = messages_db.find({"$and": [
             {"endpoint": endpoint_id},
             {"_id": {"$lt": from_message}}
-            ]}
+        ]}
         ).sort("_id", -1).limit(100)
         messages = []
 
@@ -67,7 +86,7 @@ class Message:
         msg_query = messages_db.find({"$and": [
             {"endpoint": endpoint_id},
             {"_id": {"$gt": after_message}}
-            ]}
+        ]}
         ).sort("_id", -1).limit(100)
         messages = []
 
@@ -121,9 +140,9 @@ class Message:
     async def batch_pinned(cls, from_message: ObjectId, endpoint_id: ObjectId):
         msg_query = messages_db.find({"$and": [
             {"endpoint": endpoint_id},
-            {"_id": {"$lt": from_message}},
+            {"_id": {"$lte": from_message}},
             {"pin": True}
-            ]}
+        ]}
         ).sort("_id", -1).limit(100)
         messages = []
 
