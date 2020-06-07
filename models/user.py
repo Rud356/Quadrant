@@ -94,7 +94,13 @@ class UserModel:
 
     # ? Get bots
     async def get_bots(self):
-        users_bots = await users_db.find({'parent': self._id})
+        users_bots = await users_db.find({
+            "$and":
+                [
+                    {'parent': self._id},
+                    {'deleted': {'$exists': False}}
+                ]
+        })
         bots = []
 
         async for bot in users_bots:
@@ -269,7 +275,7 @@ class UserModel:
         users = users_db.find(
             {"_id": {"$in": list(fetch_friends)}},
             public_exclude
-        )
+        ).sort("nick", -1)
 
         users_objects = []
 
@@ -483,6 +489,19 @@ class UserModel:
 
     @classmethod
     async def registrate_bot(cls, nick: str, parent: ObjectId):
+        has_number_of_bots = await users_db.count_documents(
+            {
+                "$and":
+                [
+                    {'parent': parent},
+                    {'deleted': {'$exists': False}}
+                ]
+            }
+        )
+
+        if has_number_of_bots > 20:
+            raise ValueError("Too many bots")
+
         new_user = {
             'bot': True,
             'nick': nick,

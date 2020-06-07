@@ -1,10 +1,8 @@
-from datetime import timedelta
 from pathlib import Path
 
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
-from quart_rate_limiter import rate_exempt, rate_limit
 
 from app import app, connected_users
 from models import Message, TextEndpoint, UpdateMessage, UpdateType
@@ -45,7 +43,6 @@ Message object:
 
 # ? Fetching messages
 @app.route("/api/endpoints/<string:endpoint_id>/messages")
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_latest(user: User, endpoint_id: str):
     """
@@ -76,7 +73,6 @@ async def get_messages_latest(user: User, endpoint_id: str):
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>")
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_message(user: User, endpoint_id: str, message_id: str):
     """
@@ -105,7 +101,6 @@ async def get_message(user: User, endpoint_id: str, message_id: str):
 @app.route(
     "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/from"
 )
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_from(user: User, endpoint_id: str, message_id: str):
     """
@@ -139,7 +134,6 @@ async def get_messages_from(user: User, endpoint_id: str, message_id: str):
 @app.route(
     "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/after"
 )
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_messages_after(user: User, endpoint_id: str, message_id: str):
     """
@@ -171,7 +165,6 @@ async def get_messages_after(user: User, endpoint_id: str, message_id: str):
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages/pinned")
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_pinned_latest(user: User, endpoint_id: str):
     """
@@ -205,7 +198,6 @@ async def get_pinned_latest(user: User, endpoint_id: str):
     "/api/endpoints/<string:endpoint_id>/messages"
     "/<string:message_id>/pinned/from"
 )
-@rate_limit(10, timedelta(seconds=15))
 @authorized
 async def get_pinned_messages_from(
     user: User, endpoint_id: str, message_id: str
@@ -241,7 +233,6 @@ async def get_pinned_messages_from(
 
 
 @app.route("/api/endpoints/<string:endpoint_id>/messages", methods=["POST"])
-@rate_limit(100, timedelta(seconds=5))
 @authorized
 @validate_schema(message)
 async def post_message(user: User, endpoint_id: str):
@@ -300,7 +291,6 @@ async def post_message(user: User, endpoint_id: str):
     "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>",
     methods=["DELETE"]
 )
-@rate_exempt
 @authorized
 async def delete_message(user: User, endpoint_id: str, message_id: str):
     """
@@ -359,7 +349,6 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
     methods=["PATCH"]
 )
 @authorized
-@rate_limit(100, timedelta(seconds=5))
 @validate_schema(message)
 async def edit_message(user: User, endpoint_id: str, message_id: str):
     """
@@ -416,7 +405,6 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
     "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/pin",
     methods=["PATCH"]
 )
-@rate_limit(10, timedelta(seconds=1))
 @authorized
 async def pin_message(user: User, endpoint_id: str, message_id: str):
     """
@@ -464,7 +452,6 @@ async def pin_message(user: User, endpoint_id: str, message_id: str):
     "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/unpin",
     methods=["PATCH"]
 )
-@rate_limit(10, timedelta(seconds=1))
 @authorized
 async def unpin_message(user: User, endpoint_id: str, message_id: str):
     """

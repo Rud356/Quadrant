@@ -1,6 +1,5 @@
 import imghdr
 import os
-from datetime import timedelta
 from pathlib import Path
 from random import choices
 from string import ascii_letters
@@ -9,7 +8,6 @@ from time import time
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request, send_file
-from quart_rate_limiter import rate_exempt, rate_limit
 from werkzeug.utils import secure_filename
 
 from app import app
@@ -26,7 +24,6 @@ files_path = Path(app.config['UPLOAD_FOLDER'])
 
 
 @app.route("/api/user/set_image", methods=["POST"])
-@rate_limit(1, timedelta(minutes=5))
 @authorized
 async def upload_profile_pic(user: User):
     """
@@ -63,7 +60,6 @@ async def upload_profile_pic(user: User):
 
 
 @app.route("/api/user/<string:user_id>/profile_pic")
-@rate_exempt
 @authorized
 async def get_profile_pic(user: User, user_id: str):
     """
@@ -88,7 +84,6 @@ async def get_profile_pic(user: User, user_id: str):
 
 
 @app.route("/api/files/upload", methods=["POST"])
-@rate_limit(1, timedelta(seconds=1))
 @authorized
 async def upload_file(user: User):
     """
@@ -120,7 +115,6 @@ async def upload_file(user: User):
 
 
 @app.route("/api/files/<string:file_name>")
-@rate_exempt
 @authorized
 async def get_file(user: User, file_name: str):
     """
@@ -140,3 +134,9 @@ async def get_file(user: User, file_name: str):
 
     except FileNotFoundError:
         return error("Invalid file")
+
+
+__all__ = [
+    "upload_profile_pic", "get_profile_pic",
+    "upload_file", "get_file"
+]

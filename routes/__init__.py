@@ -1,6 +1,21 @@
+from app import app
 from .ws_route import *
 from .messages import *
 from .endpoints import *
 from .file_host import *
 from .user_route import *
 from .bots_managment import *
+
+
+
+categories = {
+    "user routes": [],
+    "bot managment": [],
+    "endpoints": [],
+    "messages": [],
+    "file host": []
+}
+
+
+def init_routes():
+    pass

@@ -1,9 +1,6 @@
-from datetime import timedelta
-
 from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
-from quart_rate_limiter import rate_limit, rate_exempt
 
 from app import app
 from models import UpdateMessage, UpdateType
@@ -15,7 +12,6 @@ from .schemas import registrate_bot
 
 
 @app.route("/api/bots")
-@rate_limit(10, timedelta(minutes=1))
 @authorized
 async def get_bots(user: User):
     bots = await user.get_bots()
@@ -23,19 +19,19 @@ async def get_bots(user: User):
 
 
 @app.route("/api/bots/registrate", methods=["POST"])
-@rate_limit(10, timedelta(hours=1))
 @authorized
 @validate_schema(registrate_bot)
 async def registrating_bot(user: User):
     data = await request.json
-    try:
-        if user.bot:
-            raise user.exc.UnavailableForBots()
 
+    if user.bot:
+        return error("You're a bot", 403)
+
+    try:
         new_bot = user.registrate_bot(data['nick'])
 
-    except user.exc.UnavailableForBots:
-        return error("You're a bot", 403)
+    except ValueError:
+        return error("You have too many bots", 400)
 
     bot_dict = new_bot.private_dict
     bot_dict.update({'token': new_bot.token})
@@ -44,7 +40,6 @@ async def registrating_bot(user: User):
 
 
 @app.route("/api/bots/<string:bot_id>/<string:nick>", methods=["POST"])
-@rate_limit(1, timedelta(seconds=30))
 @authorized
 async def change_nick(user: User, bot_id: str, nick: str):
     try:
@@ -74,7 +69,6 @@ async def change_nick(user: User, bot_id: str, nick: str):
 
 
 @app.route("/api/bots/<string:bot_id>/update_token", methods=["POST"])
-@rate_exempt
 @authorized
 async def update_token(user: User, bot_id: str):
     try:
@@ -94,7 +88,6 @@ async def update_token(user: User, bot_id: str):
 
 
 @app.route("/api/bots/<string:bot_id>", methods=["DELETE"])
-@rate_limit(10, timedelta(seconds=30))
 @authorized
 async def delete_bot(user: User, bot_id: str):
     try:
@@ -109,3 +102,9 @@ async def delete_bot(user: User, bot_id: str):
         await bot.delete_user()
 
     return success("ok")
+
+
+__all__ = [
+    "get_bots", "registrating_bot", "delete_bot",
+    "update_token", "change_nick"
+]
