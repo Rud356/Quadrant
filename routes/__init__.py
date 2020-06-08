@@ -5,7 +5,7 @@ from .bot_managment_routes import (
     change_nick, delete_bot, get_bots,
     registrating_bot, update_token
 )
-from .endpoints_routes import create_dm, get_endpoint, get_endpoints
+from .endpoints_routes import create_dm, get_endpoint, get_endpoints, get_endpoints_dict
 from .file_host import (
     get_file, get_profile_pic, upload_file,
     upload_profile_pic
@@ -77,6 +77,7 @@ categories = {
     ],
     "Endpoint routes": [
         Route("/api/endpoints", get_endpoints),
+        Route("/api/endpoints/json", get_endpoints_dict),
         Route("/api/endpoints/<string:endpoint_id>", get_endpoint),
         Route("/api/endpoints/create_endpoint/dm", create_dm, ["POST"])
     ],
