@@ -11,9 +11,10 @@ from quart import request, send_file
 from werkzeug.utils import secure_filename
 
 from app import app
-from models import UpdateMessage, UpdateType
+from models.enums import UpdateType
+from models.message_model import UpdateMessage
 from models.file_model import FileModel
-from views import User
+from user_view import User
 
 from .middlewares import authorized
 from .responces import error, success
@@ -23,7 +24,6 @@ profile_pics_folder = Path(app.config['UPLOAD_FOLDER']) / 'profile_pics'
 files_path = Path(app.config['UPLOAD_FOLDER'])
 
 
-@app.route("/api/user/set_image", methods=["POST"])
 @authorized
 async def upload_profile_pic(user: User):
     """
@@ -31,6 +31,7 @@ async def upload_profile_pic(user: User):
     Limits: 4MB file of gif, jpeg, png, webp formats  
     Response codes: 200, 400, 401
     """
+
     if (
         request.content_length is None or
         request.content_length > 4 * 1024 * 1024
@@ -59,13 +60,13 @@ async def upload_profile_pic(user: User):
     return success("Profile image updated!")
 
 
-@app.route("/api/user/<string:user_id>/profile_pic")
 @authorized
 async def get_profile_pic(user: User, user_id: str):
     """
     Requires: user_id in route  
     Response: 404, file
     """
+
     try:
         user_id = ObjectId(ObjectId)
         user_id = str(user)
@@ -83,13 +84,13 @@ async def get_profile_pic(user: User, user_id: str):
         return error("Invalid user id")
 
 
-@app.route("/api/files/upload", methods=["POST"])
 @authorized
 async def upload_file(user: User):
     """
     Requires: files  
     Response: list of files names
     """
+
     files = await request.files
     files_ids = []
 
@@ -114,13 +115,13 @@ async def upload_file(user: User):
     return success(files_ids)
 
 
-@app.route("/api/files/<string:file_name>")
 @authorized
 async def get_file(user: User, file_name: str):
     """
     Requires: file name in route  
     Response: 404, file
     """
+
     try:
         file_name = files_path / file_name
 
@@ -134,9 +135,3 @@ async def get_file(user: User, file_name: str):
 
     except FileNotFoundError:
         return error("Invalid file")
-
-
-__all__ = [
-    "upload_profile_pic", "get_profile_pic",
-    "upload_file", "get_file"
-]

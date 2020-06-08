@@ -5,8 +5,11 @@ from bson import errors as bson_errors
 from quart import request
 
 from app import app, connected_users
-from models import Message, TextEndpoint, UpdateMessage, UpdateType
-from views import User
+from models.endpoint_model import TextEndpoint
+from models.enums import UpdateType
+from models.message_model import MessageModel as Message
+from models.message_model import UpdateMessage
+from user_view import User
 
 from .middlewares import authorized, validate_schema
 from .responces import error, success
@@ -27,215 +30,9 @@ async def broadcast_message(endpoint: TextEndpoint, message: Message):
         await member.add_message(message)
 
 
-"""
-Message object:
-{
-    "_id": "string",
-    "author": "string _id",
-    "endpoint": "string _id",
-    "content": "string",
-    "files": ["string ids to get through files routes"]
-    "pin": bool,
-    "edited": bool
-}
-"""
-
-
-# ? Fetching messages
-@app.route("/api/endpoints/<string:endpoint_id>/messages")
-@authorized
-async def get_messages_latest(user: User, endpoint_id: str):
-    """
-    Requires: endpoint id
-    Response: 100 messages from last one including it
-    """
-    try:
-        endpoint_id = ObjectId(endpoint_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        messages = await endpoint.get_messages(user._id)
-        return success(
-            {
-                "messages":
-                [message.__dict__ for message in messages]
-            }
-        )
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>")
-@authorized
-async def get_message(user: User, endpoint_id: str, message_id: str):
-    """
-    Requires: endpoint id, message id
-    Response: 200 (message object), 403, 404
-    """
-    try:
-        message_id = ObjectId(message_id)
-        endpoint_id = ObjectId(endpoint_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        message = await endpoint.get_message(user._id, message_id)
-        return success(message)
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/from"
-)
-@authorized
-async def get_messages_from(user: User, endpoint_id: str, message_id: str):
-    """
-    Requires: endpoint id, message id
-    Response: 100 messages from setted one without it
-    """
-    try:
-        endpoint_id = ObjectId(endpoint_id)
-        message_id = ObjectId(message_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        messages = await endpoint.get_messages_from(user._id, message_id)
-        return success(
-            {
-                "messages":
-                [message.__dict__ for message in messages]
-            }
-        )
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/after"
-)
-@authorized
-async def get_messages_after(user: User, endpoint_id: str, message_id: str):
-    """
-    Requires: endpoint id, message id
-    Response: 100 messages after setted one without it
-    """
-    try:
-        endpoint_id = ObjectId(endpoint_id)
-        message_id = ObjectId(message_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        messages = await endpoint.get_messages_after(user._id, message_id)
-        return success(
-            {
-                "messages":
-                [message.__dict__ for message in messages]
-            }
-        )
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route("/api/endpoints/<string:endpoint_id>/messages/pinned")
-@authorized
-async def get_pinned_latest(user: User, endpoint_id: str):
-    """
-    Requires: endpoint id
-    Response: 100 pinned newest messages with newest one
-    """
-    try:
-        endpoint_id = ObjectId(endpoint_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        messages = await endpoint.get_pinned_messages(user._id)
-        return success(
-            {
-                "messages":
-                [message.__dict__ for message in messages]
-            }
-        )
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages"
-    "/<string:message_id>/pinned/from"
-)
-@authorized
-async def get_pinned_messages_from(
-    user: User, endpoint_id: str, message_id: str
-):
-    """
-    Requires: endpoint id, message id
-    Response: 100 pinned messages from setted one excluding it
-    """
-    try:
-        endpoint_id = ObjectId(endpoint_id)
-        message_id = ObjectId(message_id)
-        endpoint = await user.get_endpoint(endpoint_id)
-
-    except bson_errors.InvalidId:
-        return error("Invalid id")
-
-    except ValueError:
-        return error("No such endpoint")
-
-    try:
-        messages = await endpoint.get_pinned_messages_from(
-            user._id, message_id
-        )
-        return success(
-            {
-                "messages":
-                [message.__dict__ for message in messages]
-            }
-        )
-
-    except TextEndpoint.exc.NotGroupMember:
-        return error("you aren't a group member", 403)
-
-
-@app.route("/api/endpoints/<string:endpoint_id>/messages", methods=["POST"])
 @authorized
 @validate_schema(message)
-async def post_message(user: User, endpoint_id: str):
+async def send_message(user: User, endpoint_id: str):
     """
     Requires: endpoint id, message id
     Payload:
@@ -246,10 +43,11 @@ async def post_message(user: User, endpoint_id: str):
     Checks: message content length <= 3000 symbols
     Response: 200, 400, 403, 404
     """
+
     data = await request.json
 
     if not data['content'] and not data.get('files'):
-        return error("No content given")
+        return error("No content given", 400)
 
     try:
         endpoint_id = ObjectId(endpoint_id)
@@ -287,10 +85,189 @@ async def post_message(user: User, endpoint_id: str):
         return error("Too long message", 400)
 
 
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>",
-    methods=["DELETE"]
-)
+@authorized
+async def get_message(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 200 (message object), 403, 404
+    """
+
+    try:
+        message_id = ObjectId(message_id)
+        endpoint_id = ObjectId(endpoint_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        message = await endpoint.get_message(user._id, message_id)
+        return success(message)
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
+@authorized
+async def get_messages_latest(user: User, endpoint_id: str):
+    """
+    Requires: endpoint id
+    Response: 100 messages from last one including it
+    """
+
+    try:
+        endpoint_id = ObjectId(endpoint_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        messages = await endpoint.get_messages(user._id)
+        return success(
+            {
+                "messages":
+                [message.__dict__ for message in messages]
+            }
+        )
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
+@authorized
+async def get_messages_from(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 100 messages from setted one without it
+    """
+
+    try:
+        endpoint_id = ObjectId(endpoint_id)
+        message_id = ObjectId(message_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        messages = await endpoint.get_messages_from(user._id, message_id)
+        return success(
+            {
+                "messages":
+                [message.__dict__ for message in messages]
+            }
+        )
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
+@authorized
+async def get_messages_after(user: User, endpoint_id: str, message_id: str):
+    """
+    Requires: endpoint id, message id
+    Response: 100 messages after setted one without it
+    """
+
+    try:
+        endpoint_id = ObjectId(endpoint_id)
+        message_id = ObjectId(message_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        messages = await endpoint.get_messages_after(user._id, message_id)
+        return success(
+            {
+                "messages":
+                [message.__dict__ for message in messages]
+            }
+        )
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
+@authorized
+async def get_pinned_latest(user: User, endpoint_id: str):
+    """
+    Requires: endpoint id
+    Response: 100 pinned newest messages with newest one
+    """
+
+    try:
+        endpoint_id = ObjectId(endpoint_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        messages = await endpoint.get_pinned_messages(user._id)
+        return success(
+            {
+                "messages":
+                [message.__dict__ for message in messages]
+            }
+        )
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
+@authorized
+async def get_pinned_messages_from(
+    user: User, endpoint_id: str, message_id: str
+):
+    """
+    Requires: endpoint id, message id
+    Response: 100 pinned messages from setted one excluding it
+    """
+
+    try:
+        endpoint_id = ObjectId(endpoint_id)
+        message_id = ObjectId(message_id)
+        endpoint = await user.get_endpoint(endpoint_id)
+
+    except bson_errors.InvalidId:
+        return error("Invalid id")
+
+    except ValueError:
+        return error("No such endpoint")
+
+    try:
+        messages = await endpoint.get_pinned_messages_from(
+            user._id, message_id
+        )
+        return success(
+            {
+                "messages":
+                [message.__dict__ for message in messages]
+            }
+        )
+
+    except TextEndpoint.exc.NotGroupMember:
+        return error("you aren't a group member", 403)
+
+
 @authorized
 async def delete_message(user: User, endpoint_id: str, message_id: str):
     """
@@ -344,10 +321,6 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
         return error("You can't perform this action", 403)
 
 
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>",
-    methods=["PATCH"]
-)
 @authorized
 @validate_schema(message)
 async def edit_message(user: User, endpoint_id: str, message_id: str):
@@ -360,11 +333,12 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
     Checks: message content length <= 3000 symbols
     Response: 200, 204 (if no such message from you), 400, 403, 404
     """
-    try:
-        content = await request.json.get('content')
-        if not content:
-            return error("No content to modify provided", 400)
 
+    content = await request.json.get('content')
+    if not content:
+        return error("No content to modify provided", 400)
+
+    try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
 
@@ -401,16 +375,13 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
         return error("Invalid message id")
 
 
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/pin",
-    methods=["PATCH"]
-)
 @authorized
 async def pin_message(user: User, endpoint_id: str, message_id: str):
     """
     Requires: endpoint id, message id
     Response: 200, 204 (if no such message), 403, 404
     """
+
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -448,16 +419,13 @@ async def pin_message(user: User, endpoint_id: str, message_id: str):
         return error("Invalid message id")
 
 
-@app.route(
-    "/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/unpin",
-    methods=["PATCH"]
-)
 @authorized
 async def unpin_message(user: User, endpoint_id: str, message_id: str):
     """
     Requires: endpoint id, message id
     Response: 200, 204 (if no such message), 403, 404
     """
+
     try:
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)

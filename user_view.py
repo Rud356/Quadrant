@@ -5,15 +5,13 @@ from time import time
 
 from bson import ObjectId
 
-from app import connected_users
-from app_config import server_config
-from models import UpdateMessage, UpdateType, UserModel
+from app import app, connected_users
+from models.enums import UpdateType
+from models.user_model import UserModel
+from models.message_model import MessageModel, UpdateMessage
 
+TTK = app.config["TTK"]
 tokenized_connected_users = {}
-
-TTK = int(server_config['ticks_to_kill'])
-if TTK < 5:
-    TTK = 5
 
 
 @dataclass
@@ -22,6 +20,50 @@ class User(UserModel):
     message_queue: list = field(default_factory=list)
     kill_websockets: list = field(default_factory=list)
     last_used_api_timestamp: float = time()
+
+    @classmethod
+    async def authorize(cls, login='', password='', token=''):
+        if token:
+            user_view: User = tokenized_connected_users.get(token)
+
+            if not user_view:
+                user: UserModel = await super().authorize(
+                    login, password, token
+                )
+
+                user_view = cls(**user.__dict__)
+                user_view.start_alive_checker()
+                connected_users[user_view._id] = user_view
+                tokenized_connected_users[user_view.token] = user_view
+
+        elif login and password:
+            user: UserModel = await super().authorize(
+                login, password, token
+            )
+
+            user_view = cls(**user.__dict__)
+
+            if user_view._id not in connected_users:
+                user_view.start_alive_checker()
+                connected_users[user_view._id] = user_view
+                tokenized_connected_users[user_view.token] = user_view
+
+            else:
+                user_view = connected_users.get(user_view._id)
+
+        else:
+            raise ValueError("Not enough auth info")
+
+        user_view.last_used_api_timestamp = time()
+        return user_view
+
+    @classmethod
+    async def from_id(cls, user_id: ObjectId):
+        user = connected_users.get(user_id) or await super().from_id(user_id)
+
+        user_view = cls(**user.__dict__)
+
+        return user_view
 
     def logout(self):
         if connected_users.pop(self._id, False):
@@ -55,40 +97,6 @@ class User(UserModel):
     async def friend_code_request(self, code: str):
         user_id = await self._friend_code_owner(code)
         await self.send_friend_request(user_id)
-
-    async def get_friends(self):
-        friend_users = []
-        offline_friends = set()
-
-        for friend_id in self.friends:
-            friend_view: User = connected_users.get(friend_id)
-
-            if friend_view:
-                friend_users.append(friend_view)
-
-            else:
-                offline_friends.add(friend_id)
-
-        batched_friends = await super().get_friends(offline_friends)
-
-        return friend_users + batched_friends
-
-    async def batch_get_blocked(self):
-        blocked_users = []
-        offline_blocked = set()
-
-        for blocked_id in self.blocked:
-            blocked_view: User = connected_users.get(blocked_id)
-
-            if blocked_view:
-                blocked_users.append(blocked_view.public_dict)
-
-            else:
-                offline_blocked.add(blocked_id)
-
-        batched_blocked = await super().get_blocked(offline_blocked)
-
-        return blocked_users + batched_blocked
 
     async def add_message(self, message):
         if self.connected:
@@ -131,7 +139,6 @@ class User(UserModel):
 
             await friend.add_message(update_message)
 
-    # Redefining methods to have caching
     async def send_friend_request(self, to_user_id: ObjectId):
         await super().send_friend_request(to_user_id)
         self.pendings_outgoing.append(to_user_id)
@@ -246,46 +253,37 @@ class User(UserModel):
         await super().unblock_user(unblocking)
         self.blocked.remove(unblocking)
 
-    @classmethod
-    async def authorize(cls, login='', password='', token=''):
-        if token:
-            user_view: User = tokenized_connected_users.get(token)
+    # TODO: rewrite those methods to pagination
+    async def get_friends(self):
+        friend_users = []
+        offline_friends = set()
 
-            if not user_view:
-                user: UserModel = await super().authorize(
-                    login, password, token
-                )
+        for friend_id in self.friends:
+            friend_view: User = connected_users.get(friend_id)
 
-                user_view = cls(**user.__dict__)
-                user_view.start_alive_checker()
-                connected_users[user_view._id] = user_view
-                tokenized_connected_users[user_view.token] = user_view
-
-        elif login and password:
-            user: UserModel = await super().authorize(
-                login, password, token
-            )
-
-            user_view = cls(**user.__dict__)
-
-            if user_view._id not in connected_users:
-                user_view.start_alive_checker()
-                connected_users[user_view._id] = user_view
-                tokenized_connected_users[user_view.token] = user_view
+            if friend_view:
+                friend_users.append(friend_view)
 
             else:
-                user_view = connected_users.get(user_view._id)
+                offline_friends.add(friend_id)
 
-        else:
-            raise ValueError("Not enough auth info")
+        batched_friends = await super().get_friends(offline_friends)
 
-        user_view.last_used_api_timestamp = time()
-        return user_view
+        return friend_users + batched_friends
 
-    @classmethod
-    async def from_id(cls, user_id: ObjectId):
-        user = connected_users.get(user_id) or await super().from_id(user_id)
+    async def batch_get_blocked(self):
+        blocked_users = []
+        offline_blocked = set()
 
-        user_view = cls(**user.__dict__)
+        for blocked_id in self.blocked:
+            blocked_view: User = connected_users.get(blocked_id)
 
-        return user_view
+            if blocked_view:
+                blocked_users.append(blocked_view.public_dict)
+
+            else:
+                offline_blocked.add(blocked_id)
+
+        batched_blocked = await super().get_blocked(offline_blocked)
+
+        return blocked_users + batched_blocked

@@ -5,23 +5,14 @@ from bson import errors as bson_errors
 from quart import request
 
 from app import app
-from models import DMChannel, TextEndpoint
-from views import User
+from models.endpoint_model import DMChannel, TextEndpoint
+from user_view import User
 
 from .middlewares import authorized, validate_schema
 from .responces import error, success
 from .schemas import dm_endpoint
 
 
-@app.route("/api/endpoints")
-@authorized
-async def get_endpoints(user: User):
-    endpoints: List[ObjectId] = await user.get_endpoints()
-
-    return success(endpoints)
-
-
-@app.route("/api/endpoints/<string:endpoint_id>")
 @authorized
 async def get_endpoint(user: User, endpoint_id):
     try:
@@ -37,7 +28,20 @@ async def get_endpoint(user: User, endpoint_id):
         return error("Invalid endpoint")
 
 
-@app.route("/api/endpoints/create_endpoint/dm", methods=["POST"])
+@authorized
+async def get_endpoints(user: User):
+    endpoints: List[ObjectId] = await user.get_endpoints_ids()
+
+    return success(endpoints)
+
+
+@authorized
+async def get_endpoints_dict(user: User):
+    endpoints: dict = await user.get_endpoints()
+
+    return success(endpoints)
+
+
 @authorized
 @validate_schema(dm_endpoint)
 async def create_dm(user: User):
@@ -56,9 +60,3 @@ async def create_dm(user: User):
 
     except ValueError as ve:
         return error(str(ve), 409)
-
-
-__all__ = [
-    "get_endpoints", "get_endpoint",
-    "create_dm"
-]
