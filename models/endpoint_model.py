@@ -7,7 +7,7 @@ from bson import ObjectId
 from app import db, connected_users
 
 from .enums import ChannelType
-from .messages import Message
+from .message_model import MessageModel
 
 endpoints_db = db.endpoints
 
@@ -52,22 +52,15 @@ class TextEndpoint:
     last_message: ObjectId = None
     last_pinned: ObjectId = None
 
-    @classmethod
-    async def create_endpoint(cls, **kwargs):
-        raise NotImplementedError()
-
-    async def create_invite(self):
-        raise NotImplementedError()
-
     async def send_message(
         self,
         author: ObjectId, content: str, files=[],
         **_
-    ) -> Message:
+    ) -> MessageModel:
         if author not in self.members:
             raise self.exc.NotGroupMember("User isn't a part of group")
 
-        msg = await Message.send_message(
+        msg = await MessageModel.send_message(
             author, self._id, content,
             files
         )
@@ -80,74 +73,13 @@ class TextEndpoint:
 
         return msg
 
-    async def edit_message(
-        self,
-        requester: ObjectId,
-        message_id: ObjectId,
-        content: str
-    ):
-        if requester not in self.members:
-            raise self.exc.NotGroupMember(
-                "User trying to edit message in invalid group"
-            )
-
-        if not content:
-            raise ValueError("Should give at least some content")
-
-        return await Message.edit_message(requester, message_id, content)
-
-    async def pin_message(self, requester: ObjectId, message_id: ObjectId):
-        if requester not in self.members:
-            raise self.exc.NotGroupMember(
-                "User trying to pin message in invalid group"
-            )
-
-        result = await Message.pin_message(requester, message_id)
-        if result:
-            await endpoints_db.update_one(
-                {"_id": self._id},
-                {"$set": {"last_pinned": message_id}}
-            )
-
-        return result
-
-    async def unpin_message(self, requester: ObjectId, message_id: ObjectId):
-        if requester not in self.members:
-            raise self.exc.NotGroupMember(
-                "User trying to unpin message in invalid group"
-            )
-
-        return await Message.unpin_message(requester, message_id)
-
-    async def get_pinned_messages(self, requester: ObjectId):
-        if requester not in self.members:
-            raise self.exc.NotGroupMember(
-                "User trying to fetch pinned messages in invalid group"
-            )
-
-        pinned_msgs = await Message.batch_pinned(self.last_pinned, self._id)
-        return pinned_msgs
-
-    async def get_pinned_messages_from(
-        self,
-        requester: ObjectId,
-        message_id: ObjectId
-    ):
-        if requester not in self.members:
-            raise self.exc.NotGroupMember(
-                "User trying to fetch pinned messages in invalid group"
-            )
-
-        pinned_msgs = await Message.batch_pinned(message_id, self._id)
-        return pinned_msgs
-
     async def get_message(self, requester: ObjectId, message_id: ObjectId):
         if requester not in self.members:
             raise self.exc.NotGroupMember(
                 "User trying to fetch message in invalid group"
             )
 
-        msg = await Message.get_message(message_id, self._id)
+        msg = await MessageModel.get_message(message_id, self._id)
 
         if not msg:
             raise ValueError("No such message")
@@ -160,7 +92,7 @@ class TextEndpoint:
                 "User trying to fetch messages in invalid group"
             )
 
-        msgs = await Message.get_messages_from_including(
+        msgs = await MessageModel.get_messages_from_including(
             self.last_message,
             self._id
         )
@@ -176,7 +108,7 @@ class TextEndpoint:
                 "User trying to fetch messages in invalid group"
             )
 
-        msgs = await Message.get_messages_from(from_message, self._id)
+        msgs = await MessageModel.get_messages_from(from_message, self._id)
         return msgs
 
     async def get_messages_after(
@@ -189,7 +121,7 @@ class TextEndpoint:
                 "User trying to fetch messages in invalid group"
             )
 
-        msgs = await Message.get_messages_after(after_message, self._id)
+        msgs = await MessageModel.get_messages_after(after_message, self._id)
         return msgs
 
     async def delete_message(self, requester: ObjectId, message_id: ObjectId):
@@ -198,7 +130,7 @@ class TextEndpoint:
                 "User trying to delete message in invalid group"
             )
 
-        return Message.delete_message(requester, message_id, self._id)
+        return MessageModel.delete_message(requester, message_id, self._id)
 
     async def force_delete_message(
         self,
@@ -211,7 +143,14 @@ class TextEndpoint:
             )
 
         # ! Check permissions before deleting
-        return Message.force_delete(message_id, self._id)
+        return MessageModel.force_delete(message_id, self._id)
+
+    @classmethod
+    async def create_endpoint(cls, **kwargs):
+        raise NotImplementedError()
+
+    async def create_invite(self):
+        raise NotImplementedError()
 
     class exc:
         class EndpointException(Exception):
@@ -226,17 +165,18 @@ class TextEndpoint:
 
 @dataclass
 class DMChannel(TextEndpoint):
+
     @classmethod
     async def create_endpoint(cls, user_init: ObjectId, user_accept: ObjectId):
         if not await validate_user(user_accept):
             raise ValueError("User is invalid")
 
-        blocked_eachother = (
+        blocked_each_other = (
             await _check_blocked(user_accept, user_init) or
             await _check_blocked(user_init, user_accept)
         )
 
-        if blocked_eachother:
+        if blocked_each_other:
             raise ValueError(
                 "Sorry, but one of users blocked each other and cant start dm"
             )
@@ -285,14 +225,35 @@ class DMChannel(TextEndpoint):
 
         return await super().send_message(author, content, files)
 
-    async def create_invite(self, *args, **kwargs):
-        raise NotImplementedError()
-
     async def force_delete_message(self, *args, **kwargs):
         raise NotImplementedError()
 
 
 class MetaEndpoint:
+    @staticmethod
+    async def get_endpoints_ids(requester: ObjectId) -> Dict[
+        ObjectId, TextEndpoint
+    ]:
+        list_endpoints = []
+        endpoints = endpoints_db.find({"$and": [
+            {"members": {"$in": [requester]}},
+            {"_type": {
+                "$nin":
+                [
+                    ChannelType.server_text,
+                    ChannelType.server_category,
+                    ChannelType.server_voice
+                ]
+            }}
+        ]},
+        {"_id": 1}
+        )
+
+        async for endpoint in endpoints:
+            list_endpoints.append(endpoint['_id'])
+
+        return list_endpoints
+
     @staticmethod
     async def get_endpoints(requester: ObjectId) -> Dict[
         ObjectId, TextEndpoint
@@ -311,10 +272,7 @@ class MetaEndpoint:
         ]})
 
         async for endpoint in endpoints:
-            if endpoint['_type'] == ChannelType.dm:
-                endpoint = DMChannel(**endpoint)
-                dict_endpoints[endpoint._id] = endpoint
-
+            dict_endpoints[str(endpoint["_id"])] = endpoint
         return dict_endpoints
 
     @staticmethod

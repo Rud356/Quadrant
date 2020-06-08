@@ -14,26 +14,24 @@ from pymongo import UpdateOne
 from app import db
 from utils import exclude_keys
 
-from .endpoint import MetaEndpoint
 from .enums import Status
-from .file_model import FileModel
+from .endpoint_model import MetaEndpoint
 
 users_db = db.chat_users
 
-public_exclude = {
+EXCLUDE_PUBLIC = {
     "code": 0,
+    "salt": 0,
+    "token": 0,
+    "login": 0,
+    "password": 0,
+    "status": 0,
+    "parent": 0,
     "blocked": 0,
     "friends": 0,
     "pendings_outgoing": 0,
     "pendings_incoming": 0,
-    "status": 0,
-    "login": 0,
-    "password": 0,
-    "parent": 0,
-    "token": 0,
-    "salt": 0
 }
-# TODO: add some method to reset passwords
 
 
 @dataclass
@@ -55,6 +53,7 @@ class UserModel:
 
     pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
     pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
+
 
     # ? Dangerouts methods
     async def update_token(self):
@@ -91,25 +90,6 @@ class UserModel:
         )
 
         await users_db.bulk_write(bulk_user_removing)
-
-    # ? Get bots
-    async def get_bots(self):
-        users_bots = await users_db.find({
-            "$and":
-                [
-                    {'parent': self._id},
-                    {'deleted': {'$exists': False}}
-                ]
-        })
-        bots = []
-
-        async for bot in users_bots:
-            bot = UserModel(**bot)
-            bot_dict = bot.public_dict
-            bot_dict.update({'token': bot.token})
-            bots.append(bot_dict)
-
-        return bots
 
     # ? Setters
     async def set_nick(self, new_nick):
@@ -268,13 +248,14 @@ class UserModel:
             )
         ])
 
+    # Replace method
     async def get_friends(self, fetch_friends: list):
         if self.bot:
             return []
 
         users = users_db.find(
             {"_id": {"$in": list(fetch_friends)}},
-            public_exclude
+            EXCLUDE_PUBLIC
         ).sort("nick", -1)
 
         users_objects = []
@@ -344,10 +325,11 @@ class UserModel:
             {'$pull': {'blocked': unblocking}}
         )
 
-    async def get_blocked(self, fetch_blocked=set()):
+    # Replace method
+    async def get_blocked(self, fetch_blocked: list):
         users = users_db.find(
             {"_id": {"$in": list(fetch_blocked)}},
-            public_exclude
+            EXCLUDE_PUBLIC
         )
 
         users_objects = []
@@ -363,17 +345,17 @@ class UserModel:
         endpoints = await MetaEndpoint.get_endpoints(self._id)
         return endpoints
 
+    async def get_endpoints_ids(self):
+        endpoints = await MetaEndpoint.get_endpoints_ids(self._id)
+        return endpoints
+
     async def get_endpoint(self, endpoint_id: ObjectId):
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
 
-    @staticmethod
-    async def get_file(file_name):
-        return await FileModel.get_file(file_name)
-
     @property
     def public_dict(self):
-        repr = {
+        user_dict = {
             '_id': self._id,
             "status": self.status,
             "text_status": self.text_status,
@@ -381,10 +363,11 @@ class UserModel:
             "nick": self.nick,
             "created_at": self.created_at,
         }
-        if self.deleted:
-            repr['deleted'] = self.deleted
 
-        return repr
+        if self.deleted:
+            user_dict['deleted'] = True
+
+        return user_dict
 
     @property
     def private_dict(self):
@@ -443,7 +426,7 @@ class UserModel:
         user_id = ObjectId(user_id)
         user = await users_db.find_one(
             {'_id': user_id},
-            public_exclude
+            EXCLUDE_PUBLIC
         )
 
         if not user:

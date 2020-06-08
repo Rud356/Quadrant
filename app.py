@@ -1,58 +1,35 @@
 import asyncio
-from datetime import datetime
 from os import mkdir
 
-from bson import ObjectId
 from motor import motor_asyncio
 from quart import Quart
-from quart.json import JSONEncoder
-from quart_rate_limiter import RateLimiter
 
-from app_config import server_config
-
-
-class CustomJSONEncoder(JSONEncoder):
-    def default(self, obj):
-        try:
-            if isinstance(obj, datetime):
-                return obj.isoformat()
-
-            if isinstance(obj, ObjectId):
-                return str(obj)
-
-            iterable = map(self.default, obj)
-        except TypeError:
-            pass
-
-        else:
-            return list(iterable)
-
-        return JSONEncoder.default(self, obj)
-
+from json_encoder import CustomJSONEncoder
 
 app = Quart(__name__)
-
-if not server_config['DEBUG']:
-    rate_limiter = RateLimiter(app)
-
 app.json_encoder = CustomJSONEncoder
 loop = asyncio.get_event_loop()
-app.config['UPLOAD_FOLDER'] = "resourses/"
+connected_users = {}
+
+app.config["DEBUG"]: bool = True
+app.config["ALLOW_REG"]: bool = True
+app.config['UPLOAD_FOLDER']: str = "resourses/"
+app.config["DB_CONN_STR"]: str = "mongodb://localhost:27017"
+app.config["TTK"]: int = 10
+app.config['MAX_CONTENT_LENGTH']: int = 20 * 1024 * 1024 + 1
+
 
 try:
-    mkdir(app.config['UPLOAD_FOLDER'])
+    mkdir(app.config["UPLOAD_FOLDER"])
+
 except FileExistsError:
     pass
 
 client = motor_asyncio.AsyncIOMotorClient(
-    server_config['mongo_conn_string'],
+    app.config['DB_CONN_STR'],
     io_loop=loop
 )
 
-if not server_config['DEBUG']:
-    db = client[server_config['database_name']]
-
-else:
-    db = client['debug_chat']
-
-connected_users = {}
+db = client["asyncio_chat"]
+if app.config["DEBUG"]:
+    db = client["debug_chat"]

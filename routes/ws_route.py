@@ -3,7 +3,7 @@ from asyncio import CancelledError, sleep
 from quart import copy_current_websocket_context, websocket
 
 from app import app
-from views import User
+from user_view import User
 
 from .middlewares import auth_websocket
 

@@ -6,13 +6,14 @@ from typing import List
 
 from bson import ObjectId
 
-from app import CustomJSONEncoder, db
+from app import db
+from json_encoder import CustomJSONEncoder
 
 messages_db = db.messages
 
 
 @dataclass
-class Message:
+class MessageModel:
     _id: ObjectId
     author: ObjectId
     endpoint: ObjectId
@@ -24,77 +25,6 @@ class Message:
 
     pin: bool = False
     edited: bool = False
-
-    @classmethod
-    async def get_message(cls, message_id: ObjectId, endpoint_id: ObjectId):
-        msg = await messages_db.find_one(
-            {"$and": [
-                {"_id": message_id},
-                {"endpoint": endpoint_id}
-            ]}
-        )
-
-        if not msg:
-            raise ValueError("No such message")
-
-        return cls(**msg)
-
-    @classmethod
-    async def get_messages_from_including(
-        cls,
-        from_message: ObjectId,
-        endpoint_id: ObjectId
-    ):
-        msg_query = messages_db.find({"$and": [
-            {"endpoint": endpoint_id},
-            {"_id": {"$lte": from_message}}
-        ]}
-        ).sort("_id", -1).limit(100)
-        messages = []
-
-        async for message in msg_query:
-            message = cls(**message)
-            messages.append(message)
-
-        return messages
-
-    @classmethod
-    async def get_messages_from(
-        cls,
-        from_message: ObjectId,
-        endpoint_id: ObjectId
-    ):
-        msg_query = messages_db.find({"$and": [
-            {"endpoint": endpoint_id},
-            {"_id": {"$lt": from_message}}
-        ]}
-        ).sort("_id", -1).limit(100)
-        messages = []
-
-        async for message in msg_query:
-            message = cls(**message)
-            messages.append(message)
-
-        return messages
-
-    @classmethod
-    async def get_messages_after(
-        cls,
-        after_message: ObjectId,
-        endpoint_id: ObjectId
-    ):
-        msg_query = messages_db.find({"$and": [
-            {"endpoint": endpoint_id},
-            {"_id": {"$gt": after_message}}
-        ]}
-        ).sort("_id", -1).limit(100)
-        messages = []
-
-        async for message in msg_query:
-            message = cls(**message)
-            messages.append(message)
-
-        return messages
 
     @classmethod
     async def send_message(
@@ -126,53 +56,13 @@ class Message:
         author_id: ObjectId,
         message_id: str,
         new_content: str
-    ):
+    ) -> bool:
         if len(new_content) > 3000:
             raise ValueError("Too long message")
 
         result = await messages_db.update_one(
             {"$and": [{"_id": message_id}, {"author": author_id}]},
             {"$set": {"content": new_content, "edited": True}}
-        )
-        return bool(result.modified_count)
-
-    @classmethod
-    async def batch_pinned(cls, from_message: ObjectId, endpoint_id: ObjectId):
-        msg_query = messages_db.find({"$and": [
-            {"endpoint": endpoint_id},
-            {"_id": {"$lte": from_message}},
-            {"pin": True}
-        ]}
-        ).sort("_id", -1).limit(100)
-        messages = []
-
-        async for message in msg_query:
-            message = cls(**message)
-            messages.append(message)
-
-        return messages
-
-    @staticmethod
-    async def pin_message(from_endpoint: ObjectId, message_id: ObjectId):
-        result = await messages_db.update_one(
-            {
-                "$and": [
-                    {"_id": message_id},
-                    {"endpoint": from_endpoint}
-                ]
-            }, {"$set": {"pin": True}}
-        )
-        return bool(result.modified_count)
-
-    @staticmethod
-    async def unpin_message(from_endpoint: ObjectId, message_id: ObjectId):
-        result = await messages_db.update_one(
-            {
-                "$and": [
-                    {"_id": message_id},
-                    {"endpoint": from_endpoint}
-                ]
-            }, {"$set": {"pin": False}}
         )
         return bool(result.modified_count)
 
@@ -203,7 +93,119 @@ class Message:
 
         return bool(result.deleted_count)
 
-    @lru_cache(10)
+    @staticmethod
+    async def pin_message(from_endpoint: ObjectId, message_id: ObjectId):
+        result = await messages_db.update_one(
+            {
+                "$and": [
+                    {"_id": message_id},
+                    {"endpoint": from_endpoint}
+                ]
+            }, {"$set": {"pin": True}}
+        )
+        return bool(result.modified_count)
+
+    @staticmethod
+    async def unpin_message(from_endpoint: ObjectId, message_id: ObjectId):
+        result = await messages_db.update_one(
+            {
+                "$and": [
+                    {"_id": message_id},
+                    {"endpoint": from_endpoint}
+                ]
+            }, {"$set": {"pin": False}}
+        )
+        return bool(result.modified_count)
+
+    # Get methods
+    @classmethod
+    async def get_message(cls, message_id: ObjectId, endpoint_id: ObjectId):
+        msg = await messages_db.find_one(
+            {"$and": [
+                {"_id": message_id},
+                {"endpoint": endpoint_id}
+            ]}
+        )
+
+        if not msg:
+            raise ValueError("No such message")
+
+        return cls(**msg)
+
+    @classmethod
+    async def get_messages_from(
+        cls,
+        from_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
+        msg_query = messages_db.find({"$and": [
+            {"endpoint": endpoint_id},
+            {"_id": {"$lt": from_message}}
+        ]}
+        ).sort("_id", -1).limit(100)
+        messages = []
+
+        async for message in msg_query:
+            message = cls(**message)
+            messages.append(message)
+
+        return messages
+
+    @classmethod
+    async def get_messages_from_including(
+        cls,
+        from_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
+        msg_query = messages_db.find({"$and": [
+            {"endpoint": endpoint_id},
+            {"_id": {"$lte": from_message}}
+        ]}
+        ).sort("_id", -1).limit(100)
+        messages = []
+
+        async for message in msg_query:
+            message = cls(**message)
+            messages.append(message)
+
+        return messages
+
+    @classmethod
+    async def get_messages_after(
+        cls,
+        after_message: ObjectId,
+        endpoint_id: ObjectId
+    ):
+        msg_query = messages_db.find({"$and": [
+            {"endpoint": endpoint_id},
+            {"_id": {"$gt": after_message}}
+        ]}
+        ).sort("_id", -1).limit(100)
+        messages = []
+
+        async for message in msg_query:
+            message = cls(**message)
+            messages.append(message)
+
+        return messages
+
+    @classmethod
+    async def batch_pinned(cls, from_message: ObjectId, endpoint_id: ObjectId):
+        msg_query = messages_db.find({"$and": [
+            {"endpoint": endpoint_id},
+            {"_id": {"$lte": from_message}},
+            {"pin": True}
+        ]}
+        ).sort("_id", -1).limit(100)
+        messages = []
+
+        async for message in msg_query:
+            message = cls(**message)
+            messages.append(message)
+
+        return messages
+
+    @lru_cache(2)
     def __str__(self):
         return json.dumps(
             self.__dict__,

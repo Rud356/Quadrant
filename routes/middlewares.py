@@ -3,7 +3,7 @@ import json
 import fastjsonschema
 from quart import request, websocket
 
-from views import User
+from user_view import User
 
 from .responces import error
 
@@ -17,7 +17,6 @@ def authorized(f):
             user = await User.authorize(token=request.cookies.get('token'))
 
         except TypeError as e:
-            print(e)
             return error("User unauthorized", 401)
 
         return await f(*args, user=user, **kwargs)

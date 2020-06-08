@@ -3,22 +3,21 @@ from bson import errors as bson_errors
 from quart import request
 
 from app import app
-from models import UpdateMessage, UpdateType
-from views import User
+from models.enums import UpdateType
+from models.message_model import UpdateMessage
+from user_view import User
 
 from .middlewares import authorized, validate_schema
 from .responces import error, success
 from .schemas import registrate_bot
 
 
-@app.route("/api/bots")
 @authorized
 async def get_bots(user: User):
     bots = await user.get_bots()
     return success(bots)
 
 
-@app.route("/api/bots/registrate", methods=["POST"])
 @authorized
 @validate_schema(registrate_bot)
 async def registrating_bot(user: User):
@@ -39,7 +38,6 @@ async def registrating_bot(user: User):
     return success(bot_dict)
 
 
-@app.route("/api/bots/<string:bot_id>/<string:nick>", methods=["POST"])
 @authorized
 async def change_nick(user: User, bot_id: str, nick: str):
     try:
@@ -51,6 +49,7 @@ async def change_nick(user: User, bot_id: str, nick: str):
     bot: User = user.from_id(bot_id)
 
     if bot.parent == user._id:
+
         try:
             await bot.set_nick(nick)
 
@@ -68,7 +67,6 @@ async def change_nick(user: User, bot_id: str, nick: str):
     return success("ok")
 
 
-@app.route("/api/bots/<string:bot_id>/update_token", methods=["POST"])
 @authorized
 async def update_token(user: User, bot_id: str):
     try:
@@ -87,7 +85,6 @@ async def update_token(user: User, bot_id: str):
     return success({'new_token': token})
 
 
-@app.route("/api/bots/<string:bot_id>", methods=["DELETE"])
 @authorized
 async def delete_bot(user: User, bot_id: str):
     try:
@@ -102,9 +99,3 @@ async def delete_bot(user: User, bot_id: str):
         await bot.delete_user()
 
     return success("ok")
-
-
-__all__ = [
-    "get_bots", "registrating_bot", "delete_bot",
-    "update_token", "change_nick"
-]

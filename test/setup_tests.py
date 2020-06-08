@@ -1,5 +1,5 @@
 from app import client
-from models import UserModel
+from models.user_model import UserModel
 from app_config import tests_config
 
 
