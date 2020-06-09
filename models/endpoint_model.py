@@ -4,9 +4,11 @@ from typing import Dict, List
 
 from bson import ObjectId
 
-from app import db, connected_users
+
+from app import connected_users, db
 
 from .enums import ChannelType
+from .invites_model import Invite
 from .message_model import MessageModel
 
 endpoints_db = db.endpoints
@@ -143,13 +145,17 @@ class TextEndpoint:
             )
 
         # ! Check permissions before deleting
-        return MessageModel.force_delete(message_id, self._id)
+        return await MessageModel.force_delete(message_id, self._id)
 
     @classmethod
     async def create_endpoint(cls, **kwargs):
         raise NotImplementedError()
 
     async def create_invite(self):
+        raise NotImplementedError()
+
+
+    async def accept_invite(self):
         raise NotImplementedError()
 
     class exc:
@@ -227,6 +233,57 @@ class DMChannel(TextEndpoint):
 
     async def force_delete_message(self, *args, **kwargs):
         raise NotImplementedError()
+
+
+@dataclass
+class GroupDM(TextEndpoint):
+    owner: ObjectId
+    title: str
+    owner_edits_only: bool
+
+    @classmethod
+    async def create_endpoint(cls, creator: ObjectId, title: str):
+        if len(title) not in range(1, 51):
+            raise ValueError("Too long title")
+
+        endpoint = {
+            "_type": ChannelType.group,
+            "members": [creator],
+            "owner": creator,
+            "title": title,
+            "owner_edits_only": True,
+            "created_at": datetime.utcnow(),
+            "last_message": None,
+            "last_pinned": None
+        }
+        id = await endpoints_db.insert_one(endpoint)
+        endpoint["_id"] = id.inserted_id
+
+        return cls(**endpoint)
+
+
+    async def create_invite(self, creator: ObjectId, user_limit: int, expires_at: datetime):
+        if creator != self.owner:
+            raise self.exc.NoPermission()
+
+        new_invite = await Invite.create_invite(
+            self._id, creator, user_limit, expires_at
+        )
+
+        return new_invite
+
+
+    async def force_delete_message(
+        self,
+        requester: ObjectId,
+        message_id: ObjectId
+    ):
+        if requester != self.owner:
+            raise self.exc.NoPermission()
+
+        return await super().force_delete_message(
+            requester, message_id
+        )
 
 
 class MetaEndpoint:
