@@ -4,6 +4,7 @@ from typing import Dict, List
 
 from bson import ObjectId
 
+
 from app import connected_users, db
 
 from .enums import ChannelType
@@ -153,6 +154,7 @@ class TextEndpoint:
     async def create_invite(self):
         raise NotImplementedError()
 
+
     async def accept_invite(self):
         raise NotImplementedError()
 
@@ -282,6 +284,7 @@ class GroupDM(TextEndpoint):
         return await super().force_delete_message(
             requester, message_id
         )
+
 
 class MetaEndpoint:
     @staticmethod
