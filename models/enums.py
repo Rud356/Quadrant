@@ -32,3 +32,6 @@ class UpdateType(IntEnum):
     friend_deleted = 11
     got_blocked = 12
     image_updated = 13
+    new_group_member = 14
+    left_group_member = 15
+    kicked_group_member = 16

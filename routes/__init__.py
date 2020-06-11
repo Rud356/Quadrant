@@ -5,7 +5,11 @@ from .bot_managment_routes import (
     change_nick, delete_bot, get_bots,
     registrating_bot, update_token
 )
-from .endpoints_routes import create_dm, get_endpoint, get_endpoints, get_endpoints_dict
+from .endpoints_routes import (
+    create_dm, get_endpoint, get_endpoints, get_endpoints_dict,
+    create_group, create_group_invite, get_invites, delete_invite,
+    join_group, leave_group, kick_from_group
+)
 from .file_host import (
     get_file, get_profile_pic, upload_file,
     upload_profile_pic
@@ -44,15 +48,15 @@ categories = {
     "Bot managment": [
         Route("/api/bots", get_bots),
         Route("/api/bots/registrate", registrating_bot, ["POST"]),
-        Route("/api/bots/<string:bot_id>/<string:nick>", change_nick, ["POST"]),
-        Route("/api/bots/<string:bot_id>/update_token", update_token, ["POST"]),
-        Route("/api/bots/<string:bot_id>", delete_bot, ["DELETE"]),
+        Route("/api/bots/<bot_id>/<nick>", change_nick, ["POST"]),
+        Route("/api/bots/<bot_id>/update_token", update_token, ["POST"]),
+        Route("/api/bots/<bot_id>", delete_bot, ["DELETE"]),
     ],
     "User routes": [
         Route("/api/user/login", authorize_user, ["POST"]),
         Route("/api/user/logout", logout_user, ["POST", "GET", "DELETE"]),
         Route("/api/user/register", registrate_user, ["POST"]),
-        Route("/api/user/<string:id>", user_from_id),
+        Route("/api/user/<id>", user_from_id),
         Route("/api/user/me", user_about_self),
         Route("/api/user/me", delete_user, ["DELETE"]),
         Route("/api/user/keep-alive", keep_alive),
@@ -66,40 +70,47 @@ categories = {
         Route("/api/friends", get_users_friends),
         Route("/api/blocked", get_blocked_users),
         Route("/api/outgoing_requests", get_outgoing_requests),
-        Route("/api/outgoing_requests/<string:id>", cancel_friend_request, ["DELETE"]),
+        Route("/api/outgoing_requests/<id>", cancel_friend_request, ["DELETE"]),
         Route("/api/incoming_requests", get_incoming_requests),
-        Route("/api/incoming_requests/<string:id>", response_friend_request, ["POST"]),
-        Route("/api/friends/<string:id>", send_friend_request, ["POST"]),
+        Route("/api/incoming_requests/<id>", response_friend_request, ["POST"]),
+        Route("/api/friends/<id>", send_friend_request, ["POST"]),
         Route("/api/friends/request", send_code_friend_request, ["POST"]),
-        Route("/api/friends/<string:id>", delete_friend, ["DELETE"]),
-        Route("/api/blocked/<string:id>", block_user, ["POST"]),
-        Route("/api/blocked/<string:id>", unblock_user, ["DELETE"])
+        Route("/api/friends/<id>", delete_friend, ["DELETE"]),
+        Route("/api/blocked/<id>", block_user, ["POST"]),
+        Route("/api/blocked/<id>", unblock_user, ["DELETE"])
     ],
     "Endpoint routes": [
         Route("/api/endpoints", get_endpoints),
         Route("/api/endpoints/json", get_endpoints_dict),
-        Route("/api/endpoints/<string:endpoint_id>", get_endpoint),
-        Route("/api/endpoints/create_endpoint/dm", create_dm, ["POST"])
+        Route("/api/endpoints/<endpoint_id>", get_endpoint),
+        Route("/api/endpoints/create_endpoint/dm", create_dm, ["POST"]),
+        Route("/api/endpoints/create_endpoint/group/<title>", create_group, ["POST"]),
+        Route("/api/endpoints/<group_id>/create_invite", create_group_invite, ["POST"]),
+        Route("/api/endpoints/<group_id>/invites", get_invites),
+        Route("/api/endpoints/<group_id>/invites", delete_invite, ["DELETE"]),
+        Route("/api/endpoints/join", join_group, ["GET", "POST"]),
+        Route("/api/endpoints/<group_id>/leave", leave_group, ["DELETE"]),
+        Route("/api/endpoints/<group_id>/kick", kick_from_group, ["DELETE"]),
     ],
     "Message routes": [
-        Route("/api/endpoints/<string:endpoint_id>/messages", get_messages_latest),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", get_message),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/from", get_messages_from),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/after", get_messages_after),
-        Route("/api/endpoints/<string:endpoint_id>/messages/pinned", get_pinned_latest),
-        Route("/api/endpoints/<string:endpoint_id>/messages/pinned/<string:message_id>/pinned/from", get_pinned_messages_from),
-        Route("/api/endpoints/<string:endpoint_id>/messages", send_message, ["POST"]),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", get_message),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", delete_message, ["DELETE"]),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>", edit_message, ["PATCH"]),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/pin", pin_message, ["PATCH"]),
-        Route("/api/endpoints/<string:endpoint_id>/messages/<string:message_id>/unpin", unpin_message, ["PATCH"])
+        Route("/api/endpoints/<endpoint_id>/messages", get_messages_latest),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>", get_message),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>/from", get_messages_from),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>/after", get_messages_after),
+        Route("/api/endpoints/<endpoint_id>/messages/pinned", get_pinned_latest),
+        Route("/api/endpoints/<endpoint_id>/messages/pinned/<message_id>/pinned/from", get_pinned_messages_from),
+        Route("/api/endpoints/<endpoint_id>/messages", send_message, ["POST"]),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>", get_message),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>", delete_message, ["DELETE"]),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>", edit_message, ["PATCH"]),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>/pin", pin_message, ["PATCH"]),
+        Route("/api/endpoints/<endpoint_id>/messages/<message_id>/unpin", unpin_message, ["PATCH"])
     ],
     "File routes": [
         Route("/api/user/set_image", upload_profile_pic, ["POST"]),
-        Route("/api/user/<string:user_id>/profile_pic", get_profile_pic),
+        Route("/api/user/<user_id>/profile_pic", get_profile_pic),
         Route("/api/files/upload", upload_file, ["POST"]),
-        Route("/api/files/<string:file_name>", get_file)
+        Route("/api/files/<file_name>", get_file)
     ]
 }
 

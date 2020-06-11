@@ -261,8 +261,15 @@ class GroupDM(TextEndpoint):
 
         return cls(**endpoint)
 
+    @staticmethod
+    async def accept_invite(acceptor: ObjectId, code: str):
+        invite: Invite = await Invite.get_invite(code)
+        await endpoints_db.update_one(
+            {'_id': invite.endpoint}, {"$push": {"members": acceptor}}
+        )
+        return invite.endpoint
 
-    async def create_invite(self, creator: ObjectId, user_limit: int, expires_at: datetime):
+    async def create_invite(self, creator: ObjectId, user_limit: int, expires_at: int):
         if creator != self.owner:
             raise self.exc.NoPermission()
 
@@ -272,6 +279,8 @@ class GroupDM(TextEndpoint):
 
         return new_invite
 
+    async def delete_invite(self, code: str):
+        return await Invite.delete_invite(code, self._id)
 
     async def force_delete_message(
         self,
@@ -283,6 +292,11 @@ class GroupDM(TextEndpoint):
 
         return await super().force_delete_message(
             requester, message_id
+        )
+
+    async def remove_user(self, user: ObjectId):
+        return await endpoints_db.update_one(
+            {'_id': self._id}, {"$pull": {"members": user}}
         )
 
 
@@ -355,5 +369,8 @@ class MetaEndpoint:
 
         if users_endpoint['_type'] == ChannelType.dm:
             return DMChannel(**users_endpoint)
+
+        if users_endpoint['_type'] == ChannelType.group:
+            return GroupDM(**users_endpoint)
 
         raise ValueError("Invalid endpoint")

@@ -20,7 +20,7 @@ class Invite:
     _id: ObjectId
     endpoint: ObjectId
     user_created: ObjectId
-    expires_at: datetime
+    expires_at: int
 
     code: str
     users_limit: int = -1
@@ -31,10 +31,15 @@ class Invite:
         endpoint: ObjectId,
         created_by: ObjectId,
         users_limit: int,
-        expires_at: datetime
+        expires_at: int
     ):
         if not users_limit:
             raise ValueError("Can't make empty invite")
+
+        invites = await invites_db.count_documents({"endpoint": endpoint})
+
+        if invites >= 25:
+            raise Invite.TooManyInvites("Can't create more invites")
 
         code = generate_code()
 
@@ -49,6 +54,10 @@ class Invite:
         await invites_db.insert_one(invite)
         return code
 
+    @staticmethod
+    async def delete_invite(code: str, endpoint: ObjectId):
+        return await invites_db.delete_one({"code": code, "endpoint": endpoint})
+
     @classmethod
     async def endpoints_invites(cls, endpoint_id: ObjectId):
         fine = []
@@ -58,7 +67,8 @@ class Invite:
         async for invite in invites:
             invite = cls(**invite)
             if not invite.is_expired:
-                fine.append()
+                fine.append(invite)
+
             else:
                 to_delete.append(invite._id)
 
@@ -94,3 +104,6 @@ class Invite:
                     return True
 
         return False
+
+    class TooManyInvites(ValueError):
+        ...

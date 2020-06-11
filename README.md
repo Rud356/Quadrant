@@ -4,9 +4,8 @@ There's some problems like delivering updates of nicknames and lack of functiona
 
 Yet to add:
 - [x] Add clearer way to init routes
-- [ ] Add batch with splitting by pages outgoing/incoming fetch requests
-- [ ] Replace batch get friends/blocked with paged analog
-- [ ] Group DMs
+- [x] Group DMs
+- [ ] Group dms ownership transfering
 - [x] Bot users and their managment
 - [ ] Changing passwords
 - [ ] Voice calls
