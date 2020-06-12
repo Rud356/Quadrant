@@ -8,7 +8,7 @@
 | /api/bots/<bot_id>/<nick> | POST |
 | /api/bots/<bot_id>/update_token | POST |
 | /api/bots/<bot_id> | DELETE |
-## [User routes](docs/User routes.md)
+## [User_routes](docs/User_routes.md)
 | route | method |
 | ----- | ------ |
 | /api/user/login | POST |

@@ -53,7 +53,7 @@ categories = {
         Route("/api/bots/<bot_id>/update_token", update_token, ["POST"]),
         Route("/api/bots/<bot_id>", delete_bot, ["DELETE"]),
     ],
-    "User routes": [
+    "User_routes": [
         Route("/api/user/login", authorize_user, ["POST"]),
         Route("/api/user/logout", logout_user, ["POST", "GET", "DELETE"]),
         Route("/api/user/register", registrate_user, ["POST"]),
@@ -136,6 +136,6 @@ def generate_docs():
 
             with open(f"docs/{k}.md", 'w') as doc:
                 for route in category_routes:
-                    doc.write(f"- Route: {route.path}\n")
+                    doc.write(f"### Route: {route.path}\n")
                     doc.write(f"Methods: {' '.join(route.methods) if route.methods else 'GET'}\n")
                     doc.write(f"Description:\n{getdoc(route.function) or 'Yet to add'}\n\n")
