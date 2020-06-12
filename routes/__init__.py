@@ -46,7 +46,7 @@ class Route:
 
 
 categories = {
-    "Bot managment": [
+    "Bot_managment": [
         Route("/api/bots", get_bots),
         Route("/api/bots/registrate", registrating_bot, ["POST"]),
         Route("/api/bots/<bot_id>/<nick>", change_nick, ["POST"]),
@@ -67,7 +67,7 @@ categories = {
         Route("/api/me/status/<int:new_status>", set_status, ["POST"]),
         Route("/api/me/text_status", set_text_status, ["POST"]),
     ],
-    "Relations routes": [
+    "Relations_routes": [
         Route("/api/friends", get_users_friends),
         Route("/api/blocked", get_blocked_users),
         Route("/api/outgoing_requests", get_outgoing_requests),
@@ -80,7 +80,7 @@ categories = {
         Route("/api/blocked/<id>", block_user, ["POST"]),
         Route("/api/blocked/<id>", unblock_user, ["DELETE"])
     ],
-    "Endpoint routes": [
+    "Endpoint_routes": [
         Route("/api/endpoints", get_endpoints),
         Route("/api/endpoints/json", get_endpoints_dict),
         Route("/api/endpoints/<endpoint_id>", get_endpoint),
@@ -93,7 +93,7 @@ categories = {
         Route("/api/endpoints/<group_id>/leave", leave_group, ["DELETE"]),
         Route("/api/endpoints/<group_id>/kick", kick_from_group, ["DELETE"]),
     ],
-    "Message routes": [
+    "Message_routes": [
         Route("/api/endpoints/<endpoint_id>/messages", get_messages_latest),
         Route("/api/endpoints/<endpoint_id>/messages/<message_id>", get_message),
         Route("/api/endpoints/<endpoint_id>/messages/<message_id>/from", get_messages_from),
@@ -107,7 +107,7 @@ categories = {
         Route("/api/endpoints/<endpoint_id>/messages/<message_id>/pin", pin_message, ["PATCH"]),
         Route("/api/endpoints/<endpoint_id>/messages/<message_id>/unpin", unpin_message, ["PATCH"])
     ],
-    "File routes": [
+    "File_routes": [
         Route("/api/user/set_image", upload_profile_pic, ["POST"]),
         Route("/api/user/<user_id>/profile_pic", get_profile_pic),
         Route("/api/files/upload", upload_file, ["POST"]),
@@ -128,7 +128,7 @@ def init_routes():
 
 def generate_docs():
     with open("Docs.md", 'w') as d:
-        d.writelines("# Routes")
+        d.writelines("# Routes\n\n")
 
         for k, category_routes in categories.items():
             d.writelines([f"## {k}\n", f"[{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])

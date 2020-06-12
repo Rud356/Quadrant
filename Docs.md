@@ -1,5 +1,7 @@
-# Routes## Bot managment
-[Bot managment](docs/Bot managment.md)
+# Routes
+
+## Bot_managment
+[Bot_managment](docs/Bot_managment.md)
 | route | method |
 | ----- | ------ |
 | /api/bots | GET |
@@ -23,8 +25,8 @@
 | /api/me/friend_code | POST |
 | /api/me/status/<int:new_status> | POST |
 | /api/me/text_status | POST |
-## Relations routes
-[Relations routes](docs/Relations routes.md)
+## Relations_routes
+[Relations_routes](docs/Relations_routes.md)
 | route | method |
 | ----- | ------ |
 | /api/friends | GET |
@@ -38,8 +40,8 @@
 | /api/friends/<id> | DELETE |
 | /api/blocked/<id> | POST |
 | /api/blocked/<id> | DELETE |
-## Endpoint routes
-[Endpoint routes](docs/Endpoint routes.md)
+## Endpoint_routes
+[Endpoint_routes](docs/Endpoint_routes.md)
 | route | method |
 | ----- | ------ |
 | /api/endpoints | GET |
@@ -53,8 +55,8 @@
 | /api/endpoints/join | GET POST |
 | /api/endpoints/<group_id>/leave | DELETE |
 | /api/endpoints/<group_id>/kick | DELETE |
-## Message routes
-[Message routes](docs/Message routes.md)
+## Message_routes
+[Message_routes](docs/Message_routes.md)
 | route | method |
 | ----- | ------ |
 | /api/endpoints/<endpoint_id>/messages | GET |
@@ -69,8 +71,8 @@
 | /api/endpoints/<endpoint_id>/messages/<message_id> | PATCH |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/pin | PATCH |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/unpin | PATCH |
-## File routes
-[File routes](docs/File routes.md)
+## File_routes
+[File_routes](docs/File_routes.md)
 | route | method |
 | ----- | ------ |
 | /api/user/set_image | POST |
