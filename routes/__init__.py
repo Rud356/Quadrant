@@ -131,7 +131,7 @@ def generate_docs():
         d.writelines("# Routes\n\n")
 
         for k, category_routes in categories.items():
-            d.writelines([f"## {k}\n", f"[{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])
+            d.writelines([f"## [{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])
             d.writelines([f"| {route.path} | {' '.join(route.methods) if route.methods else 'GET'} |\n" for route in category_routes])
 
             with open(f"docs/{k}.md", 'w') as doc:
