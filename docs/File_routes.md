@@ -1,20 +1,25 @@
 ### Route: /api/user/set_image
 Methods: POST
 Description:
-Yet to add
+Payload: file ["image"]  
+Limits: 4MB file of gif, jpeg, png, webp formats  
+Response codes: 200, 400, 401
 
 ### Route: /api/user/<user_id>/profile_pic
 Methods: GET
 Description:
-Yet to add
+Requires: user_id in route  
+Response: 404, file
 
 ### Route: /api/files/upload
 Methods: POST
 Description:
-Yet to add
+Requires: files  
+Response: list of files names
 
 ### Route: /api/files/<file_name>
 Methods: GET
 Description:
-Yet to add
+Requires: file name in route  
+Response: 404, file
 

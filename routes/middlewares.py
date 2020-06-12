@@ -22,6 +22,7 @@ def authorized(f):
         return await f(*args, user=user, **kwargs)
 
     wraps.__name__ = f.__name__
+    wraps.__doc__ = f.__doc__
     return wraps
 
 
