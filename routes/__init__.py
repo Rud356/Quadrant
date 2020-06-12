@@ -1,3 +1,4 @@
+from inspect import getdoc
 from dataclasses import dataclass
 
 from app import app
@@ -124,3 +125,17 @@ def init_routes():
                 view_func=route.function,
                 methods=route.methods
             )
+
+def generate_docs():
+    with open("Docs.md", 'w') as d:
+        d.writelines("# Routes")
+
+        for k, category_routes in categories.items():
+            d.writelines([f"## {k}\n", f"[{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])
+            d.writelines([f"| {route.path} | {' '.join(route.methods) if route.methods else 'GET'} |\n" for route in category_routes])
+
+            with open(f"docs/{k}.md", 'w') as doc:
+                for route in category_routes:
+                    doc.write(f"- Route: {route.path}\n")
+                    doc.write(f"Methods: {' '.join(route.methods) if route.methods else 'GET'}\n")
+                    doc.write(f"Description:\n{getdoc(route.function) or 'Yet to add'}\n\n")

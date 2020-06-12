@@ -1,101 +1,79 @@
-# Routes
+# Routes## Bot managment
+[Bot managment](docs/Bot managment.md)
+| route | method |
+| ----- | ------ |
+| /api/bots | GET |
+| /api/bots/registrate | POST |
+| /api/bots/<bot_id>/<nick> | POST |
+| /api/bots/<bot_id>/update_token | POST |
+| /api/bots/<bot_id> | DELETE |
+## User routes
+[User routes](docs/User routes.md)
 | route | method |
 | ----- | ------ |
 | /api/user/login | POST |
-| /api/user/logout | GET POST DELETE |
+| /api/user/logout | POST GET DELETE |
 | /api/user/register | POST |
-| /api/user/keep-alive | GET |
-| /api/user/<user_id> | GET |
+| /api/user/<id> | GET |
 | /api/user/me | GET |
-| /api/me/nick?new_nick=<new_nick> | POST |
-| /api/me/friend_code?=code<new_code> | POST |
-| /api/me/status/<new_status>| POST |
-| /api/me/test_status | POST |
+| /api/user/me | DELETE |
+| /api/user/keep-alive | GET |
+| /api/user/update_token | POST |
+| /api/me/nick | POST |
+| /api/me/friend_code | POST |
+| /api/me/status/<int:new_status> | POST |
+| /api/me/text_status | POST |
+## Relations routes
+[Relations routes](docs/Relations routes.md)
+| route | method |
+| ----- | ------ |
 | /api/friends | GET |
-| /api/outgoing_requests | GET |
-| /api/incoming_requests | GET |
-| /api/friends/<user_id> | POST |
-| /api/friends/<user_id> | DELETE |
-| /api/friends/request?code=<friendcode> | POST |
-| /api/incoming_requests/<user_id>?accept=True | POST |
-| /api/incoming_requests/<user_id> | POST |
-| /api/outgoing_requests/<user_id> | DELETE |
 | /api/blocked | GET |
-| /api/blocked/<user_id> | POST |
-| /api/blocked/<user_id> | DELETE |
+| /api/outgoing_requests | GET |
+| /api/outgoing_requests/<id> | DELETE |
+| /api/incoming_requests | GET |
+| /api/incoming_requests/<id> | POST |
+| /api/friends/<id> | POST |
+| /api/friends/request | POST |
+| /api/friends/<id> | DELETE |
+| /api/blocked/<id> | POST |
+| /api/blocked/<id> | DELETE |
+## Endpoint routes
+[Endpoint routes](docs/Endpoint routes.md)
+| route | method |
+| ----- | ------ |
 | /api/endpoints | GET |
+| /api/endpoints/json | GET |
 | /api/endpoints/<endpoint_id> | GET |
 | /api/endpoints/create_endpoint/dm | POST |
-| /api/endpoints/<endpoint_id>/messages | GET POST |
-| /api/endpoints/<endpoint_id>/messages/<message_id> | GET DELETE PATCH |
-| /api/endpoints/<endpoint_id>/messages/<message_id>?force=True | DELETE |
+| /api/endpoints/create_endpoint/group/<title> | POST |
+| /api/endpoints/<group_id>/create_invite | POST |
+| /api/endpoints/<group_id>/invites | GET |
+| /api/endpoints/<group_id>/invites | DELETE |
+| /api/endpoints/join | GET POST |
+| /api/endpoints/<group_id>/leave | DELETE |
+| /api/endpoints/<group_id>/kick | DELETE |
+## Message routes
+[Message routes](docs/Message routes.md)
+| route | method |
+| ----- | ------ |
+| /api/endpoints/<endpoint_id>/messages | GET |
+| /api/endpoints/<endpoint_id>/messages/<message_id> | GET |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/from | GET |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/after | GET |
 | /api/endpoints/<endpoint_id>/messages/pinned | GET |
-| /api/endpoints/<endpoint_id>/messages/<message_id>/pinned/from | GET |
-| /api/endpoints/<endpoint_id>/messages/<message_id>/pinned/after | GET |
+| /api/endpoints/<endpoint_id>/messages/pinned/<message_id>/pinned/from | GET |
+| /api/endpoints/<endpoint_id>/messages | POST |
+| /api/endpoints/<endpoint_id>/messages/<message_id> | GET |
+| /api/endpoints/<endpoint_id>/messages/<message_id> | DELETE |
+| /api/endpoints/<endpoint_id>/messages/<message_id> | PATCH |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/pin | PATCH |
 | /api/endpoints/<endpoint_id>/messages/<message_id>/unpin | PATCH |
-| /api/ws | WebSocket |
+## File routes
+[File routes](docs/File routes.md)
+| route | method |
+| ----- | ------ |
 | /api/user/set_image | POST |
 | /api/user/<user_id>/profile_pic | GET |
 | /api/files/upload | POST |
-| /api/files/<file_id> | GET |
-
-# Packages
-/api/user/login
-```json
-{
-    "login": "hash string",
-    "password": "hash password string"
-}
-```
-
-/api/user/register
-```json
-{
-    "nick": "string",
-    "login": "login hash",
-    "password": "password hash"
-}
-```
-
-
-/api/me/test_status
-```json
-{
-    "text_status": "Some string"
-}
-```
-Max length is 256 symbols
-
-/api/endpoints/create_endpoint/dm
-```json
-{
-    "with": "user id"
-}
-```
-
-/api/endpoints/<string:endpoint_id>/messages POST
-```json
-{
-    "content": "String",
-    "files": ["file_id", "file_id2", "..."]
-}
-```
-
-/api/endpoints/<endpoint_id>/messages/<message_id> PATCH
- This is about editing message content
-```json
-{
-    "content": "New content string"
-}
-```
-
-Websocket connecting
-First package should be
-```json
-{
-    "token": "your token"
-}
-```
+| /api/files/<file_name> | GET |

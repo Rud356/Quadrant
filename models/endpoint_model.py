@@ -237,9 +237,9 @@ class DMChannel(TextEndpoint):
 
 @dataclass
 class GroupDM(TextEndpoint):
-    owner: ObjectId
-    title: str
-    owner_edits_only: bool
+    title: str = ''
+    owner: ObjectId = None
+    owner_edits_only: bool = True
 
     @classmethod
     async def create_endpoint(cls, creator: ObjectId, title: str):
