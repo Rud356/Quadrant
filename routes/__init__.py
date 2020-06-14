@@ -132,11 +132,14 @@ def generate_docs():
 
         for k, category_routes in categories.items():
             d.writelines([f"## [{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])
-            d.writelines([f"| {route.path} | {' '.join(route.methods) if route.methods else 'GET'} |\n" for route in category_routes])
+            d.writelines([
+                "| " + route.path.replace('>', '\\>') + f" | {' '.join(route.methods) if route.methods else 'GET'} |\n"
+                for route in category_routes
+            ])
 
             with open(f"docs/{k}.md", 'w') as doc:
                 for route in category_routes:
-                    doc.write(f"### Route: {route.path}\n")
+                    doc.write("### Route: " + route.path.replace(">", "\\>") + '\n')
                     doc.write(f"Methods: {' '.join(route.methods) if route.methods else 'GET'}  \n")
                     docstring = getdoc(route.function) or 'Yet to add'
                     docstrings = docstring.split('\n')

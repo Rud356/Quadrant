@@ -17,7 +17,7 @@ Description:
 Yet to add  
 
 
-### Route: /api/user/<id>
+### Route: /api/user/<id\>
 Methods: GET  
 Description:  
 Requires: user id in route  
@@ -66,7 +66,7 @@ Validations:
 Responses: 200, 400  
 
 
-### Route: /api/me/status/<int:new_status>
+### Route: /api/me/status/<int:new_status\>
 Methods: POST  
 Description:  
 Requires: status code in url  

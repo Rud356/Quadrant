@@ -16,13 +16,13 @@ Description:
 Yet to add  
 
 
-### Route: /api/bots/<bot_id>/update_token
+### Route: /api/bots/<bot_id\>/update_token
 Methods: POST  
 Description:  
 Yet to add  
 
 
-### Route: /api/bots/<bot_id>
+### Route: /api/bots/<bot_id\>
 Methods: DELETE  
 Description:  
 Yet to add  
