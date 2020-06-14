@@ -10,7 +10,7 @@ Description:
 Yet to add  
 
 
-### Route: /api/bots/<\bot_id\>/<\nick>
+### Route: /api/bots/<bot_id\>/<nick>
 Methods: POST  
 Description:  
 Yet to add  
