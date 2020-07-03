@@ -3,3 +3,4 @@ motor>=2.1.0
 fastjsonschema>=2.14.4
 requests>=2.23.0
 Quart-Rate-Limiter>=0.4.0
+pyOpenSSL>=19.1.0

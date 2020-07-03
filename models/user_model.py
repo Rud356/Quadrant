@@ -15,6 +15,7 @@ from app import db
 from utils import exclude_keys
 
 from .enums import Status
+from .caches import authorization_cache
 from .endpoint_model import MetaEndpoint
 
 users_db = db.chat_users
@@ -396,15 +397,11 @@ class UserModel:
             )
 
         elif login and password:
-            loop = get_running_loop()
             login = sha256(login.encode())
             login = login.hexdigest()
+
             salt = await cls._get_salt_hashed_login(login)
-            password = await loop.run_in_executor(
-                None,
-                pbkdf2_hmac,
-                'sha256', password.encode(), salt.encode(), 100000
-            )
+            password = await UserModel._hash_password_with_salt(password=password, salt=salt)
             password = password.hex()
 
             user = await users_db.find_one(
@@ -518,12 +515,24 @@ class UserModel:
         return hashed.hexdigest()
 
     @staticmethod
+    @authorization_cache.cache_login_salt
     async def _get_salt_hashed_login(login: str):
         salt = await users_db.find_one(
             {"login": login},
             {"salt": 1}
         )
         return salt['salt']
+
+    @staticmethod
+    @authorization_cache.cache_passwords
+    async def _hash_password_with_salt(password: str, salt: bytes):
+        loop = get_running_loop()
+        password = await loop.run_in_executor(
+            None,
+            pbkdf2_hmac,
+            'sha256', password.encode(), salt.encode(), 100000
+        )
+        return password
 
     @staticmethod
     async def _avaliable_friend_code(code: str) -> bool:

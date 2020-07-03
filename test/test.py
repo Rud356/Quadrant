@@ -29,6 +29,7 @@ def create_authorized_session(auth):
     r = sess.post(base_url + "/user/login", json=auth)
     return sess, r.json()
 
+# !TEST CAN BE RUNNED ONLY ONCE PER APP START
 
 class TestUserRoutes(unittest.TestCase):
     def setUp(self):

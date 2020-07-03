@@ -17,6 +17,7 @@ app.config['UPLOAD_FOLDER']: str = "resourses/"
 app.config["DB_CONN_STR"]: str = "mongodb://localhost:27017"
 app.config["TTK"]: int = 10
 app.config['MAX_CONTENT_LENGTH']: int = 20 * 1024 * 1024 + 1
+app.config['LOGIN_CACHE_SIZE']: int = 1024
 
 
 try:
