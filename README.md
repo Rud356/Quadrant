@@ -5,6 +5,7 @@ There's some problems like delivering updates of nicknames and lack of functiona
 Status: stopped to make java version
 
 Yet to add:
+
 - [x] Add clearer way to init routes
 - [x] Group DMs
 - [ ] Group dms ownership transfering

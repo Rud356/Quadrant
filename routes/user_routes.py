@@ -93,9 +93,9 @@ async def registrate_user():
     if not app.config["ALLOW_REG"]:
         return error("Sorry, but you can't register", 403)
 
-    nick = reg['nick'].strip(' \n\t')
-    login = reg['login'].strip(' \n\t')
-    password = reg['password'].strip(' \n\t')
+    nick = reg['nick'].replace(' \n\t', '')
+    login = reg['login'].replace(' \n\t', '')
+    password = reg['password'].replace(' \n\t', '')
 
     if len(nick) not in range(1, 25 + 1):
         return error("Invalid nick", 400)

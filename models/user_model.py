@@ -8,7 +8,7 @@ from string import ascii_letters, digits
 from time import time
 from typing import List
 
-from bson import ObjectId
+from bson import ObjectId, SON
 from pymongo import UpdateOne
 
 from app import db
@@ -249,6 +249,30 @@ class UserModel:
             )
         ])
 
+    def aggregation_paged_outgoing_requests(self, page: int):
+        # Returning only cursor to iterate through to get outgoing pendings
+        pipeline = [
+            {"$match": {"$in": self.pendings_outgoing}},
+            {"$sort": SON([("name", -1), ("_id", -1)])},
+            {"$unset": EXCLUDE_PUBLIC},
+            {"$skip": page*100},
+            {"$limit": 100}
+        ]
+        cursor = users_db.aggregate(pipeline)
+        return cursor
+
+    def aggregation_paged_incoming_requests(self, page: int):
+        # Returning only cursor to iterate through to get incoming pendings
+        pipeline = [
+            {"$match": {"$in": self.pendings_incoming}},
+            {"$sort": SON([("name", -1), ("_id", -1)])},
+            {"$unset": EXCLUDE_PUBLIC},
+            {"$skip": page*100},
+            {"$limit": 100}
+        ]
+        cursor = users_db.aggregate(pipeline)
+        return cursor
+
     # Replace method
     async def get_friends(self, fetch_friends: list):
         if self.bot:
@@ -266,6 +290,18 @@ class UserModel:
             users_objects.append(user.public_dict)
 
         return users_objects
+
+    def aggregation_paged_friends(self, page: int):
+        # Returning only cursor to iterate through to get friends
+        pipeline = [
+            {"$match": {"$in": self.friends}},
+            {"$sort": SON([("name", -1), ("_id", -1)])},
+            {"$unset": EXCLUDE_PUBLIC},
+            {"$skip": page*100},
+            {"$limit": 100}
+        ]
+        cursor = users_db.aggregate(pipeline)
+        return cursor
 
     # ? Blocked users related
     async def block_user(self, blocking: ObjectId):
@@ -341,7 +377,22 @@ class UserModel:
 
         return users_objects
 
+    def aggregation_paged_blocked(self, page: int):
+        # Returning only cursor to iterate through to get blocked
+        pipeline = [
+            {"$match": {"$in": self.blocked}},
+            {"$sort": SON([("name", -1), ("_id", -1)])},
+            {"$unset": EXCLUDE_PUBLIC},
+            {"$skip": page*100},
+            {"$limit": 100}
+        ]
+        cursor = users_db.aggregate(pipeline)
+        return cursor
+
     # ? Endpoints related
+    # TODO: write aggregation to gather latest chats
+    # If user doesn't have endpoint that just recieved msg in cache
+    # he have to query it
     async def get_endpoints(self):
         endpoints = await MetaEndpoint.get_endpoints(self._id)
         return endpoints
