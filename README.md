@@ -8,7 +8,6 @@ Yet to add:
 - [x] Group DMs
 - [ ] Group dms ownership transfering
 - [x] Bot users and their managment
-- [ ] Make hashing with cryptdome module
 - [ ] Add pagination get methods of listed data
 - [ ] Changing passwords
 - [ ] Voice calls

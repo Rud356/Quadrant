@@ -1,22 +1,22 @@
 from asyncio import get_running_loop
 from dataclasses import dataclass, field
 from datetime import datetime
-from hashlib import pbkdf2_hmac, sha256
-from os import urandom
+from hashlib import pbkdf2_hmac, sha3_256
 from random import choices, randint
+from secrets import randbits
 from string import ascii_letters, digits
 from time import time
 from typing import List
 
-from bson import ObjectId, SON
+from bson import SON, ObjectId
 from pymongo import UpdateOne
 
 from app import db
 from utils import exclude_keys
 
-from .enums import Status
 from .caches import authorization_cache
 from .endpoint_model import MetaEndpoint
+from .enums import Status
 
 users_db = db.chat_users
 
@@ -430,13 +430,13 @@ class UserModel:
             )
 
         elif login and password:
-            # TODO: replace with cryptography module
-            login = sha256(login.encode())
+            login = sha3_256(login.encode())
             login = login.hexdigest()
 
             salt = await cls._get_salt_hashed_login(login)
             if not salt:
                 raise ValueError("Invalid login")
+
             password = await UserModel._hash_password_with_salt(password=password, salt=salt)
             password = password.hex()
 
@@ -470,15 +470,11 @@ class UserModel:
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
         # TODO: replace with cryptography module
-        loop = get_running_loop()
         salt = cls.generate_salt()
-        password = await loop.run_in_executor(
-            None,
-            pbkdf2_hmac,
-            'sha256', password.encode(), salt.encode(), 100000
-        )
+        password = await cls._hash_password_with_salt(password.encode(), salt.encode())
+
         password = password.hex()
-        login = sha256(login.encode()).hexdigest()
+        login = sha3_256(login.encode()).hexdigest()
 
         new_user = {
             'bot': False,
@@ -546,9 +542,9 @@ class UserModel:
         return token
 
     @staticmethod
-    def generate_salt(size=32):
-        salt_origin = urandom(size)
-        hashed = sha256(salt_origin)
+    def generate_salt(size=128):
+        salt_origin = randbits(size)
+        hashed = sha3_256(salt_origin)
         return hashed.hexdigest()
 
     @staticmethod
@@ -567,7 +563,7 @@ class UserModel:
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha256', password.encode(), salt.encode(), 100000
+            'sha3_256', password.encode(), salt.encode(), 100000
         )
         return password
 
