@@ -11,44 +11,21 @@ from .middlewares import authorized
 from .responses import error, success
 
 
-@authorized
-async def get_outgoing_requests(user: User):
-    """
-    Response: list of public users that are sent pendings from you
-    """
+async def get_paged_incoming_requests(user: User, page: int):
+    users = await user.paged_incoming_requests(page)
+    return success(users)
 
-    return success(user.pendings_outgoing)
+async def get_paged_outgoing_requests(user: User, page: int):
+    users = await user.paged_outgoing_requests(page)
+    return success(users)
 
+async def get_paged_friends(user: User, page: int):
+    users = await user.paged_friends(page)
+    return success(users)
 
-@authorized
-async def get_incoming_requests(user: User):
-    """
-    Response: list of public users that are sent pendings to you
-    """
-
-    return success(user.pendings_incoming)
-
-
-@authorized
-async def get_users_friends(user: User):
-    """
-    Response: list of public users that are friends
-    """
-
-    friends = await user.get_friends()
-    friends = [frined.__dict__ for frined in friends]
-    return success(friends)
-
-
-@authorized
-async def get_blocked_users(user: User):
-    """
-    Response: list of public users
-    """
-
-    blocked_users = await user.batch_get_blocked()
-    return success(blocked_users)
-
+async def get_paged_blocked(user: User, page: int):
+    users = await user.paged_blocked(page)
+    return success(users)
 
 @authorized
 async def send_friend_request(user: User, id: str):

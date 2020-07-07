@@ -30,6 +30,10 @@ def create_authorized_session(auth):
     return sess, r.json()
 
 # !TEST CAN BE RUNNED ONLY ONCE PER APP START
+# TODO: tests will be broken with this update cuz of
+# moving setters routes into one and
+# making pagination for some routes with big output
+
 
 class TestUserRoutes(unittest.TestCase):
     def setUp(self):

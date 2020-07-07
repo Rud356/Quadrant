@@ -52,7 +52,7 @@ async def upload_profile_pic(user: User):
 
     update_message = UpdateMessage(
         {
-            "user_id": user._id,
+            "_id": user._id,
         },
         UpdateType.image_updated
     )

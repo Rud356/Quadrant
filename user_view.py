@@ -148,7 +148,7 @@ class User(UserModel):
 
         friend_request = UpdateMessage(
             {
-                "user_id": self._id
+                "_id": self._id
             },
             UpdateType.new_friend_request
         )
@@ -172,7 +172,7 @@ class User(UserModel):
 
             new_friend = UpdateMessage(
                 {
-                    "user_id": self._id
+                    "_id": self._id
                 },
                 UpdateType.new_friend
             )
@@ -181,7 +181,7 @@ class User(UserModel):
         else:
             rejected_friend_request = UpdateMessage(
                 {
-                    "user_id": self._id
+                    "_id": self._id
                 },
                 UpdateType.friend_request_rejected
             )
@@ -197,7 +197,7 @@ class User(UserModel):
             canceled_to_user.pendings_incoming.remove(self._id)
             cancel_friend_request = UpdateMessage(
                 {
-                    "user_id": self._id
+                    "_id": self._id
                 },
                 UpdateType.friend_request_canceled
             )
@@ -214,7 +214,7 @@ class User(UserModel):
 
             update_friend_removed = UpdateMessage(
                 {
-                    "user_id": self._id
+                    "_id": self._id
                 },
                 UpdateType.friend_deleted
             )
@@ -243,7 +243,7 @@ class User(UserModel):
 
         got_blocked_by = UpdateMessage(
             {
-                "user_id": self._id
+                "_id": self._id
             },
             UpdateType.got_blocked
         )
@@ -253,37 +253,63 @@ class User(UserModel):
         await super().unblock_user(unblocking)
         self.blocked.remove(unblocking)
 
-    # TODO: rewrite those methods to pagination
-    async def get_friends(self):
-        friend_users = []
-        offline_friends = set()
+    # Pagination methods
+    async def paged_incoming_requests(self, page: int = 0):
+        cursor = self.aggregation_paged_incoming_requests(page)
+        users = []
 
-        for friend_id in self.friends:
-            friend_view: User = connected_users.get(friend_id)
+        async for user in cursor:
+            cached: User = connected_users.get(user['_id'])
 
-            if friend_view:
-                friend_users.append(friend_view)
-
-            else:
-                offline_friends.add(friend_id)
-
-        batched_friends = await super().get_friends(offline_friends)
-
-        return friend_users + batched_friends
-
-    async def batch_get_blocked(self):
-        blocked_users = []
-        offline_blocked = set()
-
-        for blocked_id in self.blocked:
-            blocked_view: User = connected_users.get(blocked_id)
-
-            if blocked_view:
-                blocked_users.append(blocked_view.public_dict)
+            if cached:
+                users.append(cached.public_dict)
 
             else:
-                offline_blocked.add(blocked_id)
+                users.append(user)
 
-        batched_blocked = await super().get_blocked(offline_blocked)
+        return users
 
-        return blocked_users + batched_blocked
+    async def paged_outgoing_requests(self, page: int = 0):
+        cursor = self.aggregation_paged_outgoing_requests(page)
+        users = []
+
+        async for user in cursor:
+            cached: User = connected_users.get(user['_id'])
+
+            if cached:
+                users.append(cached.public_dict)
+
+            else:
+                users.append(user)
+
+        return users
+
+    async def paged_friends(self, page: int = 0):
+        cursor = self.aggregation_paged_friends(page)
+        users = []
+
+        async for user in cursor:
+            cached: User = connected_users.get(user['_id'])
+
+            if cached:
+                users.append(cached.public_dict)
+
+            else:
+                users.append(user)
+
+        return users
+
+    async def paged_blocked(self, page: int = 0):
+        cursor = self.aggregation_paged_blocked(page)
+        users = []
+
+        async for user in cursor:
+            cached: User = connected_users.get(user['_id'])
+
+            if cached:
+                users.append(cached.public_dict)
+
+            else:
+                users.append(user)
+
+        return users

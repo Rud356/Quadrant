@@ -24,16 +24,16 @@ from .messages_routes import (
 )
 from .relations_routes import (
     block_user, cancel_friend_request,
-    delete_friend, get_blocked_users,
-    get_incoming_requests, get_outgoing_requests,
-    get_users_friends, response_friend_request,
+    delete_friend,
+    response_friend_request,
     send_friend_code_request, send_friend_request,
-    unblock_user
+    unblock_user,
+    get_paged_friends, get_paged_blocked,
+    get_paged_incoming_requests, get_paged_outgoing_requests
 )
 from .user_routes import (
     authorize_user, delete_user, keep_alive, logout_user, registrate_user,
-    set_friend_code, set_nickname, set_status, set_text_status,
-    update_users_token, user_from_id, user_about_self
+    update_users_token, user_from_id, user_about_self, update_user
 )
 from .ws_route import add_websocket
 
@@ -43,6 +43,7 @@ class Route:
     path: str
     function: callable
     methods: list = None
+    defaults: dict = {}
 
 
 categories = {
@@ -62,17 +63,14 @@ categories = {
         Route("/api/user/me", delete_user, ["DELETE"]),
         Route("/api/user/keep-alive", keep_alive),
         Route("/api/user/update_token", update_users_token, ["POST"]),
-        Route("/api/me/nick", set_nickname, ["POST"]),
-        Route("/api/me/friend_code", set_friend_code, ["POST"]),
-        Route("/api/me/status/<int:new_status>", set_status, ["POST"]),
-        Route("/api/me/text_status", set_text_status, ["POST"]),
+        Route("/api/me/update", update_user, ["POST"]),
     ],
     "Relations_routes": [
-        Route("/api/friends", get_users_friends),
-        Route("/api/blocked", get_blocked_users),
-        Route("/api/outgoing_requests", get_outgoing_requests),
+        Route("/api/friends/<int:page>", get_paged_friends, defaults={"page": 0}),
+        Route("/api/blocked/<int:page>", get_paged_blocked, defaults={"page": 0}),
+        Route("/api/incoming_requests/<int:page>", get_paged_incoming_requests, defaults={"page": 0}),
+        Route("/api/outgoing_requests/<int:page>", get_paged_outgoing_requests, defaults={"page": 0}),
         Route("/api/outgoing_requests/<id>", cancel_friend_request, ["DELETE"]),
-        Route("/api/incoming_requests", get_incoming_requests),
         Route("/api/incoming_requests/<id>", response_friend_request, ["POST"]),
         Route("/api/friends/<id>", send_friend_request, ["POST"]),
         Route("/api/friends/request", send_friend_code_request, ["POST"]),

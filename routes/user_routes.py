@@ -9,7 +9,7 @@ from user_view import User
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
-from .schemas import login, registrate, text_status
+from .schemas import login, registrate, text_status, user_update
 
 
 @validate_schema(login)
@@ -82,7 +82,7 @@ async def registrate_user():
     Validations:  
     `0 < nick length <= 25`  
     `5 < login length <= 200`  
-    `8 < password length <= 255`  
+    `8 < password length <= 256`  
     If they're failed - returns code 400  
 
     Repsonse: 400, 403 or 200 private user + token cookie
@@ -153,109 +153,31 @@ async def user_about_self(user: User):
 
 # Setters
 @authorized
-async def set_nickname(user: User):
-    """
-    Requires: new_nick as url parameter  
-    Validations:  
-    `0 < nick length <= 25`  
-    Responses: 200, 400
-    """
+@validate_schema(user_update)
+async def update_user(user: User):
+    update_fields = await request.json
 
-    nickname = request.args.get('new_nick', '')
     try:
-        await user.set_nick(nickname)
+        update_payload = await user.update(**update_fields)
 
     except ValueError:
-        return error("Invalid nick", 400)
+        if user.bot:
+            return error("Bots can not set friend codes", 400)
 
-    updated_nick = UpdateMessage(
-        {
-            "user_id": user._id,
-            "nick": nickname
-        },
-        UpdateType.updated_nick
+        else:
+            return error("No values provided", 400)
+
+    await user.broadcast_to_friends(
+        UpdateMessage(
+            update_payload,
+            UpdateType.updated_user
+        )
     )
-    await user.broadcast_to_friends(updated_nick)
-    return success("ok")
+
+    return success(update_payload)
 
 
-@authorized
-async def set_friend_code(user: User):
-    """
-    Requires: code as url parameter  
-    Validations:  
-    `0 < code length <= 50`  
-    Responses: 200, 400
-    """
-
-    friendcode = request.args.get('code', '')
-    try:
-        await user.set_friend_code(friendcode)
-        return success(friendcode)
-
-    except ValueError as ve:
-        return error(str(ve), 400)
-
-    except user.exc.UnavailableForBots:
-        return error("You are the bot user", 403)
-
-
-@authorized
-async def set_status(user: User, new_status: int):
-    """
-    Requires: status code in url  
-    Validations:  
-    `0 <= status <= 4`  
-    Responses: 200, 400
-    """
-
-    try:
-        await user.set_status(new_status)
-
-    except ValueError:
-        return error("Wrong status code", 400)
-
-    updated_status = UpdateMessage(
-        {
-            "user_id": user._id,
-            "status": new_status
-        },
-        UpdateType.updated_status
-    )
-    await user.broadcast_to_friends(updated_status)
-    return success("ok")
-
-
-@authorized
-@validate_schema(text_status)
-async def set_text_status(user: User):
-    """
-    Requries:
-    {
-        "text_status": "string" or empty string
-    }  
-    Response: 200, 400
-    """
-
-    text_status = await request.json
-    text_status = text_status.get('text_status')
-    try:
-        await user.set_text_status(text_status)
-
-    except ValueError:
-        return error("Invalid text status", 400)
-
-    updated_text_status = UpdateMessage(
-        {
-            "user_id": user._id,
-            "status": text_status
-        },
-        UpdateType.updated_status
-    )
-    await user.broadcast_to_friends(updated_text_status)
-    return success('ok')
-
-
+# TODO: add changing passwords
 # Dangerous methods for user
 @authorized
 async def update_users_token(user: User):

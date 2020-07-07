@@ -18,6 +18,7 @@ class Status(IntEnum):
 
 
 class UpdateType(IntEnum):
+    # !THIS CODES WILL BE CHANGED SOON
     deleted_message = 0
     edited_message = 1
     pinned_message = 2

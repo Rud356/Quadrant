@@ -58,7 +58,7 @@ async def change_nick(user: User, bot_id: str, nick: str):
 
     updated_nick = UpdateMessage(
         {
-            "user_id": user._id,
+            "_id": user._id,
             "nick": nick
         },
         UpdateType.updated_nick

@@ -16,7 +16,7 @@ def authorized(f):
         try:
             user = await User.authorize(token=request.cookies.get('token'))
 
-        except TypeError as e:
+        except TypeError:
             return error("User unauthorized", 401)
 
         return await f(*args, user=user, **kwargs)

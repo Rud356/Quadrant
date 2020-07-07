@@ -1,5 +1,8 @@
 import fastjsonschema
 
+from models.enums import Status
+
+
 login = fastjsonschema.compile({
     "type": "object",
     "properties": {
@@ -52,10 +55,27 @@ dm_endpoint = fastjsonschema.compile({
     "required": ["with"]
 })
 
+
 text_status = fastjsonschema.compile({
     "type": "object",
     "properties": {
         "text_status": {"type": "string", "default": ''}
     },
     "required": ["text_status"]
+})
+
+
+user_update = fastjsonschema.compile({
+    "type": "object",
+    "properties": {
+        "nick": {"type": "string"},
+        "status": {"type": "number"},
+        "text_status": {"type": "string"},
+        "friend_code": {"type": "string"}
+    }},
+    formats={
+        "nick": lambda val: len(val.strip(' \n\t')) in range(1, 25 + 1),
+        "status": lambda val: val in list(Status),
+        "text_status": lambda val: len(val.strip(' \n\t')) <= 256,
+        "friend_code": lambda val: len(val.strip(' \n\t')) in range(3, 51)
 })

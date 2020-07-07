@@ -99,18 +99,12 @@ class UserModel:
         text_status: str = None, friend_code: str = None,
         **_
     ):
-        if any(
-            [
-                len(nick) in range(1, 25 + 1),
-                status in list(Status),
-                len(text_status) <= 256,
-                len(friend_code) in range(3, 51)
-            ]
-        ):
+        if any((nick, status, text_status, friend_code and not self.bot)):
             actions = []
             update = {"_id": self._id}
 
-            if nick in range(1, 25 + 1):
+            if nick:
+                nick = nick.strip(' \n\t')
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -121,7 +115,7 @@ class UserModel:
                 update["nick"] = nick
                 self.nick = nick
 
-            if status in list(Status):
+            if status:
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -132,7 +126,8 @@ class UserModel:
                 update["status"] = status
                 self.status = status
 
-            if len(text_status) <= 256:
+            if text_status:
+                text_status = text_status.strip(' \n\t')
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -143,11 +138,8 @@ class UserModel:
                 update["text_status"] = text_status
                 self.text_status = text_status
 
-            if (
-                len(friend_code) in range(3, 51) and
-                not self.bot and
-                await self._avaliable_friend_code(friend_code)
-            ):
+            if await self._avaliable_friend_code(friend_code) and not self.bot:
+                friend_code = friend_code.strip(' \n\t')
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -163,54 +155,6 @@ class UserModel:
 
         else:
             raise ValueError("No values given")
-
-    async def set_nick(self, new_nick):
-        if len(new_nick) not in range(1, 25 + 1):
-            raise ValueError("Invalid nickname")
-
-        await users_db.update_one(
-            {"_id": self._id},
-            {"$set": {"nick": new_nick}}
-        )
-        self.nick = new_nick
-
-    async def set_status(self, status: int):
-        if status not in list(Status):
-            raise ValueError("Wrong status")
-
-        await users_db.update_one(
-            {"_id": self._id},
-            {"$set": {"status": status}}
-        )
-        self.status = status
-
-    async def set_text_status(self, text_status: str):
-        if len(text_status) > 256:
-            raise ValueError("Too long status")
-
-        await users_db.update_one(
-            {"_id": self._id},
-            {"$set": {"text_status": text_status}}
-        )
-        self.text_status = text_status
-
-    async def set_friend_code(self, new_friend_code: str):
-        if self.bot:
-            raise self.exc.UnavailableForBots()
-
-        if len(new_friend_code) not in range(3, 51):
-            raise ValueError("Too long friend friend_code")
-
-        is_avaliable = await self._avaliable_friend_code(new_friend_code)
-
-        if not is_avaliable:
-            raise ValueError("friend_code is already used")
-
-        await users_db.update_one(
-            {"_id": self._id},
-            {"$set": {"friend_code": new_friend_code}}
-        )
-        self.friend_code = new_friend_code
 
     # ? Friends related
     async def send_friend_request(self, to_user_id: ObjectId):
@@ -344,24 +288,6 @@ class UserModel:
         cursor = users_db.aggregate(pipeline)
         return cursor
 
-    # Replace method
-    async def get_friends(self, fetch_friends: list):
-        if self.bot:
-            return []
-
-        users = users_db.find(
-            {"_id": {"$in": list(fetch_friends)}},
-            EXCLUDE_PUBLIC
-        ).sort("nick", -1)
-
-        users_objects = []
-
-        async for user in users:
-            user = UserModel(**user)
-            users_objects.append(user.public_dict)
-
-        return users_objects
-
     def aggregation_paged_friends(self, page: int = 0):
         # Returning only cursor to iterate through to get friends
         pipeline = [
@@ -432,21 +358,6 @@ class UserModel:
             {'_id': self._id},
             {'$pull': {'blocked': unblocking}}
         )
-
-    # Replace method
-    async def get_blocked(self, fetch_blocked: list):
-        users = users_db.find(
-            {"_id": {"$in": list(fetch_blocked)}},
-            EXCLUDE_PUBLIC
-        )
-
-        users_objects = []
-
-        async for user in users:
-            user = UserModel(**user)
-            users_objects.append(user.public_dict)
-
-        return users_objects
 
     def aggregation_paged_blocked(self, page: int = 0):
         # Returning only cursor to iterate through to get blocked
@@ -519,7 +430,8 @@ class UserModel:
             )
 
         elif login and password:
-            login = sha256(login.enfriend_code())
+            # TODO: replace with cryptography module
+            login = sha256(login.encode())
             login = login.hexdigest()
 
             salt = await cls._get_salt_hashed_login(login)
@@ -557,15 +469,16 @@ class UserModel:
 
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
+        # TODO: replace with cryptography module
         loop = get_running_loop()
         salt = cls.generate_salt()
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha256', password.enfriend_code(), salt.enfriend_code(), 100000
+            'sha256', password.encode(), salt.encode(), 100000
         )
         password = password.hex()
-        login = sha256(login.enfriend_code()).hexdigest()
+        login = sha256(login.encode()).hexdigest()
 
         new_user = {
             'bot': False,
@@ -654,7 +567,7 @@ class UserModel:
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha256', password.enfriend_code(), salt.enfriend_code(), 100000
+            'sha256', password.encode(), salt.encode(), 100000
         )
         return password
 
