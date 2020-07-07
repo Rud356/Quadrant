@@ -1,5 +1,5 @@
 from inspect import getdoc
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app import app
 from .bot_managment_routes import (
@@ -43,7 +43,7 @@ class Route:
     path: str
     function: callable
     methods: list = None
-    defaults: dict = {}
+    defaults: dict = field(default_factory=dict)
 
 
 categories = {
