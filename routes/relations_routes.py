@@ -11,21 +11,29 @@ from .middlewares import authorized
 from .responses import error, success
 
 
+@authorized
 async def get_paged_incoming_requests(user: User, page: int):
     users = await user.paged_incoming_requests(page)
     return success(users)
 
+
+@authorized
 async def get_paged_outgoing_requests(user: User, page: int):
     users = await user.paged_outgoing_requests(page)
     return success(users)
 
+
+@authorized
 async def get_paged_friends(user: User, page: int):
     users = await user.paged_friends(page)
     return success(users)
 
+
+@authorized
 async def get_paged_blocked(user: User, page: int):
     users = await user.paged_blocked(page)
     return success(users)
+
 
 @authorized
 async def send_friend_request(user: User, id: str):
