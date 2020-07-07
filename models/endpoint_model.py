@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List
 
-from bson import ObjectId
-
+from bson import SON, ObjectId
 
 from app import connected_users, db
 
@@ -324,6 +323,24 @@ class MetaEndpoint:
             list_endpoints.append(endpoint['_id'])
 
         return list_endpoints
+
+    @staticmethod
+    async def aggregation_paged_endpoints(requester: ObjectId, page: int = 0) -> Dict[
+        ObjectId, TextEndpoint
+    ]:
+        pipeline = [
+            {"$match": {"$in": [requester]}},
+            {"$sort": SON([("last_message", -1), ("_id", -1)])},
+            {"$skip": page*100},
+            {"$limit": 100}
+        ]
+
+        cursor = endpoints_db.aggregate(pipeline)
+        endpoints = {}
+        async for endpoint in cursor:
+            endpoints[str(endpoint['_id'])] = endpoint
+
+        return endpoints
 
     @staticmethod
     async def get_endpoints(requester: ObjectId) -> Dict[

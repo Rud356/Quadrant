@@ -35,3 +35,4 @@ class UpdateType(IntEnum):
     new_group_member = 14
     left_group_member = 15
     kicked_group_member = 16
+    updated_user = 17

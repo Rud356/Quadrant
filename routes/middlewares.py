@@ -5,7 +5,7 @@ from quart import request, websocket
 
 from user_view import User
 
-from .responces import error
+from .responses import error
 
 
 def authorized(f):

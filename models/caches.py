@@ -34,7 +34,9 @@ class authorization_cache:
         async def caching_logins(login):
             if login not in authorization_cache.login_salt:
                 result = await f(login)
-                authorization_cache.login_salt[login] = result
+
+                if result:
+                    authorization_cache.login_salt[login] = result
 
                 if len(authorization_cache.login_salt) > authorization_cache.CACHE_SIZE:
                     keys = list(authorization_cache.login_salt)

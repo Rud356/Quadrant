@@ -8,7 +8,7 @@ from models.message_model import MessageModel, UpdateMessage
 from user_view import User
 
 from .middlewares import authorized
-from .responces import error, success
+from .responses import error, success
 
 
 @authorized
@@ -74,18 +74,18 @@ async def send_friend_request(user: User, id: str):
 
 
 @authorized
-async def send_code_friend_request(user: User):
+async def send_friend_code_request(user: User):
     """
     Requests: code as url param of reciever of friend request  
     Response: 200, 400, 404
     """
 
     try:
-        code = request.args.get('code', '')
-        if not len(code) or len(code) > 50:
+        friend_code = request.args.get('code', '')
+        if not len(friend_code) or len(friend_code) > 50:
             raise ValueError("Invalid code", 400)
 
-        await user.friend_code_request(code)
+        await user.friend_code_request(friend_code)
 
     except User.exc.InvalidUser as err:
         return error(str(err), 403)

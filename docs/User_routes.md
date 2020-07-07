@@ -60,9 +60,9 @@ Responses: 200, 400
 ### Route: /api/me/friend_code
 Methods: POST  
 Description:  
-Requires: code as url parameter  
+Requires: friend_code as url parameter  
 Validations:  
-`0 < code length <= 50`  
+`0 < friend_code length <= 50`  
 Responses: 200, 400  
 
 

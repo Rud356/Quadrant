@@ -21,7 +21,7 @@ from .endpoint_model import MetaEndpoint
 users_db = db.chat_users
 
 EXCLUDE_PUBLIC = {
-    "code": 0,
+    "friend_code": 0,
     "salt": 0,
     "token": 0,
     "login": 0,
@@ -46,7 +46,7 @@ class UserModel:
     token: str = field(default=None, repr=False)
     status: int = Status.offline
     text_status: str = ''
-    code: str = field(default=None, repr=False)
+    friend_code: str = field(default=None, repr=False)
     parent: int = field(default=None, repr=False)
 
     blocked: List[ObjectId] = field(default_factory=list, repr=False)
@@ -76,7 +76,7 @@ class UserModel:
                     "token": "",
                     "status": "",
                     "text_status": "",
-                    "code": "",
+                    "friend_code": "",
                     "parent": "",
                     "blocked": "",
                     "friends": "",
@@ -93,6 +93,77 @@ class UserModel:
         await users_db.bulk_write(bulk_user_removing)
 
     # ? Setters
+    async def update(
+        self, *,
+        nick: str = None, status: int = None,
+        text_status: str = None, friend_code: str = None,
+        **_
+    ):
+        if any(
+            [
+                len(nick) in range(1, 25 + 1),
+                status in list(Status),
+                len(text_status) <= 256,
+                len(friend_code) in range(3, 51)
+            ]
+        ):
+            actions = []
+            update = {"_id": self._id}
+
+            if nick in range(1, 25 + 1):
+                actions.append(
+                    UpdateOne(
+                        {"_id": self._id},
+                        {"$set": {"nick": nick}}
+                    )
+                )
+
+                update["nick"] = nick
+                self.nick = nick
+
+            if status in list(Status):
+                actions.append(
+                    UpdateOne(
+                        {"_id": self._id},
+                        {"$set": {"status": status}}
+                    )
+                )
+
+                update["status"] = status
+                self.status = status
+
+            if len(text_status) <= 256:
+                actions.append(
+                    UpdateOne(
+                        {"_id": self._id},
+                        {"$set": {"text_status": status}}
+                    )
+                )
+
+                update["text_status"] = text_status
+                self.text_status = text_status
+
+            if (
+                len(friend_code) in range(3, 51) and
+                not self.bot and
+                await self._avaliable_friend_code(friend_code)
+            ):
+                actions.append(
+                    UpdateOne(
+                        {"_id": self._id},
+                        {"$set": {"friend_code": friend_code}}
+                    )
+                )
+
+                update["friend_code"] = friend_code
+                self.friend_code = friend_code
+
+            await users_db.bulk_write(actions)
+            return update
+
+        else:
+            raise ValueError("No values given")
+
     async def set_nick(self, new_nick):
         if len(new_nick) not in range(1, 25 + 1):
             raise ValueError("Invalid nickname")
@@ -123,23 +194,23 @@ class UserModel:
         )
         self.text_status = text_status
 
-    async def set_friend_code(self, new_code: str):
+    async def set_friend_code(self, new_friend_code: str):
         if self.bot:
             raise self.exc.UnavailableForBots()
 
-        if len(new_code) not in range(3, 51):
-            raise ValueError("Too long friend code")
+        if len(new_friend_code) not in range(3, 51):
+            raise ValueError("Too long friend friend_code")
 
-        is_avaliable = await self._avaliable_friend_code(new_code)
+        is_avaliable = await self._avaliable_friend_code(new_friend_code)
 
         if not is_avaliable:
-            raise ValueError("Code is already used")
+            raise ValueError("friend_code is already used")
 
         await users_db.update_one(
             {"_id": self._id},
-            {"$set": {"code": new_code}}
+            {"$set": {"friend_code": new_friend_code}}
         )
-        self.code = new_code
+        self.friend_code = new_friend_code
 
     # ? Friends related
     async def send_friend_request(self, to_user_id: ObjectId):
@@ -249,7 +320,7 @@ class UserModel:
             )
         ])
 
-    def aggregation_paged_outgoing_requests(self, page: int):
+    def aggregation_paged_outgoing_requests(self, page: int = 0):
         # Returning only cursor to iterate through to get outgoing pendings
         pipeline = [
             {"$match": {"$in": self.pendings_outgoing}},
@@ -261,7 +332,7 @@ class UserModel:
         cursor = users_db.aggregate(pipeline)
         return cursor
 
-    def aggregation_paged_incoming_requests(self, page: int):
+    def aggregation_paged_incoming_requests(self, page: int = 0):
         # Returning only cursor to iterate through to get incoming pendings
         pipeline = [
             {"$match": {"$in": self.pendings_incoming}},
@@ -291,7 +362,7 @@ class UserModel:
 
         return users_objects
 
-    def aggregation_paged_friends(self, page: int):
+    def aggregation_paged_friends(self, page: int = 0):
         # Returning only cursor to iterate through to get friends
         pipeline = [
             {"$match": {"$in": self.friends}},
@@ -377,7 +448,7 @@ class UserModel:
 
         return users_objects
 
-    def aggregation_paged_blocked(self, page: int):
+    def aggregation_paged_blocked(self, page: int = 0):
         # Returning only cursor to iterate through to get blocked
         pipeline = [
             {"$match": {"$in": self.blocked}},
@@ -448,10 +519,12 @@ class UserModel:
             )
 
         elif login and password:
-            login = sha256(login.encode())
+            login = sha256(login.enfriend_code())
             login = login.hexdigest()
 
             salt = await cls._get_salt_hashed_login(login)
+            if not salt:
+                raise ValueError("Invalid login")
             password = await UserModel._hash_password_with_salt(password=password, salt=salt)
             password = password.hex()
 
@@ -489,10 +562,10 @@ class UserModel:
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha256', password.encode(), salt.encode(), 100000
+            'sha256', password.enfriend_code(), salt.enfriend_code(), 100000
         )
         password = password.hex()
-        login = sha256(login.encode()).hexdigest()
+        login = sha256(login.enfriend_code()).hexdigest()
 
         new_user = {
             'bot': False,
@@ -581,21 +654,21 @@ class UserModel:
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha256', password.encode(), salt.encode(), 100000
+            'sha256', password.enfriend_code(), salt.enfriend_code(), 100000
         )
         return password
 
     @staticmethod
-    async def _avaliable_friend_code(code: str) -> bool:
-        same_codes = await users_db.count_documents(
-            {"code": code}
+    async def _avaliable_friend_code(friend_code: str) -> bool:
+        same_friend_codes = await users_db.count_documents(
+            {"friend_code": friend_code}
         )
-        return not bool(same_codes)
+        return not bool(same_friend_codes)
 
     @staticmethod
-    async def _friend_code_owner(code):
+    async def _friend_code_owner(friend_code):
         user_id = await users_db.find_one(
-            {"code": code},
+            {"friend_code": friend_code},
             {"_id": 1, "total": 1}
         )
         return user_id.get('_id')

@@ -47,7 +47,7 @@ Response: 200, 403, 404
 ### Route: /api/friends/request
 Methods: POST  
 Description:  
-Requests: code as url param of reciever of friend request  
+Requests: friend_code as url param of reciever of friend request  
 Response: 200, 400, 404  
 
 

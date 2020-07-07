@@ -94,8 +94,8 @@ class User(UserModel):
 
         self.logout()
 
-    async def friend_code_request(self, code: str):
-        user_id = await self._friend_code_owner(code)
+    async def friend_code_request(self, friend_code: str):
+        user_id = await self._friend_code_owner(friend_code)
         await self.send_friend_request(user_id)
 
     async def add_message(self, message):

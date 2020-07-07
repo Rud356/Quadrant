@@ -27,7 +27,7 @@ from .relations_routes import (
     delete_friend, get_blocked_users,
     get_incoming_requests, get_outgoing_requests,
     get_users_friends, response_friend_request,
-    send_code_friend_request, send_friend_request,
+    send_friend_code_request, send_friend_request,
     unblock_user
 )
 from .user_routes import (
@@ -75,7 +75,7 @@ categories = {
         Route("/api/incoming_requests", get_incoming_requests),
         Route("/api/incoming_requests/<id>", response_friend_request, ["POST"]),
         Route("/api/friends/<id>", send_friend_request, ["POST"]),
-        Route("/api/friends/request", send_code_friend_request, ["POST"]),
+        Route("/api/friends/request", send_friend_code_request, ["POST"]),
         Route("/api/friends/<id>", delete_friend, ["DELETE"]),
         Route("/api/blocked/<id>", block_user, ["POST"]),
         Route("/api/blocked/<id>", unblock_user, ["DELETE"])

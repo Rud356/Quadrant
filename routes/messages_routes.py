@@ -12,7 +12,7 @@ from models.message_model import UpdateMessage
 from user_view import User
 
 from .middlewares import authorized, validate_schema
-from .responces import error, success
+from .responses import error, success
 from .schemas import message
 
 files_path = Path(app.config['UPLOAD_FOLDER'])

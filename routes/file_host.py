@@ -17,7 +17,7 @@ from models.file_model import FileModel
 from user_view import User
 
 from .middlewares import authorized
-from .responces import error, success
+from .responses import error, success
 
 allowed_formats = {'gif', 'jpeg', 'png', 'webp'}
 profile_pics_folder = Path(app.config['UPLOAD_FOLDER']) / 'profile_pics'
