@@ -121,7 +121,8 @@ def init_routes():
             app.add_url_rule(
                 route.path,
                 view_func=route.function,
-                methods=route.methods
+                methods=route.methods,
+                defaults=route.defaults
             )
 
 def generate_docs():
