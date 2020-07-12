@@ -1,6 +1,7 @@
 import fastjsonschema
 
 from models.enums import Status
+from utils import string_strips
 
 
 login = fastjsonschema.compile({
@@ -74,8 +75,8 @@ user_update = fastjsonschema.compile({
         "friend_code": {"type": "string"}
     }},
     formats={
-        "nick": lambda val: len(val.strip(' \n\t')) in range(1, 25 + 1),
+        "nick": lambda val: len(string_strips(val)) in range(1, 25 + 1),
         "status": lambda val: val in list(Status),
-        "text_status": lambda val: len(val.strip(' \n\t')) <= 256,
-        "friend_code": lambda val: len(val.strip(' \n\t')) in range(3, 51)
+        "text_status": lambda val: len(string_strips(val)) <= 256,
+        "friend_code": lambda val: len(string_strips(val)) in range(3, 51)
 })

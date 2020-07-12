@@ -12,7 +12,7 @@ from bson import SON, ObjectId
 from pymongo import UpdateOne
 
 from app import db
-from utils import exclude_keys
+from utils import exclude_keys, string_strips
 
 from .caches import authorization_cache
 from .endpoint_model import MetaEndpoint
@@ -104,7 +104,7 @@ class UserModel:
             update = {"_id": self._id}
 
             if nick:
-                nick = nick.strip(' \n\t')
+                nick = string_strips(nick)
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -127,7 +127,7 @@ class UserModel:
                 self.status = status
 
             if text_status:
-                text_status = text_status.strip(' \n\t')
+                text_status = string_strips(text_status)
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -139,7 +139,7 @@ class UserModel:
                 self.text_status = text_status
 
             if await self._avaliable_friend_code(friend_code) and not self.bot:
-                friend_code = friend_code.strip(' \n\t')
+                friend_code = string_strips(friend_code)
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
