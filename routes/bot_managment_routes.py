@@ -6,6 +6,7 @@ from app import app
 from models.enums import UpdateType
 from models.message_model import UpdateMessage
 from user_view import User
+from utils import string_strips
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
@@ -47,14 +48,14 @@ async def change_nick(user: User, bot_id: str, nick: str):
         return error("Invalid user id", 400)
 
     bot: User = user.from_id(bot_id)
+    nick = string_strips(nick)
 
     if bot.parent == user._id:
 
-        try:
-            await bot.set_nick(nick)
+        if len(nick) in range(1, 26):
+            return error("Invalid nick length", 400)
 
-        except ValueError:
-            return error("Invalid bot nick length")
+        await bot.update(nick=nick)
 
     updated_nick = UpdateMessage(
         {

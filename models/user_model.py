@@ -27,7 +27,6 @@ EXCLUDE_PUBLIC = {
     "login": 0,
     "password": 0,
     "status": 0,
-    "parent": 0,
     "blocked": 0,
     "friends": 0,
     "pendings_outgoing": 0,
@@ -387,6 +386,18 @@ class UserModel:
         endpoint = await MetaEndpoint.get_endpoint(self._id, endpoint_id)
         return endpoint
 
+    async def get_bots(self):
+        users_bots = await users_db.find({'parent': self._id})
+        bots = []
+
+        async for bot in users_bots:
+            bot = UserModel(**bot)
+            bot_dict = bot.public_dict
+            bot_dict.update({'token': bot.token})
+            bots.append(bot_dict)
+
+        return bots
+
     @property
     def public_dict(self):
         user_dict = {
@@ -469,7 +480,6 @@ class UserModel:
 
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
-        # TODO: replace with cryptography module
         salt = cls.generate_salt()
         password = await cls._hash_password_with_salt(password.encode(), salt.encode())
 

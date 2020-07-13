@@ -6,6 +6,7 @@ from app import app
 from models.enums import UpdateType
 from models.message_model import MessageModel, UpdateMessage
 from user_view import User
+from utils import string_strips
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
@@ -54,7 +55,7 @@ async def logout_user(user: User):
     """
 
     user.logout()
-    response = success("All is fine!")
+    response = success("OK")
     response.delete_cookie('token')
     return response
 
@@ -93,7 +94,7 @@ async def registrate_user():
     if not app.config["ALLOW_REG"]:
         return error("Sorry, but you can't register", 403)
 
-    nick = reg['nick'].replace(' \n\t', '')
+    nick = string_strips(reg['nick'])
     login = reg['login'].replace(' \n\t', '')
     password = reg['password'].replace(' \n\t', '')
 

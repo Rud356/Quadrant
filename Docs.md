@@ -19,18 +19,15 @@
 | /api/user/me | DELETE |
 | /api/user/keep-alive | GET |
 | /api/user/update_token | POST |
-| /api/me/nick | POST |
-| /api/me/friend_code | POST |
-| /api/me/status/<int:new_status\> | POST |
-| /api/me/text_status | POST |
+| /api/me/update | POST |
 ## [Relations_routes](docs/Relations_routes.md)
 | route | method |
 | ----- | ------ |
-| /api/friends | GET |
-| /api/blocked | GET |
-| /api/outgoing_requests | GET |
+| /api/friends/<int:page\> | GET |
+| /api/blocked/<int:page\> | GET |
+| /api/incoming_requests/<int:page\> | GET |
+| /api/outgoing_requests/<int:page\> | GET |
 | /api/outgoing_requests/<id\> | DELETE |
-| /api/incoming_requests | GET |
 | /api/incoming_requests/<id\> | POST |
 | /api/friends/<id\> | POST |
 | /api/friends/request | POST |

@@ -8,6 +8,7 @@ from bson import ObjectId
 
 from app import db
 from json_encoder import CustomJSONEncoder
+from utils import string_strips
 
 messages_db = db.messages
 
@@ -32,6 +33,8 @@ class MessageModel:
         content: str,
         files: List[ObjectId] = [],
     ):
+        content = string_strips(content)
+
         if len(content) > 3000:
             raise ValueError("Too long message")
 
@@ -57,6 +60,8 @@ class MessageModel:
         message_id: str,
         new_content: str
     ) -> bool:
+        new_content = string_strips(new_content)
+
         if len(new_content) > 3000:
             raise ValueError("Too long message")
 

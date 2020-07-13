@@ -1,19 +1,25 @@
-### Route: /api/friends
+### Route: /api/friends/<int:page\>
 Methods: GET  
 Description:  
-Response: list of public users that are friends  
+Yet to add  
 
 
-### Route: /api/blocked
+### Route: /api/blocked/<int:page\>
 Methods: GET  
 Description:  
-Response: list of public users  
+Yet to add  
 
 
-### Route: /api/outgoing_requests
+### Route: /api/incoming_requests/<int:page\>
 Methods: GET  
 Description:  
-Response: list of public users that are sent pendings from you  
+Yet to add  
+
+
+### Route: /api/outgoing_requests/<int:page\>
+Methods: GET  
+Description:  
+Yet to add  
 
 
 ### Route: /api/outgoing_requests/<id\>
@@ -21,12 +27,6 @@ Methods: DELETE
 Description:  
 Requests: id of user we sent request to cancel  
 Response: 200, 400, 403, 404  
-
-
-### Route: /api/incoming_requests
-Methods: GET  
-Description:  
-Response: list of public users that are sent pendings to you  
 
 
 ### Route: /api/incoming_requests/<id\>
@@ -47,7 +47,7 @@ Response: 200, 403, 404
 ### Route: /api/friends/request
 Methods: POST  
 Description:  
-Requests: friend_code as url param of reciever of friend request  
+Requests: code as url param of reciever of friend request  
 Response: 200, 400, 404  
 
 

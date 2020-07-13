@@ -10,6 +10,7 @@ from models.enums import UpdateType
 from models.message_model import MessageModel as Message
 from models.message_model import UpdateMessage
 from user_view import User
+from utils import string_strips
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
@@ -65,8 +66,10 @@ async def send_message(user: User, endpoint_id: str):
             filtered_files.append(str(file))
 
     try:
+        content = string_strips(data.get('content'))
+
         message = await endpoint.send_message(
-            user._id, data.get('content'), filtered_files
+            user._id, content, filtered_files
         )
         for user_id in endpoint.members:
 

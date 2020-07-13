@@ -48,34 +48,7 @@ Description:
 Yet to add  
 
 
-### Route: /api/me/nick
-Methods: POST  
-Description:  
-Requires: new_nick as url parameter  
-Validations:  
-`0 < nick length <= 25`  
-Responses: 200, 400  
-
-
-### Route: /api/me/friend_code
-Methods: POST  
-Description:  
-Requires: friend_code as url parameter  
-Validations:  
-`0 < friend_code length <= 50`  
-Responses: 200, 400  
-
-
-### Route: /api/me/status/<int:new_status\>
-Methods: POST  
-Description:  
-Requires: status code in url  
-Validations:  
-`0 <= status <= 4`  
-Responses: 200, 400  
-
-
-### Route: /api/me/text_status
+### Route: /api/me/update
 Methods: POST  
 Description:  
 Yet to add  

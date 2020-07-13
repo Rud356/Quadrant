@@ -68,7 +68,7 @@ async def send_friend_code_request(user: User):
     try:
         friend_code = request.args.get('code', '')
         if not len(friend_code) or len(friend_code) > 50:
-            raise ValueError("Invalid code", 400)
+            return error("No friend code given", 400)
 
         await user.friend_code_request(friend_code)
 
@@ -77,9 +77,6 @@ async def send_friend_code_request(user: User):
 
     except user.exc.UnavailableForBots:
         return error("You are the bot user", 403)
-
-    except ValueError:
-        return error("No friend code given", 400)
 
     return success("ok")
 
@@ -159,7 +156,7 @@ async def delete_friend(user: User, id: str):
 async def block_user(user: User, id: str):
     """
     Request: blocking user id in url  
-    Response: 200, 204 (already blocked), 400
+    Response: 200, 204 (already blocked), 404
     """
 
     try:
@@ -167,7 +164,7 @@ async def block_user(user: User, id: str):
         await user.block_user(id)
 
     except bson_errors.InvalidId:
-        return error("Invalid id", 400)
+        return error("Invalid id")
 
     except User.exc.UserNotInGroup:
         return success("User is blocked already", 204)
@@ -179,7 +176,7 @@ async def block_user(user: User, id: str):
 async def unblock_user(user: User, id: str):
     """
     Request: unblocking user id in url  
-    Response: 200, 204 (already blocked), 400
+    Response: 200, 204 (already blocked), 404
     """
 
     try:
@@ -187,7 +184,7 @@ async def unblock_user(user: User, id: str):
         await user.unblock_user(id)
 
     except bson_errors.InvalidId:
-        return error("Invalid id", 400)
+        return error("Invalid id")
 
     except User.exc.UserNotInGroup:
         return success("User isn't blocked", 204)

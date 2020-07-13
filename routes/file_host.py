@@ -100,8 +100,8 @@ async def upload_file(user: User):
             continue
 
         rand_part = ''.join(choices(ascii_letters, k=12))
-
-        system_file_name = f"{time()}_{user._id}_{rand_part}"
+        hex_time = hex(int(time()))
+        system_file_name = f"{hex_time}_{user._id}_{rand_part}"
         with open(files_path / system_file_name, 'wb') as f:
             file.save(f)
 

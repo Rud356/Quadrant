@@ -65,6 +65,10 @@ class User(UserModel):
 
         return user_view
 
+    async def delete_user(self):
+        tokenized_connected_users.pop(self.token)
+        await super().delete_user()
+
     def logout(self):
         if connected_users.pop(self._id, False):
             self.connected.clear()
