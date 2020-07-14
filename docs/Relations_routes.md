@@ -1,6 +1,6 @@
 # Relations routes
 
-## Route: /api/friends/<int:page\>
+## Route: /api/friends/\<int:page>
 
 Methods: GET
 
@@ -37,7 +37,7 @@ Response:
 ]
 ```
 
-## Route: /api/blocked/<int:page\>
+## Route: /api/blocked/\<int:page>
 
 Methods: GET
 
@@ -74,7 +74,7 @@ Response:
 ]
 ```
 
-## Route: /api/incoming_requests/<int:page\>
+## Route: /api/incoming_requests/\<int:page>
 
 Methods: GET
 
@@ -111,7 +111,7 @@ Response:
 ]
 ```
 
-## Route: /api/outgoing_requests/<int:page\>
+## Route: /api/outgoing_requests/\<int:page>
 
 Methods: GET
 
@@ -148,7 +148,7 @@ Response:
 ]
 ```
 
-## Route: /api/friends/<id\>
+## Route: /api/friends/\<id>
 
 Methods: POST
 
@@ -193,7 +193,7 @@ Sends friend request by code
 
 Response: ok
 
-## Route: /api/outgoing_requests/<id\>
+## Route: /api/outgoing_requests/\<id>
 
 Methods: DELETE
 
