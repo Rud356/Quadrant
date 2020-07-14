@@ -30,7 +30,7 @@ def load_config():
         config.set("App", "db_conn_string", "mongodb://localhost:27017")
         config.set("App", "# TTK means the number of minutes until killing user from cache for inactive", "")
         config.set("App", "TTK", "10")
-        config.set("App", "# Next parameter shows how big can be the uploaded file to server", "")
+        config.set("App", "# Next parameter shows how big (in megabytes) can be the uploaded file to server", "")
         config.set("App", "max_payload_size", "20")
         config.set("App", "login_cache_size", "1024")
         config.set("App", "priv_key", "")
