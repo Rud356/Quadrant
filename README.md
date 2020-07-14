@@ -28,7 +28,7 @@ Steps:
 
 - Firstly you should get python 3.7 and above cause of used modules
 
-- Install all mudiles required to work with: `pip install -r requirements.txt` while being inside working dir in console (might need to put `pip3` for linux users)
+- Install all modules required to work with: `pip install -r requirements.txt` while being inside working dir in console (might need to put `pip3` for linux users)
 
 - Install [MongoDB](https://www.mongodb.com/try/download/community)
 
