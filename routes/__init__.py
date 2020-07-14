@@ -130,12 +130,12 @@ def generate_docs():
         d.writelines("# Routes\n")
 
         d.writelines([
-            "\nThis API is based on json format",
-            "## Fine requests"
-            "All fine requests response can be found inside of `response` field",
-            "Later will be added info about what websockets responses you should await",
-            "204 in context of app isn't an error so you should not count it as one too"
-            "## Errors",
+            "\nThis API is based on json format\n\n",
+            "## Fine requests\n\n"
+            "All fine requests response can be found inside of `response` field\n\n",
+            "Later will be added info about what websockets responses you should await\n\n",
+            "204 in context of app isn't an error so you should not count it as one too\n\n"
+            "## Errors\n\n",
             "All fails will tell you a bit more about what happened in `description` field\n"
         ])
 
