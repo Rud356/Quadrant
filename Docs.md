@@ -1,5 +1,7 @@
 # Routes
 
+This API is based on json format## Fine requestsAll fine requests response can be found inside of `response` fieldLater will be added info about what websockets responses you should await204 in context of app isn't an error so you should not count it as one too## ErrorsAll fails will tell you a bit more about what happened in `description` field
+
 ## [Bot_managment](docs/Bot_managment.md)
 
 | route | method |

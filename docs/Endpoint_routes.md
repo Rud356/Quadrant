@@ -234,7 +234,7 @@ Returns all invites created for that group
 Response:
 
 ```json
-{
+[
     {
         "endpoint": "string",
         "user_created": "string",
@@ -251,7 +251,7 @@ Response:
         "users_passed": "integer",
         "expires_at": "float"
     }, ...
-}
+]
 ```
 
 ## Route: /api/endpoints/<group_id\>/invites

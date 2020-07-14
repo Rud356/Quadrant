@@ -129,6 +129,16 @@ def generate_docs():
     with open("Docs.md", 'w') as d:
         d.writelines("# Routes\n")
 
+        d.writelines([
+            "\nThis API is based on json format",
+            "## Fine requests"
+            "All fine requests response can be found inside of `response` field",
+            "Later will be added info about what websockets responses you should await",
+            "204 in context of app isn't an error so you should not count it as one too"
+            "## Errors",
+            "All fails will tell you a bit more about what happened in `description` field\n"
+        ])
+
         for k, category_routes in categories.items():
             d.writelines([f"\n## [{k}](docs/{k}.md)\n", "\n| route | method |\n", "| ----- | ------ |\n"])
             d.writelines([
