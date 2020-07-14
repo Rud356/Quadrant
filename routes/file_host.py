@@ -12,8 +12,8 @@ from werkzeug.utils import secure_filename
 
 from app import app
 from models.enums import UpdateType
-from models.message_model import UpdateMessage
 from models.file_model import FileModel
+from models.message_model import UpdateMessage
 from user_view import User
 
 from .middlewares import authorized

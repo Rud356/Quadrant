@@ -113,6 +113,9 @@ async def get_message(user: User, endpoint_id: str, message_id: str):
     except TextEndpoint.exc.NotGroupMember:
         return error("you aren't a group member", 403)
 
+    except ValueError:
+        return error("No such message")
+
 
 @authorized
 async def get_messages_latest(user: User, endpoint_id: str):
@@ -279,7 +282,7 @@ async def delete_message(user: User, endpoint_id: str, message_id: str):
     Response: 200, 204, 403, 404
     """
     try:
-        force_delete = bool(request.args.get('force', False))
+        force_delete = request.args.get('force', False) == "True"
 
         endpoint_id = ObjectId(endpoint_id)
         endpoint = await user.get_endpoint(endpoint_id)
@@ -337,7 +340,7 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
     Response: 200, 204 (if no such message from you), 400, 403, 404
     """
 
-    content = await request.json.get('content')
+    content = (await request.json).get('content')
     if not content:
         return error("No content to modify provided", 400)
 
@@ -369,7 +372,7 @@ async def edit_message(user: User, endpoint_id: str, message_id: str):
             return success("ok")
 
         else:
-            return success("Nothing to modify", 204)
+            return success("Not modified", 204)
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)
@@ -454,7 +457,7 @@ async def unpin_message(user: User, endpoint_id: str, message_id: str):
             return success("ok")
 
         else:
-            return success("Nothing pinned", 204)
+            return success("Nothing unpinned", 204)
 
     except TextEndpoint.exc.NotGroupMember:
         return error("You aren't a group member", 403)

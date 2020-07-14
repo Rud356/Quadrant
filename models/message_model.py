@@ -2,14 +2,17 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
+from os.path import isfile, join
 from typing import List
 
 from bson import ObjectId
+from werkzeug.utils import secure_filename
 
-from app import db
+from app import app, db
 from json_encoder import CustomJSONEncoder
 from utils import string_strips
 
+files_path = app.config['UPLOAD_FOLDER']
 messages_db = db.messages
 
 
@@ -37,6 +40,15 @@ class MessageModel:
 
         if len(content) > 3000:
             raise ValueError("Too long message")
+
+        files = [
+            filename for filename in files if isfile(
+                join(files_path, secure_filename(filename))
+            )
+        ]
+
+        if len(files) > 15:
+            raise ValueError("Too many attachments")
 
         if not content and not files:
             raise ValueError("No content provided")

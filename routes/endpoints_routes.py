@@ -11,6 +11,7 @@ from models.enums import ChannelType, UpdateType
 from models.invites_model import Invite
 from models.message_model import UpdateMessage
 from user_view import User
+from utils import string_strips
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
@@ -80,6 +81,8 @@ async def create_dm(user: User):
 
 @authorized
 async def create_group(user: User, title: str):
+    title = string_strips(title)
+
     try:
         new_group_dm = await GroupDM.create_endpoint(
             user._id, title
@@ -105,19 +108,18 @@ async def create_group_invite(user: User, group_id: str):
         endpoint = await MetaEndpoint.get_endpoint(
             user._id, group_id
         )
-
-        if endpoint._type != ChannelType.group:
-            return error("It's not an group dm channel")
-
         invite = endpoint.create_invite(user._id, limit, expires)
 
         return success(invite)
 
     except bson_errors.InvalidId:
-        return error("Invalid user with id")
+        return error("Invalid group channel id")
 
-    except ValueError as ve:
-        return error(str(ve), 403)
+    except Invite.TooManyInvites:
+        return error("Too many invites", 400)
+
+    except NotImplementedError:
+        return error("Can't make invite for that type of channel", 403)
 
 
 @authorized
@@ -127,16 +129,16 @@ async def get_invites(user: User, group_id: str):
         endpoint = await MetaEndpoint.get_endpoint(user._id, group_id)
 
         if endpoint._type != ChannelType.group:
-            return error("Not an group channel")
+            return error("Not an group channel", 400)
 
         if user._id not in endpoint.members:
-            return error("Not a group member")
+            return error("Not a group member", 403)
 
         invites = await Invite.endpoints_invites(endpoint._id)
         return success(invites)
 
     except bson_errors.InvalidId:
-        return error("Invalid group id", 404)
+        return error("Invalid group id")
 
 
 @authorized
@@ -149,13 +151,13 @@ async def delete_invite(user: User, group_id: str, code: str):
             return error("Not an group channel")
 
         if user._id != endpoint.owner:
-            return error("No permission")
+            return error("No permission", 403)
 
         deleted = await endpoint.delete_invite(code)
         return success(bool(deleted))
 
     except bson_errors.InvalidId:
-        return error("Invalid group id", 404)
+        return error("Invalid group id")
 
 
 @authorized
@@ -187,6 +189,9 @@ async def leave_group(user: User, group_id: str):
         group_id = ObjectId(group_id)
         endpoint = await MetaEndpoint.get_endpoint(user._id, group_id)
 
+        if endpoint._type != ChannelType.group:
+            return error("Invalid channel type")
+
         if endpoint.owner == user._id:
             return error("Creator of group can't leave groups", 403)
 
@@ -199,20 +204,25 @@ async def leave_group(user: User, group_id: str):
             UpdateType.left_group_member
         )
         await broadcast_update_message(endpoint, update_message)
-        return success(endpoint.__dict__)
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return error("Invalid group id", 404)
+        return error("Invalid group id")
 
     except ValueError:
-        return error("Invalid group id", 404)
+        return error("Invalid group id")
 
 
 @authorized
-async def kick_from_group(user: User, group_id: str, kicked: str):
+async def kick_from_group(user: User, group_id: str, user_id: str):
     try:
         group_id = ObjectId(group_id)
+        kicked = ObjectId(user_id)
+
         endpoint = await MetaEndpoint.get_endpoint(user._id, group_id)
+
+        if endpoint._type != ChannelType.group:
+            return error("Invalid group type", 400)
 
         if kicked == user._id:
             return error("You can't kick yourself", 403)
@@ -232,10 +242,7 @@ async def kick_from_group(user: User, group_id: str, kicked: str):
             UpdateType.kicked_group_member
         )
         await broadcast_update_message(endpoint, update_message)
-        return success(endpoint.__dict__)
+        return success("ok")
 
     except bson_errors.InvalidId:
-        return error("Invalid user with id")
-
-    except ValueError:
         return error("Invalid id", 400)

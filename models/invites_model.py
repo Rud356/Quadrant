@@ -33,9 +33,6 @@ class Invite:
         users_limit: int,
         expires_at: int
     ):
-        if not users_limit:
-            raise ValueError("Can't make empty invite")
-
         invites = await invites_db.count_documents({"endpoint": endpoint})
 
         if invites >= 25:
@@ -51,8 +48,9 @@ class Invite:
             "users_passed": 0,
             "expires_at": expires_at,
         }
-        await invites_db.insert_one(invite)
-        return code
+        invite["_id"] = (await invites_db.insert_one(invite)).inserted_id
+
+        return invite
 
     @staticmethod
     async def delete_invite(code: str, endpoint: ObjectId):

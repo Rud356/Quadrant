@@ -1,74 +1,292 @@
-### Route: /api/friends/<int:page\>
-Methods: GET  
-Description:  
-Yet to add  
+# Relations routes
 
+## Route: /api/friends/<int:page\>
 
-### Route: /api/blocked/<int:page\>
-Methods: GET  
-Description:  
-Yet to add  
+Methods: GET
 
+Requires: being authorized
 
-### Route: /api/incoming_requests/<int:page\>
-Methods: GET  
-Description:  
-Yet to add  
+Error codes:
 
+- 401: unauthorized
 
-### Route: /api/outgoing_requests/<int:page\>
-Methods: GET  
-Description:  
-Yet to add  
+Description:
+Returning a page out of 100 friends users public dictionaries
 
+Response:
 
-### Route: /api/outgoing_requests/<id\>
-Methods: DELETE  
-Description:  
-Requests: id of user we sent request to cancel  
-Response: 200, 400, 403, 404  
+```json
+[
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    },
 
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    }, ...
+]
+```
 
-### Route: /api/incoming_requests/<id\>
-Methods: POST  
-Description:  
-Requests: id of friend request sender we're responding to  
-Optionally may set url param `accept` to True to accept (default: decline)  
-Response: 200, 400, 404  
+## Route: /api/blocked/<int:page\>
 
+Methods: GET
 
-### Route: /api/friends/<id\>
-Methods: POST  
-Description:  
-Requests: id of reciever of friend request  
-Response: 200, 403, 404  
+Requires: being authorized
 
+Error codes:
 
-### Route: /api/friends/request
-Methods: POST  
-Description:  
-Requests: code as url param of reciever of friend request  
-Response: 200, 400, 404  
+- 401: unauthorized
 
+Description:
+Returning a page out of 100 blocked users public dictionaries
 
-### Route: /api/friends/<id\>
-Methods: DELETE  
-Description:  
-Requests: id of reciever of friend request  
-Response: 200, 400, 404  
+Response:
 
+```json
+[
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    },
 
-### Route: /api/blocked/<id\>
-Methods: POST  
-Description:  
-Request: blocking user id in url  
-Response: 200, 204 (already blocked), 400  
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    }, ...
+]
+```
 
+## Route: /api/incoming_requests/<int:page\>
 
-### Route: /api/blocked/<id\>
-Methods: DELETE  
-Description:  
-Request: unblocking user id in url  
-Response: 200, 204 (already blocked), 400  
+Methods: GET
 
+Requires: being authorized
 
+Error codes:
+
+- 401: unauthorized
+
+Description:
+Returning a page out of 100 incoming friend requests from users (public dictionaries)
+
+Response:
+
+```json
+[
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    },
+
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    }, ...
+]
+```
+
+## Route: /api/outgoing_requests/<int:page\>
+
+Methods: GET
+
+Requires: being authorized
+
+Error codes:
+
+- 401: unauthorized
+
+Description:
+Returning a page out of 100 outgoing friend requests from users (public dictionaries)
+
+Response:
+
+```json
+[
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    },
+
+    {
+    "_id": "string",
+    "nick": "string",
+    "created_at": "datetime",
+    "bot": "boolean",
+    "status": "integer",
+    "text_status": "string"
+    }, ...
+]
+```
+
+## Route: /api/friends/<id\>
+
+Methods: POST
+
+Requires: Being authorized, id
+
+Description:
+Adds user to friends by _id
+
+Error codes:
+
+- 401: unauthorized
+
+- 403: you are bot user
+
+- 404: already sent request, cant do that, user doesn't exists
+
+Description:
+Sends friend request by user id
+
+Response: ok
+
+## Route: /api/friends/request
+
+Methods: POST
+
+Requires: being authorized, code (url param)
+
+Checks:
+
+- Code length: 1 to 50 symbols
+
+Error codes:
+
+- 400: no friend code
+
+- 401: unauthorized
+
+- 403: blocked, already in relations, you are bot
+
+Description:
+Sends friend request by code
+
+Response: ok
+
+## Route: /api/outgoing_requests/<id\>
+
+Methods: DELETE
+
+Requires: being authorized, user id
+
+Error codes:
+
+- 400: not sent friend request
+
+- 401: unauthorized
+
+- 403: you are bot
+
+- 404: invalid id (not in outgiong)
+
+Description:
+Canceling friend request sent to someone
+
+Response: ok
+
+## Route: /api/incoming_requests/<id\>
+
+Methods: POST
+
+Requires: being authorized, user id
+
+Optionally: accept (url param) can be set to `True` (exactly like that) (default cancelling request)
+
+Error codes:
+
+- 400: not sent friend request
+
+- 401: unauthorized
+
+- 403: you are bot
+
+- 404: invalid id (not in incoming)
+
+Description:
+Responding to someone's request (by default cancelling, set accept param to `True` for accepting)
+
+## Route: /api/friends/<id\>
+
+Methods: DELETE
+
+Requires: being authorized, friend id
+
+Error codes:
+
+- 400: user ain't a friend
+
+- 401: unauthorized
+
+- 403: you are bot
+
+- 404: no such user
+
+Description: delete user from friends
+
+Response: ok
+
+## Route: /api/blocked/<id\>
+
+Methods: POST
+
+Requires: being authorized, user id
+
+Error codes:
+
+- 204: already blocked
+
+- 401: unauthorized
+
+- 404: invalid user id
+
+Description: blocking any user (bots also can do that)
+
+Response: ok
+
+## Route: /api/blocked/<id\>
+
+Methods: POST
+
+Requires: being authorized, user id
+
+Error codes:
+
+- 204: already unblocked
+
+- 401: unauthorized
+
+- 404: invalid user id
+
+Description: unblocking blocked user (bots also can do that)
+
+Response: ok

@@ -48,6 +48,7 @@ async def _check_blocked(
 class TextEndpoint:
     _id: ObjectId
     _type: int
+    # TODO: make more optimized way to get channel members with agregations
     members: List[ObjectId]
     created_at: datetime
     last_message: ObjectId = None
@@ -74,7 +75,7 @@ class TextEndpoint:
 
         return msg
 
-    async def get_message(self, requester: ObjectId, message_id: ObjectId):
+    async def get_message(self, requester: ObjectId, message_id: ObjectId) -> MessageModel:
         if requester not in self.members:
             raise self.exc.NotGroupMember(
                 "User trying to fetch message in invalid group"
@@ -146,6 +147,11 @@ class TextEndpoint:
         # ! Check permissions before deleting
         return await MessageModel.force_delete(message_id, self._id)
 
+    async def remove_user(self, user: ObjectId):
+        raise NotImplementedError(
+            "This method being implemented by specific channels"
+        )
+
     @classmethod
     async def create_endpoint(cls, **kwargs):
         raise NotImplementedError()
@@ -153,12 +159,11 @@ class TextEndpoint:
     async def create_invite(self):
         raise NotImplementedError()
 
-
     async def accept_invite(self):
         raise NotImplementedError()
 
     class exc:
-        class EndpointException(Exception):
+        class EndpointException(PermissionError):
             ...
 
         class NotGroupMember(EndpointException):
@@ -240,6 +245,7 @@ class GroupDM(TextEndpoint):
     owner: ObjectId = None
     owner_edits_only: bool = True
 
+    # TODO: make paged methods to grab channels
     @classmethod
     async def create_endpoint(cls, creator: ObjectId, title: str):
         if len(title) not in range(1, 51):
@@ -361,6 +367,7 @@ class MetaEndpoint:
 
         async for endpoint in endpoints:
             dict_endpoints[str(endpoint["_id"])] = endpoint
+
         return dict_endpoints
 
     @staticmethod

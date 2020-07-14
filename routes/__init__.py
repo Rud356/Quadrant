@@ -80,7 +80,7 @@ categories = {
     ],
     "Endpoint_routes": [
         Route("/api/endpoints", get_endpoints),
-        Route("/api/endpoints/json", get_endpoints_dict),
+        Route("/api/endpoints/full", get_endpoints_dict),
         Route("/api/endpoints/<endpoint_id>", get_endpoint),
         Route("/api/endpoints/create_endpoint/dm", create_dm, ["POST"]),
         Route("/api/endpoints/create_endpoint/group/<title>", create_group, ["POST"]),
@@ -89,7 +89,7 @@ categories = {
         Route("/api/endpoints/<group_id>/invites", delete_invite, ["DELETE"]),
         Route("/api/endpoints/join", join_group, ["GET", "POST"]),
         Route("/api/endpoints/<group_id>/leave", leave_group, ["DELETE"]),
-        Route("/api/endpoints/<group_id>/kick", kick_from_group, ["DELETE"]),
+        Route("/api/endpoints/<group_id>/<user_id>/kick", kick_from_group, ["DELETE"]),
     ],
     "Message_routes": [
         Route("/api/endpoints/<endpoint_id>/messages", get_messages_latest),
