@@ -6,6 +6,10 @@ Route fields:
 
 - Requires
 
+- Optional
+
+- Checks
+
 - Error codes and reason
 
 - Description

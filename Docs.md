@@ -1,6 +1,7 @@
 # Routes
 
 ## [Bot_managment](docs/Bot_managment.md)
+
 | route | method |
 | ----- | ------ |
 | /api/bots | GET |
@@ -8,7 +9,9 @@
 | /api/bots/<bot_id\>/<nick\> | POST |
 | /api/bots/<bot_id\>/update_token | POST |
 | /api/bots/<bot_id\> | DELETE |
+
 ## [User_routes](docs/User_routes.md)
+
 | route | method |
 | ----- | ------ |
 | /api/user/login | POST |
@@ -20,7 +23,9 @@
 | /api/user/keep-alive | GET |
 | /api/user/update_token | POST |
 | /api/me/update | POST |
+
 ## [Relations_routes](docs/Relations_routes.md)
+
 | route | method |
 | ----- | ------ |
 | /api/friends/<int:page\> | GET |
@@ -34,11 +39,13 @@
 | /api/friends/<id\> | DELETE |
 | /api/blocked/<id\> | POST |
 | /api/blocked/<id\> | DELETE |
+
 ## [Endpoint_routes](docs/Endpoint_routes.md)
+
 | route | method |
 | ----- | ------ |
 | /api/endpoints | GET |
-| /api/endpoints/json | GET |
+| /api/endpoints/full | GET |
 | /api/endpoints/<endpoint_id\> | GET |
 | /api/endpoints/create_endpoint/dm | POST |
 | /api/endpoints/create_endpoint/group/<title\> | POST |
@@ -47,8 +54,10 @@
 | /api/endpoints/<group_id\>/invites | DELETE |
 | /api/endpoints/join | GET POST |
 | /api/endpoints/<group_id\>/leave | DELETE |
-| /api/endpoints/<group_id\>/kick | DELETE |
+| /api/endpoints/<group_id\>/<user_id\>/kick | DELETE |
+
 ## [Message_routes](docs/Message_routes.md)
+
 | route | method |
 | ----- | ------ |
 | /api/endpoints/<endpoint_id\>/messages | GET |
@@ -63,7 +72,9 @@
 | /api/endpoints/<endpoint_id\>/messages/<message_id\> | PATCH |
 | /api/endpoints/<endpoint_id\>/messages/<message_id\>/pin | PATCH |
 | /api/endpoints/<endpoint_id\>/messages/<message_id\>/unpin | PATCH |
+
 ## [File_routes](docs/File_routes.md)
+
 | route | method |
 | ----- | ------ |
 | /api/user/set_image | POST |

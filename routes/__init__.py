@@ -127,23 +127,11 @@ def init_routes():
 
 def generate_docs():
     with open("Docs.md", 'w') as d:
-        d.writelines("# Routes\n\n")
+        d.writelines("# Routes\n")
 
         for k, category_routes in categories.items():
-            d.writelines([f"## [{k}](docs/{k}.md)\n", "| route | method |\n", "| ----- | ------ |\n"])
+            d.writelines([f"\n## [{k}](docs/{k}.md)\n", "\n| route | method |\n", "| ----- | ------ |\n"])
             d.writelines([
                 "| " + route.path.replace('>', '\\>') + f" | {' '.join(route.methods) if route.methods else 'GET'} |\n"
                 for route in category_routes
             ])
-
-            with open(f"docs/{k}.md", 'w') as doc:
-                for route in category_routes:
-                    doc.write("### Route: " + route.path.replace(">", "\\>") + '\n')
-                    doc.write(f"Methods: {' '.join(route.methods) if route.methods else 'GET'}  \n")
-                    docstring = getdoc(route.function) or 'Yet to add'
-                    docstrings = docstring.split('\n')
-
-                    docstring = ''
-                    for string in docstrings:
-                        docstring += string.strip(' ') + '  '+ '\n'
-                    doc.write(f"Description:  \n{docstring}\n\n")

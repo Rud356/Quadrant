@@ -38,3 +38,7 @@ Steps:
 To see more about [connection string](https://docs.mongodb.com/manual/reference/connection-string/) for mongodb
 
 - Also you might need to add encryption so go and change `priv_key`, `pub_key` and maybe `ca_certs`
+
+## Documentation:
+
+See [documenatation file](/Docs.md) and [docs formatting](/Docs_format.md)
