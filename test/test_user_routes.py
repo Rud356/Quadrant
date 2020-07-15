@@ -267,6 +267,8 @@ class TestUserRoutes(unittest.TestCase):
                 self.base_url + "/user/update_token"
             )
 
+            await new_session.close()
+
             return r
 
         r = self.loop.run_until_complete(request())
@@ -280,6 +282,8 @@ class TestUserRoutes(unittest.TestCase):
             r = await new_session.delete(
                 self.base_url + "/user/me"
             )
+
+            await new_session.close()
 
             return r
 
