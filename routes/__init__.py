@@ -61,7 +61,7 @@ categories = {
         Route("/api/user/<id>", user_from_id),
         Route("/api/user/me", user_about_self),
         Route("/api/user/me", delete_user, ["DELETE"]),
-        Route("/api/user/keep-alive", keep_alive),
+        Route("/api/user/keep-alive", keep_alive, ["GET", "POST"]),
         Route("/api/user/update_token", update_users_token, ["POST"]),
         Route("/api/me/update", update_user, ["POST"]),
     ],
@@ -124,6 +124,7 @@ def init_routes():
                 methods=route.methods,
                 defaults=route.defaults
             )
+
 
 def generate_docs():
     with open("Docs.md", 'w') as d:

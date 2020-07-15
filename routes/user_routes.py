@@ -3,14 +3,14 @@ from bson import errors as bson_errors
 from quart import request
 
 from app import app
-from models.enums import UpdateType
-from models.message_model import MessageModel, UpdateMessage
+from models.enums import UpdateType, Status
+from models.message_model import UpdateMessage
 from user_view import User
 from utils import string_strips
 
 from .middlewares import authorized, validate_schema
 from .responses import error, success
-from .schemas import login, registrate, text_status, user_update
+from .schemas import login, registrate, user_update
 
 
 @validate_schema(login)
@@ -153,10 +153,16 @@ async def user_about_self(user: User):
     return success(user.private_dict)
 
 # Setters
+
+
 @authorized
 @validate_schema(user_update)
 async def update_user(user: User):
     update_fields = await request.json
+
+    if update_fields.get('status', None) is not None:
+        if update_fields.get('status') not in tuple(Status):
+            return error("Invalid status field", 400)
 
     try:
         update_payload = await user.update(**update_fields)

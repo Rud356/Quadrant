@@ -1,15 +1,15 @@
 from asyncio import get_running_loop
 from dataclasses import dataclass, field
 from datetime import datetime
-from hashlib import pbkdf2_hmac, sha3_256
+from hashlib import pbkdf2_hmac, sha256
+from os import urandom
 from random import choices, randint
-from secrets import randbits
 from string import ascii_letters, digits
 from time import time
 from typing import List
 
 from bson import SON, ObjectId
-from pymongo import UpdateOne
+from pymongo import DESCENDING, UpdateOne
 
 from app import db
 from utils import exclude_keys, string_strips
@@ -19,6 +19,12 @@ from .endpoint_model import MetaEndpoint
 from .enums import Status
 
 users_db = db.chat_users
+
+users_db.create_index([
+    ("login", DESCENDING),
+    ("_id", DESCENDING),
+    ("friend_code", DESCENDING)
+], unique=True)
 
 EXCLUDE_PUBLIC = {
     "friend_code": 0,
@@ -54,9 +60,10 @@ class UserModel:
     pendings_outgoing: List[ObjectId] = field(default_factory=list, repr=False)
     pendings_incoming: List[ObjectId] = field(default_factory=list, repr=False)
 
-
     # ? Dangerouts methods
+
     async def update_token(self):
+
         # Updating token of user
         # Leading to log out on all devices
         new_token = self.generate_token()
@@ -68,7 +75,7 @@ class UserModel:
         return new_token
 
     async def delete_user(self):
-        bulk_user_removing = (
+        bulk_user_removing = [
             UpdateOne(
                 {"_id": self._id},
                 {"$unset": {
@@ -87,7 +94,7 @@ class UserModel:
                 {"_id": self._id},
                 {"$set": {"deleted": True}}
             )
-        )
+        ]
 
         await users_db.bulk_write(bulk_user_removing)
 
@@ -98,7 +105,14 @@ class UserModel:
         text_status: str = None, friend_code: str = None,
         **_
     ):
-        if any((nick, status, text_status, friend_code and not self.bot)):
+        if any(
+            (
+                nick,
+                status in tuple(Status),
+                text_status != self.text_status,
+                friend_code and not self.bot
+            )
+        ):
             actions = []
             update = {"_id": self._id}
 
@@ -114,7 +128,7 @@ class UserModel:
                 update["nick"] = nick
                 self.nick = nick
 
-            if status:
+            if status in tuple(Status):
                 actions.append(
                     UpdateOne(
                         {"_id": self._id},
@@ -441,14 +455,16 @@ class UserModel:
             )
 
         elif login and password:
-            login = sha3_256(login.encode())
+            login = sha256(login.encode())
             login = login.hexdigest()
 
             salt = await cls._get_salt_hashed_login(login)
             if not salt:
                 raise ValueError("Invalid login")
 
-            password = await UserModel._hash_password_with_salt(password=password, salt=salt)
+            password = await UserModel._hash_password_with_salt(
+                password=password, salt=salt
+            )
             password = password.hex()
 
             user = await users_db.find_one(
@@ -481,10 +497,12 @@ class UserModel:
     @classmethod
     async def registrate(cls, nick: str, login: str, password: str):
         salt = cls.generate_salt()
-        password = await cls._hash_password_with_salt(password.encode(), salt.encode())
+        password = await cls._hash_password_with_salt(
+            password, salt
+        )
 
         password = password.hex()
-        login = sha3_256(login.encode()).hexdigest()
+        login = sha256(login.encode()).hexdigest()
 
         new_user = {
             'bot': False,
@@ -553,8 +571,8 @@ class UserModel:
 
     @staticmethod
     def generate_salt(size=128):
-        salt_origin = randbits(size)
-        hashed = sha3_256(salt_origin)
+        salt_origin = urandom(size)
+        hashed = sha256(salt_origin)
         return hashed.hexdigest()
 
     @staticmethod
@@ -568,12 +586,16 @@ class UserModel:
 
     @staticmethod
     @authorization_cache.cache_passwords
-    async def _hash_password_with_salt(password: str, salt: bytes):
+    async def _hash_password_with_salt(password: str, salt: str):
         loop = get_running_loop()
+
+        salt = salt.encode()
+        password = password.encode()
+
         password = await loop.run_in_executor(
             None,
             pbkdf2_hmac,
-            'sha3_256', password.encode(), salt.encode(), 100000
+            'sha256', password, salt, 100000
         )
         return password
 

@@ -125,7 +125,7 @@ Response:
 
 ## Route: /api/user/keep-alive
 
-Methods: GET
+Methods: GET POST
 
 Description:
 Keeps user alive if has no websockets
@@ -229,3 +229,6 @@ Error codes:
 - 400: No values provided or setting friend code as bot user (you can try to change friend code as bot user, but it won't give anything)
 
 - 401: unauthorized
+
+Response:
+Same json as request

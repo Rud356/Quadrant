@@ -1,14 +1,21 @@
 import fastjsonschema
 
 from models.enums import Status
-from utils import string_strips
 
 
 login = fastjsonschema.compile({
     "type": "object",
     "properties": {
-        "login": {"type": "string"},
-        "password": {"type": "string"}
+        "login": {
+            "type": "string",
+            "minLength": 6,
+            "maxLength": 200
+        },
+        "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 256
+        },
     },
     "required": ["password", "login"]
 })
@@ -17,7 +24,11 @@ login = fastjsonschema.compile({
 registrate_bot = fastjsonschema.compile({
     "type": "object",
     "properties": {
-        "nick": {"type": "string"},
+        "nick": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 25
+        },
     },
     "required": ["nick"]
 })
@@ -26,7 +37,11 @@ registrate_bot = fastjsonschema.compile({
 registrate = fastjsonschema.compile({
     "type": "object",
     "properties": {
-        "nick": {"type": "string"},
+        "nick": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 25
+        },
         "login": {"type": "string", "default": ''},
         'password': {"type": "string", "default": ''},
     },
@@ -37,11 +52,12 @@ registrate = fastjsonschema.compile({
 message = fastjsonschema.compile({
     "type": "object",
     "properties": {
-        "content": {"type": "string"},
+        "content": {"type": "string", "maxLength": 3000},
         "files": {
             "type": "array",
             "items": {
-                "type": "string"
+                "type": "string",
+                "maxLength": 15
             }
         }
     },
@@ -66,17 +82,24 @@ text_status = fastjsonschema.compile({
 })
 
 
+status_codes = tuple(Status)
 user_update = fastjsonschema.compile({
     "type": "object",
     "properties": {
-        "nick": {"type": "string"},
-        "status": {"type": "number"},
-        "text_status": {"type": "string"},
-        "friend_code": {"type": "string"}
-    }},
-    formats={
-        "nick": lambda val: len(string_strips(val)) in range(1, 25 + 1),
-        "status": lambda val: val in list(Status),
-        "text_status": lambda val: len(string_strips(val)) <= 256,
-        "friend_code": lambda val: len(string_strips(val)) in range(3, 51)
-})
+        "nick": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 25
+        },
+        "status": {"type": "integer"},
+        "text_status": {
+            "type": "string",
+            "maxLength": 256
+        },
+        "friend_code": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 50
+        },
+    }}
+)
