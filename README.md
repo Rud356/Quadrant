@@ -42,4 +42,4 @@ To see more about [connection string](https://docs.mongodb.com/manual/reference/
 
 ## Documentation:
 
-See [documenatation file](/Docs.md) and [docs formatting](/Docs_format.md)
+See [documenatation file](/docs/Docs.md) and [docs formatting](/docs/Docs_format.md)
