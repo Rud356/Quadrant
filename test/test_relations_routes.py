@@ -86,7 +86,7 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_and_cancel_by_acceptor(self):
         async def request():
-            async with test_client.websocket("/api/ws") as ws:
+            async with test_client.websocket("/api/ws/") as ws:
                 await ws.send(
                     '{"token":' +
                     f'{self.first_session.cookie_jar.get("token")}' + "}"
@@ -143,7 +143,7 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_and_cancel_by_initiator(self):
         async def request():
-            async with test_client.websocket("/api/ws") as ws:
+            async with test_client.websocket("/api/ws/") as ws:
                 await ws.send(
                     '{"token":' +
                     f'{self.first_session.cookie_jar.get("token")}' + "}"
@@ -200,7 +200,7 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_accept_and_remove_friend(self):
         async def request():
-            async with test_client.websocket("/api/ws") as ws:
+            async with test_client.websocket("/api/ws/") as ws:
                 await ws.send(
                     '{"token":' +
                     f'{self.first_session.cookie_jar.get("token")}' + "}"
@@ -264,4 +264,3 @@ class TestRelationRoutes(unittest.TestCase):
         cls.loop.run_until_complete(close_session(cls.first_session))
         cls.loop.run_until_complete(close_session(cls.second_session))
         cls.loop.run_until_complete(drop_db())
-        cls.loop.close()
