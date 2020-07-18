@@ -8,7 +8,7 @@ from bson import ObjectId
 from app import app, connected_users
 from models.enums import UpdateType
 from models.user_model import UserModel
-from models.message_model import MessageModel, UpdateMessage
+from models.message_model import UpdateMessage
 
 TTK = app.config["TTK"]
 tokenized_connected_users = {}

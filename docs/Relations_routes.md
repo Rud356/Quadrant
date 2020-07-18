@@ -235,6 +235,8 @@ Error codes:
 Description:
 Responding to someone's request (by default cancelling, set accept param to `True` for accepting)
 
+Response: ok
+
 ## Route: /api/friends/<id\>
 
 Methods: DELETE
@@ -275,7 +277,7 @@ Response: ok
 
 ## Route: /api/blocked/<id\>
 
-Methods: POST
+Methods: DELETE
 
 Requires: being authorized, user id
 

@@ -53,7 +53,9 @@ app.config["ALLOW_REG"]: bool = config.getboolean("App", "allow_reg") or False
 app.config['UPLOAD_FOLDER']: str = config.get("App", "upload_folder")
 app.config["DB_CONN_STR"]: str = config.get("App", "db_conn_string")
 app.config["TTK"]: int = config.getint("App", "TTK")
-app.config['MAX_CONTENT_LENGTH']: int = config.getfloat("App", "max_payload_size") * 1024 * 1024 + 1
+app.config['MAX_CONTENT_LENGTH']: int = config.getfloat(
+    "App", "max_payload_size"
+) * 1024 * 1024 + 1
 
 if config.getfloat("App", "max_payload_size") == float("inf"):
     print("Do not set payload size as inf")
@@ -62,6 +64,8 @@ if config.getfloat("App", "max_payload_size") == float("inf"):
 
 app.config['LOGIN_CACHE_SIZE']: int = config.getint("App", "login_cache_size")
 
+if app.config["TTK"] < 10:
+    app.config["TTK"] = 10
 
 try:
     mkdir(app.config["UPLOAD_FOLDER"])

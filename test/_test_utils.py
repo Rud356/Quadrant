@@ -1,6 +1,7 @@
 from random import choices
 from string import ascii_letters, digits
 
+from app import client
 from models import user_model
 
 charset = digits + ascii_letters
@@ -19,3 +20,7 @@ async def create_user() -> (str, str):
     )
 
     return login, password
+
+
+async def drop_db():
+    await client.drop_database("debug_chat")

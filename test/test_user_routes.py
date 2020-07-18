@@ -4,7 +4,7 @@ import unittest
 import aiohttp
 import fastjsonschema
 
-from test._test_utils import create_user, rand_string
+from test._test_utils import create_user, rand_string, drop_db
 from app import load_config
 
 config = load_config()
@@ -292,12 +292,10 @@ class TestUserRoutes(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        async def del_users(session):
-            await session.delete(
-                cls.base_url + "/user/me"
-            )
+        async def close_session(session):
             await session.close()
 
-        cls.loop.run_until_complete(del_users(cls.first_session))
-        cls.loop.run_until_complete(del_users(cls.second_session))
+        cls.loop.run_until_complete(close_session(cls.first_session))
+        cls.loop.run_until_complete(close_session(cls.second_session))
+        cls.loop.run_until_complete(drop_db())
         cls.loop.close()

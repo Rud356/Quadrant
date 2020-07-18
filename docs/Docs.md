@@ -14,7 +14,7 @@ Later will be added info about what websockets responses you should await
 
 All fails will tell you a bit more about what happened in `description` field
 
-## [Bot_managment](docs/Bot_managment.md)
+## [Bot_managment](/docs/Bot_managment.md)
 
 | route | method |
 | ----- | ------ |
@@ -24,7 +24,7 @@ All fails will tell you a bit more about what happened in `description` field
 | /api/bots/<bot_id\>/update_token | POST |
 | /api/bots/<bot_id\> | DELETE |
 
-## [User_routes](docs/User_routes.md)
+## [User_routes](/docs/User_routes.md)
 
 | route | method |
 | ----- | ------ |
@@ -38,7 +38,7 @@ All fails will tell you a bit more about what happened in `description` field
 | /api/user/update_token | POST |
 | /api/me/update | POST |
 
-## [Relations_routes](docs/Relations_routes.md)
+## [Relations_routes](/docs/Relations_routes.md)
 
 | route | method |
 | ----- | ------ |
@@ -70,7 +70,7 @@ All fails will tell you a bit more about what happened in `description` field
 | /api/endpoints/<group_id\>/leave | DELETE |
 | /api/endpoints/<group_id\>/<user_id\>/kick | DELETE |
 
-## [Message_routes](docs/Message_routes.md)
+## [Message_routes](/docs/Message_routes.md)
 
 | route | method |
 | ----- | ------ |
@@ -87,7 +87,7 @@ All fails will tell you a bit more about what happened in `description` field
 | /api/endpoints/<endpoint_id\>/messages/<message_id\>/pin | PATCH |
 | /api/endpoints/<endpoint_id\>/messages/<message_id\>/unpin | PATCH |
 
-## [File_routes](docs/File_routes.md)
+## [File_routes](/docs/File_routes.md)
 
 | route | method |
 | ----- | ------ |

@@ -2,9 +2,6 @@ from bson import ObjectId
 from bson import errors as bson_errors
 from quart import request
 
-from app import app
-from models.enums import UpdateType
-from models.message_model import MessageModel, UpdateMessage
 from user_view import User
 
 from .middlewares import authorized

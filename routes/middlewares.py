@@ -55,6 +55,9 @@ def auth_websocket(f):
         except ValueError:
             return error("Incorrect credentials", 401)
 
+        except TypeError:
+            return error("Incorrect data format", 401)
+
         except KeyError:
             return error("No token provided", 401)
 
