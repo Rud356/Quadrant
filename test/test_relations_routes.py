@@ -156,7 +156,7 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_and_cancel_by_initiator(self):
         async def request():
-            async with websockets.connect(self.base_ws + "/ws") as ws:
+            async with websockets.connect(self.base_ws + "/ws", close_timeout=2000) as ws:
                 await ws.send(
                     json.dumps({
                         "token": self.token_1

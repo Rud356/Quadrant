@@ -1,4 +1,4 @@
-from asyncio import CancelledError, sleep
+from asyncio import CancelledError, sleep, ensure_future
 
 from quart import copy_current_websocket_context, websocket
 
@@ -11,10 +11,13 @@ from .middlewares import auth_websocket
 class WebsocketNotifier:
     def __init__(self, user: User):
         self.user = user
+        self.activated = False
         self.message_pool = []
 
     async def __call__(self):
-        while True:
+        self.activated = True
+        print("Started ws loop")
+        while self.activated:
             try:
                 message_pool_length = len(self.message_pool)
 
@@ -28,6 +31,7 @@ class WebsocketNotifier:
                 break
 
         # Deleting websocket from pool
+        print("Ended ws loop")
         current_ws_index = self.user.connected.index(self)
         self.user.kill_websockets(current_ws_index)
 
@@ -35,6 +39,7 @@ class WebsocketNotifier:
 @app.websocket('/api/ws')
 @auth_websocket
 async def add_websocket(user: User):
+    # TODO: change logic to make this more usable
     """
     Payload: json
     {
@@ -46,3 +51,5 @@ async def add_websocket(user: User):
     new_ws_user = copy_current_websocket_context(new_ws_user)
     await websocket.send("Authorized!")
     await user.add_ws(new_ws_user)
+
+    ensure_future(new_ws_user())
