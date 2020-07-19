@@ -66,10 +66,14 @@ categories = {
         Route("/api/me/update", update_user, ["POST"]),
     ],
     "Relations_routes": [
-        Route("/api/friends/<int:page>", get_paged_friends, defaults={"page": 0}),
-        Route("/api/blocked/<int:page>", get_paged_blocked, defaults={"page": 0}),
-        Route("/api/incoming_requests/<int:page>", get_paged_incoming_requests, defaults={"page": 0}),
-        Route("/api/outgoing_requests/<int:page>", get_paged_outgoing_requests, defaults={"page": 0}),
+        Route("/api/friends", get_paged_friends, defaults={"page": 0}),
+        Route("/api/blocked", get_paged_blocked, defaults={"page": 0}),
+        Route("/api/incoming_requests", get_paged_incoming_requests, defaults={"page": 0}),
+        Route("/api/outgoing_requests", get_paged_outgoing_requests, defaults={"page": 0}),
+        Route("/api/friends/<int:page>", get_paged_friends),
+        Route("/api/blocked/<int:page>", get_paged_blocked),
+        Route("/api/incoming_requests/<int:page>", get_paged_incoming_requests),
+        Route("/api/outgoing_requests/<int:page>", get_paged_outgoing_requests),
         Route("/api/outgoing_requests/<id>", cancel_friend_request, ["DELETE"]),
         Route("/api/incoming_requests/<id>", response_friend_request, ["POST"]),
         Route("/api/friends/<id>", send_friend_request, ["POST"]),
@@ -121,7 +125,7 @@ def init_routes():
             app.add_url_rule(
                 route.path,
                 view_func=route.function,
-                methods=route.methods,
+                methods=route.methods or ["GET"],
                 defaults=route.defaults
             )
 

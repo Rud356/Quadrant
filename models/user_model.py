@@ -282,7 +282,7 @@ class UserModel:
         pipeline = [
             {"$match": {"$in": self.pendings_outgoing}},
             {"$sort": SON([("name", -1), ("_id", -1)])},
-            {"$unset": EXCLUDE_PUBLIC},
+            {"$unset": list(EXCLUDE_PUBLIC)},
             {"$skip": page*100},
             {"$limit": 100}
         ]
@@ -292,9 +292,9 @@ class UserModel:
     def aggregation_paged_incoming_requests(self, page: int = 0):
         # Returning only cursor to iterate through to get incoming pendings
         pipeline = [
-            {"$match": {"$in": self.pendings_incoming}},
+            {"$match": {"_id": {"$in": self.pendings_incoming}}},
             {"$sort": SON([("name", -1), ("_id", -1)])},
-            {"$unset": EXCLUDE_PUBLIC},
+            {"$unset": list(EXCLUDE_PUBLIC)},
             {"$skip": page*100},
             {"$limit": 100}
         ]
@@ -304,9 +304,9 @@ class UserModel:
     def aggregation_paged_friends(self, page: int = 0):
         # Returning only cursor to iterate through to get friends
         pipeline = [
-            {"$match": {"$in": self.friends}},
+            {"$match": {"_id": {"$in": self.friends}}},
             {"$sort": SON([("name", -1), ("_id", -1)])},
-            {"$unset": EXCLUDE_PUBLIC},
+            {"$unset": list(EXCLUDE_PUBLIC)},
             {"$skip": page*100},
             {"$limit": 100}
         ]
@@ -375,9 +375,9 @@ class UserModel:
     def aggregation_paged_blocked(self, page: int = 0):
         # Returning only cursor to iterate through to get blocked
         pipeline = [
-            {"$match": {"$in": self.blocked}},
+            {"$match": {"_id": {"$in": self.blocked}}},
             {"$sort": SON([("name", -1), ("_id", -1)])},
-            {"$unset": EXCLUDE_PUBLIC},
+            {"$unset": list(EXCLUDE_PUBLIC)},
             {"$skip": page*100},
             {"$limit": 100}
         ]

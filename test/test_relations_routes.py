@@ -126,7 +126,7 @@ class TestRelationRoutes(unittest.TestCase):
                 self.assertEqual(r.status, 200)
 
                 r = await self.first_session.get(
-                    self.base_url + "/friends/incoming_requests"
+                    self.base_url + "/incoming_requests"
                 )
                 print('\n', await r.text())
                 r = await r.json()
@@ -134,7 +134,7 @@ class TestRelationRoutes(unittest.TestCase):
                 user_id = list(r.keys())[0]
 
                 r = await self.first_session.delete(
-                    self.base_url + f"/friends/incoming_requests/{user_id}"
+                    self.base_url + f"/incoming_requests/{user_id}"
                 )
 
                 self.assertEqual(r.status, 200)
@@ -187,14 +187,14 @@ class TestRelationRoutes(unittest.TestCase):
                 self.assertEqual(r.status, 200)
 
                 r = await self.second_session.get(
-                    self.base_url + "/friends/outgoing_requests"
+                    self.base_url + "/outgoing_requests"
                 )
                 r = await r.json()
 
                 user_id = list(r.keys())[0]
 
                 r = await self.second_session.delete(
-                    self.base_url + f"/friends/outgoing_requests/{user_id}"
+                    self.base_url + f"/outgoing_requests/{user_id}"
                 )
 
                 self.assertEqual(r.status, 200)
@@ -247,14 +247,14 @@ class TestRelationRoutes(unittest.TestCase):
                 self.assertEqual(r.status, 200)
 
                 r = await self.first_session.get(
-                    self.base_url + "/friends/incoming_requests"
+                    self.base_url + "/incoming_requests"
                 )
                 r = await r.json()
 
-                user_id = list(r.keys())[0]
+                user_id = r[0]['_id']
 
                 r = await self.first_session.post(
-                    self.base_url + f"/friends/incoming_requests/{user_id}",
+                    self.base_url + f"/incoming_requests/{user_id}",
                     params={"accept": "True"}
                 )
 
