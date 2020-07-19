@@ -128,6 +128,7 @@ class TestRelationRoutes(unittest.TestCase):
                 r = await self.first_session.get(
                     self.base_url + "/friends/incoming_requests"
                 )
+                print('\n', await r.text())
                 r = await r.json()
 
                 user_id = list(r.keys())[0]

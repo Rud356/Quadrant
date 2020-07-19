@@ -17,7 +17,7 @@ tokenized_connected_users = {}
 @dataclass
 class User(UserModel):
     connected: list = field(default_factory=list)
-    message_queue: Queue = field(default=Queue(1024))
+    message_queue: Queue = field(default=Queue())
     kill_websockets: list = field(default_factory=list)
     last_used_api_timestamp: float = time()
 
@@ -109,11 +109,7 @@ class User(UserModel):
             await self.message_queue.put(message)
 
     async def add_ws(self, ws):
-        # TODO: this asend function is broken
-        # Replace with other way to drop messages to user
-        ws_gen = ws()
-        (await ws_gen).asend(None)
-        self.connected.append(ws_gen)
+        self.connected.append(ws)
 
         # The first connected websocket
         if len(self.connected) == 1:
@@ -128,13 +124,13 @@ class User(UserModel):
                 message = await self.message_queue.get()
 
                 for ws in self.connected:
-                    await ws.asend(message)
+                    await ws.enqueue(message)
 
             else:
                 await sleep(0.1)
 
-            for remove_index in self.kill_websockets:
-                self.connected.pop(remove_index)
+            for remove_ws in self.kill_websockets:
+                self.connected.remove(remove_ws)
 
             self.kill_websockets.clear()
 

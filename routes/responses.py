@@ -14,6 +14,6 @@ def warning(description: str):
 
 
 def success(data: object, code: int = 200):
-    responce = jsonify(response=data, status_code=code)
+    responce = jsonify(response=data)
     responce.status_code = code
     return responce
