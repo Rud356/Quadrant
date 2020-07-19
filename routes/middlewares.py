@@ -47,7 +47,7 @@ def validate_schema(schema: object):
 
 def auth_websocket(f):
     async def wraps(*args, **kwargs):
-        auth = await websocket.data()
+        auth = await websocket.receive()
         try:
             auth = json.loads(auth)
             user = await User.authorize(token=auth['token'])

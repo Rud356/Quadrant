@@ -3,13 +3,13 @@ import asyncio
 import unittest
 
 import aiohttp
+import websockets
 import fastjsonschema
 
 from test._test_utils import create_user, rand_string, drop_db
-from app import load_config, app
+from app import load_config
 
 config = load_config()
-test_client = app.test_client()
 
 
 class TestRelationRoutes(unittest.TestCase):
@@ -33,6 +33,13 @@ class TestRelationRoutes(unittest.TestCase):
                 config.getint("App", "port")
             )
         )
+        for cookie in cls.first_session.cookie_jar:
+            if cookie.key == 'token':
+                cls.token_1 = cookie.value
+
+        for cookie in cls.second_session.cookie_jar:
+            if cookie.key == 'token':
+                cls.token_2 = cookie.value
 
         cls.second_friend_code = cls.set_friend_code(
             cls.second_session, loop, "http://localhost:{}/api".format(
@@ -42,6 +49,9 @@ class TestRelationRoutes(unittest.TestCase):
 
         cls.loop = loop
         cls.base_url = "http://localhost:{}/api".format(
+            config.getint("App", "port")
+        )
+        cls.base_ws = "ws://localhost:{}/api".format(
             config.getint("App", "port")
         )
 
@@ -86,10 +96,11 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_and_cancel_by_acceptor(self):
         async def request():
-            async with test_client.websocket("/api/ws/") as ws:
+            async with websockets.connect(self.base_ws + "/ws") as ws:
                 await ws.send(
-                    '{"token":' +
-                    f'{self.first_session.cookie_jar.get("token")}' + "}"
+                    json.dumps({
+                        "token": self.token_1
+                    })
                 )
 
                 r = await self.second_session.post(
@@ -98,7 +109,8 @@ class TestRelationRoutes(unittest.TestCase):
                     }
                 )
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
@@ -126,7 +138,8 @@ class TestRelationRoutes(unittest.TestCase):
 
                 self.assertEqual(r.status, 200)
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
@@ -143,10 +156,11 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_and_cancel_by_initiator(self):
         async def request():
-            async with test_client.websocket("/api/ws/") as ws:
+            async with websockets.connect(self.base_ws + "/ws") as ws:
                 await ws.send(
-                    '{"token":' +
-                    f'{self.first_session.cookie_jar.get("token")}' + "}"
+                    json.dumps({
+                        "token": self.token_1
+                    })
                 )
 
                 r = await self.second_session.post(
@@ -155,7 +169,8 @@ class TestRelationRoutes(unittest.TestCase):
                     }
                 )
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
@@ -183,7 +198,8 @@ class TestRelationRoutes(unittest.TestCase):
 
                 self.assertEqual(r.status, 200)
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
@@ -200,10 +216,11 @@ class TestRelationRoutes(unittest.TestCase):
 
     def test_send_friend_code_request_accept_and_remove_friend(self):
         async def request():
-            async with test_client.websocket("/api/ws/") as ws:
+            async with websockets.connect(self.base_ws + "/ws") as ws:
                 await ws.send(
-                    '{"token":' +
-                    f'{self.first_session.cookie_jar.get("token")}' + "}"
+                    json.dumps({
+                        "token": self.token_1
+                    })
                 )
 
                 r = await self.second_session.post(
@@ -212,7 +229,8 @@ class TestRelationRoutes(unittest.TestCase):
                     }
                 )
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
@@ -241,7 +259,8 @@ class TestRelationRoutes(unittest.TestCase):
 
                 self.assertEqual(r.status, 200)
 
-                ws_r = await ws.receive()
+                ws_r = await ws.recv()
+                ws_r = await ws.recv()
                 ws_r = json.loads(ws_r)
 
                 fastjsonschema.validate(
