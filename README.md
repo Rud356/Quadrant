@@ -5,7 +5,7 @@ There's some problems like delivering updates of nicknames and lack of functiona
 
 ## TODO list
 
-- [ ] Write new tests
+- [ ] Fix websockets connection
 - [ ] More efficient paged channels receiving
 - [ ] Add pagination get methods of listed data
 - [ ] Changing passwords
