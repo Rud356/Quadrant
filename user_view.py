@@ -1,5 +1,5 @@
 import asyncio
-from asyncio import sleep
+from asyncio import sleep, Queue
 from dataclasses import dataclass, field
 from time import time
 
@@ -17,7 +17,7 @@ tokenized_connected_users = {}
 @dataclass
 class User(UserModel):
     connected: list = field(default_factory=list)
-    message_queue: list = field(default_factory=list)
+    message_queue: Queue = field(default=Queue(1024))
     kill_websockets: list = field(default_factory=list)
     last_used_api_timestamp: float = time()
 
@@ -72,7 +72,9 @@ class User(UserModel):
     def logout(self):
         if connected_users.pop(self._id, False):
             self.connected.clear()
-            self.message_queue.clear()
+            for _ in range(self.message_queue.qsize()):
+                self.message_queue.get_nowait()
+                self.message_queue.task_done()
 
     def start_alive_checker(self):
         asyncio.ensure_future(self.check_user_alive())
@@ -104,26 +106,32 @@ class User(UserModel):
 
     async def add_message(self, message):
         if self.connected:
-            self.message_queue.append(message)
+            await self.message_queue.put(message)
 
     async def add_ws(self, ws):
-        self.connected.append(ws)
+        # TODO: this asend function is broken
+        # Replace with other way to drop messages to user
+        ws_gen = ws()
+        (await ws_gen).asend(None)
+        self.connected.append(ws_gen)
 
         # The first connected websocket
         if len(self.connected) == 1:
-            asyncio.ensure_future(self.run_websocket())
+            asyncio.create_task(
+                self.run_websocket()
+            )
 
     async def run_websocket(self):
         while len(self.connected):
 
-            await sleep(0.1)
-            messages_queue_len = len(self.message_queue)
-
-            for _ in range(messages_queue_len):
-                message = self.message_queue.pop(0)
+            while not self.message_queue.empty():
+                message = await self.message_queue.get()
 
                 for ws in self.connected:
-                    ws.message_pool.append(message)
+                    await ws.asend(message)
+
+            else:
+                await sleep(0.1)
 
             for remove_index in self.kill_websockets:
                 self.connected.pop(remove_index)
