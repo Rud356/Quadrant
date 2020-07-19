@@ -15,3 +15,5 @@ services:
         command: cd ./app && python start.py
         ports:
             - 8080:8080
+        depends_on:
+            - "database"
