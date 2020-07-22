@@ -54,7 +54,7 @@ All fails will tell you a bit more about what happened in `description` field
 | /api/blocked/<id\> | POST |
 | /api/blocked/<id\> | DELETE |
 
-## [Endpoint_routes](docs/Endpoint_routes.md)
+## [Endpoint_routes](/docs/Endpoint_routes.md)
 
 | route | method |
 | ----- | ------ |
