@@ -1,0 +1,5 @@
+tornado~=6.1
+Alembic~=1.5.7
+sqlalchemy~=1.4.2
+ConfigFramework==2.0.1
+asyncpg~=0.22.0
