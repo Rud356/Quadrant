@@ -26,7 +26,6 @@ class UserAuthorization(Base):
 
     user: User = relationship(User, uselist=False, cascade="all, delete-orphan")
 
-    __mapper_args__ = {"eager_defaults": True}
     __tablename__ = "users_auth"
 
     @staticmethod
