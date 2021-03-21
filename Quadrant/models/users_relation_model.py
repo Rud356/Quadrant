@@ -200,6 +200,7 @@ class UsersRelations(Base):
             UsersRelations.initiator_id == user_unblock_initializer.id,
             UsersRelations.relation_with_id == unblocking_user.id
         ).delete()
+
         await session.commit()
         return True
 

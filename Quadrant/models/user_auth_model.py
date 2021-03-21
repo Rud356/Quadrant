@@ -21,6 +21,7 @@ class UserAuthorization(Base):
     refresh_token = Column(String(100), unique=True, index=True, nullable=True)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
+    salt = Column(String(40), nullable=True)
     password = Column(String(64), nullable=True)
     registration_type = Column(Enum(RegistrationType), nullable=False)
 
@@ -31,12 +32,14 @@ class UserAuthorization(Base):
     @staticmethod
     async def register_user_internally(username: str, login: str, password: str, *, session) -> UserAuthorization:
         login = hash_login(login)
-        salt = token_urlsafe(32)
+        salt = token_urlsafe(30)
         # TODO: add way to run asynchronously
         password = hash_password(password, salt)
 
         user = User(username=username)
-        user_auth = UserAuthorization(login=login, password=password, registration_type=RegistrationType.internal)
+        user_auth = UserAuthorization(
+            login=login, password=password, salt=salt, registration_type=RegistrationType.internal
+        )
 
         session.add(user)
         user_auth.user.append(user)
