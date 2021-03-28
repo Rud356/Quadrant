@@ -54,9 +54,11 @@ class DirectMessagesChannel(Base):
     async def participants_have_channel(
         cls: DirectMessagesChannel, requester: models.User, with_user: models.User, *, session
     ) -> bool:
-        return await cls._channel_by_participants(
-            cls, requester, with_user, session=session
-        ).exists().scalar() or False
+        return await session.query(
+            cls._channel_by_participants(
+                cls, requester, with_user, session=session
+            ).exists()
+        ).scalar() or False
 
     @staticmethod
     def _channel_by_participants(cls, requester: models.User, with_user: models.User, *, session):
