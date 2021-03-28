@@ -95,6 +95,11 @@ class GroupMessagesChannel(Base):
 
     __tablename__ = "group_channels"
 
+    async def leave_group(self, user_leaving: models.User, *, session) -> None:
+        member = await self.members.filter(models.GroupParticipant.user_id == user_leaving.id).one()
+        self.members.remove(member)
+        await session.commit()
+
     async def kick_member(self, kicked_by: models.User, kicking_user: models.User.id, *, session) -> None:
         if kicked_by.id != self.owner_id:
             raise PermissionError("User isn't owner of group dm")
@@ -119,7 +124,7 @@ class GroupMessagesChannel(Base):
 
         await session.commit()
 
-    async def unban_user(self, unban_by: models.User, unbanning_user: models.User.id, *, session):
+    async def unban_user(self, unban_by: models.User, unbanning_user: models.User.id, *, session) -> None:
         if unban_by.id != self.owner_id:
             raise PermissionError("User isn't owner of group dm")
 
@@ -130,11 +135,18 @@ class GroupMessagesChannel(Base):
         session.delete(ban_instance)
         await session.commit()
 
-    # TODO: add ownership transferring
+    async def transfer_ownership(self, user_transferring: models.User, other_member_id: UUID, *, session):
+        if user_transferring.id != self.owner_id:
+            raise PermissionError("User isn't owner of group dm")
+
+        member = await self.members.filter(models.GroupParticipant.user_id == other_member_id).one()
+        self.owner_id = member.id
+
+        await session.commit()
 
     async def add_invite(
         self, expires_at: Optional[datetime] = None, users_limit: Optional[int] = 1, *, session
-    ):
+    ) -> models.GroupInvite:
         if self.invites.count() > GROUP_MEMBERS_LIMIT:
             raise models.InvitesExceptions.TooManyInvites("Too many invites for dm group")
 
@@ -158,7 +170,7 @@ class GroupMessagesChannel(Base):
 
         return new_invite
 
-    async def delete_invite(self, invite_code: str, user: models.User, *, session):
+    async def delete_invite(self, invite_code: str, user: models.User, *, session) -> None:
         if user.id != self.owner_id:
             raise PermissionError("User can not delete invites")
 
@@ -187,7 +199,7 @@ class GroupMessagesChannel(Base):
         return group
 
     @hybrid_property
-    def members_count(self):
+    def members_count(self) -> int:
         return self.members.count()
 
     @members_count.expression
