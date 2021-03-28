@@ -1,11 +1,10 @@
 from __future__ import annotations
-from uuid import uuid4, UUID
 
-from sqlalchemy import Column, String, Boolean, ForeignKey, BigInteger, and_
-from sqlalchemy.orm import relationship, declared_attr
+from sqlalchemy import BigInteger, Column, ForeignKey
+from sqlalchemy.orm import relationship
 
-from .db_init import Base
 from Quadrant import models
+from .db_init import Base
 
 
 class DMParticipant(Base):
@@ -13,4 +12,13 @@ class DMParticipant(Base):
     user_id = Column(ForeignKey('users.id'), nullable=False)
     channel_id = Column(ForeignKey('dm_channels.channel_id'))
 
-    user = relationship("User", lazy='joined', uselist=False)
+    user: models.User = relationship("User", lazy='joined', uselist=False)
+
+    __tablename__ = "dm_channel_participants"
+
+
+class GroupParticipant(DMParticipant):
+    channel_id = Column(ForeignKey('group_channels.channel_id'))
+
+    __tablename__ = "group_channel_participants"
+

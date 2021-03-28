@@ -13,9 +13,8 @@
   <key attr.name="description" attr.type="string" for="edge" id="d9"/>
   <key for="edge" id="d10" yfiles.type="edgegraphics"/>
   <graph edgedefault="directed" id="G">
-    <data key="d0"/>
+    <data key="d0" xml:space="preserve"/>
     <node id="n0">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="144.0" width="455.0" x="293.0" y="295.00000000000006"/>
@@ -35,7 +34,6 @@ Responds with information about user, if user successfuly authorized<y:LabelMode
       </data>
     </node>
     <node id="n1">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="217.0" width="455.0" x="293.0" y="607.0"/>
@@ -59,17 +57,14 @@ Also patched authorized user data.<y:LabelModel><y:ErdAttributesNodeLabelModel/>
       </data>
     </node>
     <node id="n2">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="217.0" width="280.0" x="802.2" y="607.0"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="78.68359375" x="100.658203125" xml:space="preserve" y="4.0">DMs resource</y:NodeLabel>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="92.20703125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="213.431640625" x="2.0" xml:space="preserve" y="30.701171875">/dm/&lt;with_user_id&gt;
-/dm/stats
-/dm/{calls_routes}
-/dm/{messages_routes}
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="213.431640625" x="2.0" xml:space="preserve" y="30.701171875">/dm/&lt;user_id&gt;
+/dm/&lt;user_id&gt;/stats
 
 Resource with dms info between users.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
           <y:StyleProperties>
@@ -79,7 +74,6 @@ Resource with dms info between users.<y:LabelModel><y:ErdAttributesNodeLabelMode
       </data>
     </node>
     <node id="n3">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="217.0" width="338.0" x="-104.00000000000011" y="607.0"/>
@@ -103,7 +97,6 @@ Resource with users relations information and managing it.<y:LabelModel><y:ErdAt
       </data>
     </node>
     <node id="n4">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="231.79999999999995" width="494.0" x="-226.39999999999998" y="951.0000000000001"/>
@@ -126,7 +119,6 @@ Resource representing a server base information.<y:LabelModel><y:ErdAttributesNo
       </data>
     </node>
     <node id="n5">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="150.0" width="373.0" x="-749.3906250000003" y="869.1005000000005"/>
@@ -145,7 +137,6 @@ Resource for managing server categories.<y:LabelModel><y:ErdAttributesNodeLabelM
       </data>
     </node>
     <node id="n6">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="117.0" width="373.0" x="210.0577499999995" y="1227.170000000001"/>
@@ -164,7 +155,6 @@ Resource for managing channels.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y
       </data>
     </node>
     <node id="n7">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="90.0" width="373.0" x="-749.3906250000003" y="1049.1005000000005"/>
@@ -181,7 +171,6 @@ Resource for managing emojis from server.<y:LabelModel><y:ErdAttributesNodeLabel
       </data>
     </node>
     <node id="n8">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="113.03999999999996" width="280.32000000000005" x="-317.1200000000001" y="1407.721000000001"/>
@@ -199,7 +188,6 @@ Resource for managing emojis from server.<y:LabelModel><y:ErdAttributesNodeLabel
       </data>
     </node>
     <node id="n9">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="113.03999999999996" width="268.15999999999997" x="-113.47999999999996" y="1238.7405000000006"/>
@@ -217,7 +205,6 @@ Resource managing logs information for moders.<y:LabelModel><y:ErdAttributesNode
       </data>
     </node>
     <node id="n10">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="217.0" width="373.0" x="-744.5906250000004" y="1191.9700000000012"/>
@@ -243,7 +230,6 @@ Manages users on server.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelM
       </data>
     </node>
     <node id="n11">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="106.0" width="179.0" x="569.0" y="469.00000000000006"/>
@@ -259,18 +245,18 @@ Manages users on server.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelM
       </data>
     </node>
     <node id="n12">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="192.0" width="280.0000000000001" x="802.2" y="921.0000000000001"/>
           <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="136.708984375" x="71.6455078125" xml:space="preserve" y="4.0">DMs messages resource</y:NodeLabel>
-          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="106.908203125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="272.81640625" x="2.0" xml:space="preserve" y="30.701171875">/dm/&lt;user_id&gt;/messages
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="121.609375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="272.81640625" x="2.0" xml:space="preserve" y="30.701171875">/dm/&lt;user_id&gt;/messages
 /dm/&lt;user_id&gt;/messages/pins
 /dm/&lt;user_id&gt;/messages/search
 /dm/&lt;user_id&gt;/messages/&lt;message_id&gt;
 /dm/&lt;user_id&gt;/messages/&lt;message_id&gt;/reactions
+/dm/&lt;user_id&gt;/{calls_routes}
 
 Resource manages dms messages.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
           <y:StyleProperties>
@@ -280,7 +266,6 @@ Resource manages dms messages.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:
       </data>
     </node>
     <node id="n13">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="192.0" width="455.0" x="210.0577499999995" y="1401.1999999999998"/>
@@ -302,7 +287,6 @@ Resource manages server messages.<y:LabelModel><y:ErdAttributesNodeLabelModel/><
       </data>
     </node>
     <node id="n14">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="106.0" width="179.0" x="293.0" y="471.0"/>
@@ -318,7 +302,6 @@ Resource manages server messages.<y:LabelModel><y:ErdAttributesNodeLabelModel/><
       </data>
     </node>
     <node id="n15">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="123.92000000000007" width="226.87999999999988" x="428.5" y="898.0000000000001"/>
@@ -336,7 +319,6 @@ Manages apps and server side settings.<y:LabelModel><y:ErdAttributesNodeLabelMod
       </data>
     </node>
     <node id="n16">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="165.0" width="338.0" x="-104.00000000000011" y="370.17000000000144"/>
@@ -358,7 +340,6 @@ Updates include:
       </data>
     </node>
     <node id="n17">
-      <data key="d5"/>
       <data key="d6">
         <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
           <y:Geometry height="143.99999999999994" width="280.0" x="802.2" y="433.0000000000001"/>
@@ -375,8 +356,86 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
         </y:GenericNode>
       </data>
     </node>
+    <node id="n18">
+      <data key="d6">
+        <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
+          <y:Geometry height="183.158851823119" width="280.0" x="802.2000000000003" y="1190.2331920093097"/>
+          <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="80.037109375" x="99.9814453125" xml:space="preserve" y="4.0">Groups routes</y:NodeLabel>
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="106.908203125" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="183.4609375" x="2.0" xml:space="preserve" y="30.701171875">/groups
+/groups/&lt;group_id&gt;
+/groups/&lt;group_id&gt;/stats
+/groups/&lt;group_id&gt;/{calls_routes}
+
+
+Resource manages groups<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
+          <y:StyleProperties>
+            <y:Property class="java.lang.Boolean" name="y.view.ShadowNodePainter.SHADOW_PAINTING" value="true"/>
+          </y:StyleProperties>
+        </y:GenericNode>
+      </data>
+    </node>
+    <node id="n19">
+      <data key="d6">
+        <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
+          <y:Geometry height="97.98972226532214" width="280.0" x="802.2000000000003" y="1415.306768813034"/>
+          <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="117.384765625" x="81.3076171875" xml:space="preserve" y="4.0">Groups invites routes</y:NodeLabel>
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="62.8046875" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="239.166015625" x="2.0" xml:space="preserve" y="30.701171875">/groups/&lt;group_id&gt;/invites
+/groups/&lt;group_id&gt;/invites/join?=&lt;invite_id&gt;
+
+Resource manages groups invites<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
+          <y:StyleProperties>
+            <y:Property class="java.lang.Boolean" name="y.view.ShadowNodePainter.SHADOW_PAINTING" value="true"/>
+          </y:StyleProperties>
+        </y:GenericNode>
+      </data>
+    </node>
+    <node id="n20">
+      <data key="d6">
+        <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
+          <y:Geometry height="172.68052754072914" width="315.7622963537626" x="1186.3227595580383" y="1195.4723541505048"/>
+          <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="101.376953125" x="107.1926716143812" xml:space="preserve" y="4.0">Groups messages</y:NodeLabel>
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="121.609375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="300.185546875" x="2.0" xml:space="preserve" y="30.701171875">/groups/&lt;group_id&gt;/messages
+/groups/&lt;group_id&gt;/messages/pins
+/groups/&lt;group_id&gt;/messages/search
+/groups/&lt;group_id&gt;/messages/&lt;message_id&gt;
+/groups/&lt;group_id&gt;/messages/&lt;message_id&gt;/reactions
+/groups/&lt;group_id&gt;/{calls_routes}
+
+Resource manages groups messages.<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
+          <y:StyleProperties>
+            <y:Property class="java.lang.Boolean" name="y.view.ShadowNodePainter.SHADOW_PAINTING" value="true"/>
+          </y:StyleProperties>
+        </y:GenericNode>
+      </data>
+    </node>
+    <node id="n21">
+      <data key="d6">
+        <y:GenericNode configuration="com.yworks.entityRelationship.big_entity">
+          <y:Geometry height="195.83107525213381" width="315.7622963537626" x="1186.3227595580383" y="1415.3067688130338"/>
+          <y:Fill color="#E8EEF7" color2="#B7C9E3" transparent="false"/>
+          <y:BorderStyle color="#000000" type="line" width="1.0"/>
+          <y:NodeLabel alignment="center" autoSizePolicy="content" backgroundColor="#B7C9E3" configuration="com.yworks.entityRelationship.label.name" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasLineColor="false" height="18.701171875" horizontalTextPosition="center" iconTextGap="4" modelName="internal" modelPosition="t" textColor="#000000" verticalTextPosition="bottom" visible="true" width="96.6953125" x="109.5334919268812" xml:space="preserve" y="4.0">Groups members</y:NodeLabel>
+          <y:NodeLabel alignment="left" autoSizePolicy="content" configuration="com.yworks.entityRelationship.label.attributes" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" height="121.609375" horizontalTextPosition="center" iconTextGap="4" modelName="custom" textColor="#000000" verticalTextPosition="top" visible="true" width="262.796875" x="2.0" xml:space="preserve" y="30.701171875">/groups/&lt;group_id&gt;/owner
+/groups/&lt;group_id&gt;/members
+/groups/&lt;group_id&gt;/members/&lt;member_id&gt;
+/groups/&lt;group_id&gt;/members/&lt;member_id&gt;/ban
+/groups/&lt;group_id&gt;/members/&lt;member_id&gt;/kick
+/groups/&lt;group_id&gt;/members_count
+
+Resource manages groups members<y:LabelModel><y:ErdAttributesNodeLabelModel/></y:LabelModel><y:ModelParameter><y:ErdAttributesNodeLabelModelParameter/></y:ModelParameter></y:NodeLabel>
+          <y:StyleProperties>
+            <y:Property class="java.lang.Boolean" name="y.view.ShadowNodePainter.SHADOW_PAINTING" value="true"/>
+          </y:StyleProperties>
+        </y:GenericNode>
+      </data>
+    </node>
     <edge id="e0" source="n0" target="n1">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -387,7 +446,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e1" source="n1" target="n2">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -398,7 +456,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e2" source="n3" target="n1">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -409,7 +466,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e3" source="n1" target="n4">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="-119.5" sy="92.5" tx="0.0" ty="0.0">
@@ -422,7 +478,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e4" source="n5" target="n4">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
@@ -436,7 +491,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e5" source="n6" target="n4">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="-234.04225000000008" ty="49.200500000000375">
@@ -449,7 +503,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e6" source="n7" target="n4">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="-161.04225000000008" ty="27.200500000000375"/>
@@ -460,7 +513,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e7" source="n4" target="n9">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -471,7 +523,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e8" source="n4" target="n10">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="116.10573716000016" sy="47.599942157501346" tx="0.0" ty="0.0">
@@ -485,7 +536,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e9" source="n11" target="n1">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="138.0" ty="9.5616577148445"/>
@@ -496,7 +546,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e10" source="n2" target="n12">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
@@ -507,7 +556,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e11" source="n6" target="n13">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="-41.0" ty="-10.545159875780428"/>
@@ -518,7 +566,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e12" source="n4" target="n8">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="-197.56000000000012" sy="103.60484012421944" tx="0.0" ty="0.0"/>
@@ -529,7 +576,6 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e13" source="n14" target="n1">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="-138.0" ty="-3.9216136111326705"/>
@@ -540,10 +586,55 @@ Handles file uploading to server<y:LabelModel><y:ErdAttributesNodeLabelModel/></
       </data>
     </edge>
     <edge id="e14" source="n1" target="n15">
-      <data key="d9"/>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="21.43999999999994" sy="1.1079059201173322" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="none"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e15" source="n1" target="n18">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="171.42758161001655" sy="54.710880527541235" tx="0.0" ty="0.0">
+            <y:Point x="691.9275816100165" y="1281.8126179208693"/>
+          </y:Path>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="none"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e16" source="n18" target="n19">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="none"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e17" source="n18" target="n20">
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0"/>
+          <y:LineStyle color="#000000" type="line" width="1.0"/>
+          <y:Arrows source="none" target="none"/>
+          <y:BendStyle smoothed="false"/>
+        </y:PolyLineEdge>
+      </data>
+    </edge>
+    <edge id="e18" source="n18" target="n21">
+      <data key="d9"/>
+      <data key="d10">
+        <y:PolyLineEdge>
+          <y:Path sx="35.785079131109455" sy="37.30190845616721" tx="0.0" ty="0.0">
+            <y:Point x="1156.423235841738" y="1319.1145263770366"/>
+            <y:Point x="1156.423235841738" y="1513.2223064391007"/>
+          </y:Path>
           <y:LineStyle color="#000000" type="line" width="1.0"/>
           <y:Arrows source="none" target="none"/>
           <y:BendStyle smoothed="false"/>

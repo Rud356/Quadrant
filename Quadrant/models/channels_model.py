@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from uuid import uuid4, UUID
+from typing import Optional
+from datetime import datetime, timedelta
+from uuid import UUID, uuid4
 
-from sqlalchemy import Column, String, Boolean, ForeignKey, and_
-from sqlalchemy.orm import relationship
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy import Column, ForeignKey, String, DateTime, func, select, not_
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.hybrid import hybrid_property
 
-from .db_init import Base
 from Quadrant import models
+from .db_init import Base
+
+GROUP_MEMBERS_LIMIT = 10
 
 
 class DirectMessagesChannel(Base):
@@ -69,3 +74,138 @@ class DirectMessagesChannel(Base):
                 )
             )
         )
+
+
+class GroupMessagesChannel(Base):
+    channel_id = Column(db_UUID, primary_key=True, default=uuid4)
+    channel_name = Column(String(50), default="Untitled channel")
+    owner_id = Column(ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    members = relationship(models.GroupParticipant, lazy='joined')
+    invites = relationship(
+        models.GroupInvite, lazy='joined',
+        primaryjoin="""
+            and_(
+                GroupMessagesChannel.channel_id == models.GroupInvite,
+                models.GroupInvite.is_expired.is_(False)
+            )
+        """
+    )
+
+    __tablename__ = "group_channels"
+
+    async def kick_member(self, kicked_by: models.User, kicking_user: models.User.id, *, session) -> None:
+        if kicked_by.id != self.owner_id:
+            raise PermissionError("User isn't owner of group dm")
+
+        if kicking_user == kicked_by.id:
+            raise ValueError("User can not kick himself")
+
+        member = await self.members.filter(models.GroupParticipant.user_id == kicking_user).one()
+        self.members.remove(member)
+        await session.commit()
+
+    async def ban_member(self, banned_by: models.User, banning_user: models.User.id, reason: str, *, session) -> None:
+        if banned_by.id != self.owner_id:
+            raise PermissionError("User isn't owner of group dm")
+
+        if banning_user == banned_by.id:
+            raise ValueError("User can not ban himself")
+
+        member = await self.members.filter(models.GroupParticipant.user_id == banning_user).one()
+        models.GroupBans(reason=reason, group_id=self.channel_id, banned_user_id=banning_user)
+        self.members.remove(member)
+
+        await session.commit()
+
+    async def unban_user(self, unban_by: models.User, unbanning_user: models.User.id, *, session):
+        if unban_by.id != self.owner_id:
+            raise PermissionError("User isn't owner of group dm")
+
+        if unbanning_user == unban_by.id:
+            raise ValueError("User can not unban himself")
+
+        ban_instance = models.GroupBans.get_ban(self.id, unbanning_user.id, session=session)
+        session.delete(ban_instance)
+        await session.commit()
+
+    # TODO: add ownership transferring
+
+    async def add_invite(
+        self, expires_at: Optional[datetime] = None, users_limit: Optional[int] = 1, *, session
+    ):
+        if self.invites.count() > GROUP_MEMBERS_LIMIT:
+            raise models.InvitesExceptions.TooManyInvites("Too many invites for dm group")
+
+        if expires_at is None:
+            expires_at = datetime.utcnow() + timedelta(days=1)
+
+        elif datetime.utcnow() - expires_at < timedelta(minutes=5):
+            raise models.InvitesExceptions.TooShortLifespan("Invite must live at least 5 minutes")
+
+        if users_limit < 1:
+            raise models.InvitesExceptions.InvalidUsersLimitValue(
+                "You must have at least 1 user being able to use invite"
+            )
+
+        new_invite = models.GroupInvite(
+            group_channel_id=self.channel_id, expires_at=expires_at, users_limit=users_limit
+        )
+
+        self.invites.append(new_invite)
+        await session.commit()
+
+        return new_invite
+
+    async def delete_invite(self, invite_code: str, user: models.User, *, session):
+        if user.id != self.owner_id:
+            raise PermissionError("User can not delete invites")
+
+        invite = await self.invites.filter(models.GroupInvite.invite_code == invite_code).one()
+        self.invites.remove(invite)
+        await session.commit()
+
+    @staticmethod
+    async def use_join_via_invite(user_joining: models.User, invite_code: str, *, session) -> GroupMessagesChannel:
+        group_invite: models.GroupInvite = await session.query(models.GroupInvite).filter(
+            models.GroupInvite.invite_code == invite_code, not_(models.GroupInvite.is_expired)
+        )
+
+        if await models.GroupBans.is_user_banned(group_invite.group_channel_id, user_joining.id, session=session):
+            raise PermissionError("User has been banned")
+
+        new_member = models.DMParticipant(user_id=user_joining.id, channel_id=group_invite.group_channel_id)
+        group: GroupMessagesChannel = await session.query(GroupMessagesChannel).filter(
+            GroupMessagesChannel.channel_id == group_invite.group_channel_id
+        ).one()
+
+        group.members.append(new_member)
+        group_invite.users_used_invite += 1
+        await session.commit()
+
+        return group
+
+    @hybrid_property
+    def members_count(self):
+        return self.members.count()
+
+    @members_count.expression
+    def members_count(cls):  # noqa
+        return select(func.count()).select_from(models.GroupParticipant).where(
+            models.GroupParticipant.channel_id == cls.channel_id
+        )
+
+    @classmethod
+    async def get_group_channel(cls, channel_id: UUID, *, session):
+        return await session.query(cls).filter(cls.channel_id == channel_id).one()
+
+    @classmethod
+    async def create_group_channel(cls, channel_name: str, owner: models.User, *, session):
+        # TODO: validate channel name
+        new_group_channel = cls(
+            channel_name=channel_name, owner_id=owner.id,
+            members=[owner], invites=[models.GroupInvite()]
+        )
+        await session.commit()
+        return new_group_channel
