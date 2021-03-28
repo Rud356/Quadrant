@@ -106,20 +106,8 @@ class UsersRelations(Base):
 
             return True
 
-        elif relationships_status == UsersRelationType.friends:
-            raise UsersRelations.exc.AlreadyFriends()
-
-        elif relationships_status == UsersRelationType.friend_request_sender:
-            raise UsersRelations.exc.AlreadySentFriendRequest()
-
-        elif relationships_status == UsersRelationType.friend_request_receiver:
-            raise UsersRelations.exc.IsFriendRequestReceiver()
-
-        elif relationships_status == UsersRelationType.blocked:
-            raise UsersRelations.exc.BlockedRelationshipException()
-
         else:
-            raise UsersRelations.exc.RelationshipsException("Unknown relationship type")
+            raise UsersRelations.exc.RelationshipsException("Invalid relationship type")
 
     @staticmethod
     async def respond_on_friend_request(from_user: User, to_user: User, accept_request: bool, *, session) -> bool:
@@ -206,15 +194,6 @@ class UsersRelations(Base):
 
     class exc:
         class RelationshipsException(Exception):
-            pass
-
-        class AlreadyFriends(RelationshipsException):
-            pass
-
-        class AlreadySentFriendRequest(RelationshipsException):
-            pass
-
-        class IsFriendRequestReceiver(RelationshipsException):
             pass
 
         class BlockedRelationshipException(RelationshipsException):

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 @dataclass
 class CommonSettingsValidator:
     key: AnyStr
+    default: Any
     validator: Callable
 
     def validate(self, value: Any) -> bool:
@@ -16,5 +17,7 @@ class CommonSettingsValidator:
 
 
 COMMON_SETTINGS = (
-    CommonSettingsValidator("enable_sites_preview", lambda v: isinstance(v, bool)),
+    CommonSettingsValidator("enable_sites_preview", False, lambda v: isinstance(v, bool)),
 )
+DEFAULT_COMMON_SETTINGS_DICT = {i.key: i.default for i in COMMON_SETTINGS}
+
