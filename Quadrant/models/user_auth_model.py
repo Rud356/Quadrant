@@ -78,7 +78,8 @@ class OauthUserAuthorization(Base):
     refresh_token = Column(String(100), unique=True, index=True, nullable=True)
 
     user: User = relationship(
-        UserInternalAuthorization, primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id"
+        UserInternalAuthorization,
+        primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id"
     )
 
 # TODO: finish oauth later

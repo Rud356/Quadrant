@@ -205,7 +205,7 @@ class GroupMessagesChannel(Base):
         # TODO: validate channel name
         new_group_channel = cls(
             channel_name=channel_name, owner_id=owner.id,
-            members=[owner], invites=[models.GroupInvite()]
+            members=[models.GroupParticipant(user_id=owner.id)], invites=[models.GroupInvite()]
         )
         await session.commit()
         return new_group_channel
