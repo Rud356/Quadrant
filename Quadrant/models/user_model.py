@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import List
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 
 from .db_init import Base
@@ -16,7 +16,7 @@ MAX_OWNED_BOTS = 20
 
 
 class User(Base):
-    id = Column(UUID, primary_key=True, default=uuid4)
+    id = Column(db_UUID, primary_key=True, default=uuid4)
     color_id = Column(Integer, default=generate_random_color, nullable=False)
     username = Column(String(length='50'), nullable=False)
     status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
@@ -26,7 +26,7 @@ class User(Base):
     is_bot = Column(Boolean, nullable=False, default=False)
     is_banned = Column(Boolean, nullable=False, default=False)
 
-    bots_owner_id = Column(UUID, nullable=True)
+    bots_owner_id = Column(db_UUID, nullable=True)
 
     __tablename__ = "users"
 
@@ -72,18 +72,14 @@ class User(Base):
         return bots
 
     @classmethod
-    async def get_user(cls, user_id: int, *, session, filter_deleted: bool = True, filter_bots: bool = False):
-        try:
-            user_query = session.query(cls).filter(cls.id == user_id)
-            if filter_deleted:
-                user_query = user_query.filter(cls.is_banned.is_(False))
+    async def get_user(cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False):
+        user_query = session.query(cls).filter(cls.id == user_id)
+        if filter_deleted:
+            user_query = user_query.filter(cls.is_banned.is_(False))
 
-            if filter_bots:
-                user_query = user_query.filter(cls.is_bot.is_(False))
+        if filter_bots:
+            user_query = user_query.filter(cls.is_bot.is_(False))
 
-            user = await user_query.one()
-
-        except OverflowError:
-            raise NoResultFound("User not found")
+        user = await user_query.one()
 
         return user

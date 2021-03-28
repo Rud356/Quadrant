@@ -1,9 +1,10 @@
 from __future__ import annotations
-from secrets import token_urlsafe
-from hmac import compare_digest
 
-from sqlalchemy import BigInteger, Column, Enum, ForeignKey, String
-from sqlalchemy.orm import relationship, backref
+from hmac import compare_digest
+from secrets import token_urlsafe
+
+from sqlalchemy import BigInteger, Column, ForeignKey, String
+from sqlalchemy.orm import backref, relationship
 
 from .db_init import Base
 from .user_model import User
