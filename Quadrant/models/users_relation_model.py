@@ -45,9 +45,10 @@ class UsersRelations(Base):
         return relation, relation_with
 
     @staticmethod
-    async def get_relationship_status(user: User, with_user: User.id, *, session) -> UsersRelationType:
+    async def get_exact_relationship_status(user: User, with_user: User.id, *, session) -> UsersRelationType:
         relation = await session.query(UsersRelations.relation_status).filter(
-            UsersRelations.initiator_id == user.id, UsersRelations.relation_with_id == with_user.id
+            UsersRelations.initiator_id == user.id,
+            UsersRelations.relation_with_id == with_user.id
         ).scalar()
 
         if relation is None:
@@ -68,7 +69,9 @@ class UsersRelations(Base):
         ).join(User, User.id != user.id) \
             .limit(UsersRelations).offset(USERS_RELATIONS_PER_PAGE * page).all()
 
-        return tuple(((relation, relation_with) for relation, relation_with in results))  # noqa: alchemy objects
+        return tuple( # noqa: alchemy objects
+            ((relation, relation_with) for relation, relation_with in results)
+        )
 
     @staticmethod
     def users_relationship_query(to_user: User, from_user: User, *, session):
@@ -111,7 +114,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def respond_on_friend_request(from_user: User, to_user: User, accept_request: bool, *, session) -> bool:
-        relationships_status: UsersRelationType = await UsersRelations.get_relationship_status(
+        relationships_status: UsersRelationType = await UsersRelations.get_exact_relationship_status(
             to_user, from_user.id, session=session
         )
 
@@ -132,7 +135,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def cancel_friend_request(from_user: User, to_user: User, *, session) -> bool:
-        relationships_status: UsersRelationType = await UsersRelations.get_relationship_status(
+        relationships_status: UsersRelationType = await UsersRelations.get_exact_relationship_status(
             to_user, from_user.id, session=session
         )
 
@@ -145,7 +148,7 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationships to cancel friend request")
 
     @staticmethod
-    async def block_user(block_by: User, blocking_user: User, *, session) -> bool:
+    async def block_user(block_by: User, blocking_user: User, *, session) -> UsersRelations:
         # There only max of two relations and we should make sure that we're not unblocking someone unintentionally
         relations: Tuple[UsersRelations] = await UsersRelations.users_relationship_query(
             block_by, blocking_user, session=session
@@ -166,6 +169,14 @@ class UsersRelations(Base):
         if initialized_by_blocker is not None:
             initialized_by_blocker.relation_status = UsersRelationType.blocked
 
+        else:
+            initialized_by_blocker = UsersRelations(
+                initiator_id=block_by.id,
+                relation_with_id=blocking_user.id,
+                relation_status=UsersRelationType.blocked
+            )
+            session.add(initialized_by_blocker)
+
         if (
             (initialized_by_blocking_user is not None) and
             (initialized_by_blocking_user.relation_status != UsersRelationType.blocked)
@@ -173,11 +184,11 @@ class UsersRelations(Base):
             initialized_by_blocking_user.relation_status.delete()
 
         await session.commit()
-        return True
+        return initialized_by_blocker
 
     @staticmethod
     async def unblock_user(user_unblock_initializer: User, unblocking_user: User, *, session) -> bool:
-        relation = await UsersRelations.get_relationship_status(
+        relation = await UsersRelations.get_exact_relationship_status(
             user_unblock_initializer, unblocking_user.id, session=session
         )
 

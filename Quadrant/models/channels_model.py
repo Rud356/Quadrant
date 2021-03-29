@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Optional
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
@@ -19,7 +20,7 @@ GROUP_MEMBERS_LIMIT = 10
 class DirectMessagesChannel(Base):
     channel_id = Column(db_UUID, primary_key=True, default=uuid4)
 
-    participants = relationship(models.DMParticipant)
+    participants = relationship(models.DMParticipant, lazy='joined')
     __tablename__ = "dm_channels"
 
     async def other_participant(self, requester_user: models.User) -> models.User:
@@ -74,6 +75,14 @@ class DirectMessagesChannel(Base):
                 )
             )
         )
+
+    async def is_member(self, user: models.User, *, session) -> bool:
+        return await session.query(
+            session.query(models.DMParticipant).filter(
+                models.DMParticipant.user_id == user.id,
+                models.DMParticipant.channel_id == self.channel_id
+            ).exists()
+        ).scalar() or False
 
 
 class GroupMessagesChannel(Base):
@@ -221,3 +230,11 @@ class GroupMessagesChannel(Base):
         )
         await session.commit()
         return new_group_channel
+
+    async def is_member(self, user: models.User, *, session) -> bool:
+        return await session.query(
+            session.query(models.GroupParticipant).filter(
+                models.GroupParticipant.user_id == user.id,
+                models.GroupParticipant.channel_id == self.channel_id
+            ).exists()
+        ).scalar() or False
