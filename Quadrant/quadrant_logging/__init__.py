@@ -1,11 +1,12 @@
 import logging
+from logging import handlers
 from functools import partial
-from logging.handlers import TimedRotatingFileHandler
 
 from tornado.log import access_log, app_log, gen_log
 
 from Quadrant.config import quadrant_config
 
+TimedRotatingFileHandler = handlers.TimedRotatingFileHandler
 log_config = quadrant_config.LoggingConfig
 rotation_config = log_config.LogsRotationConfig
 

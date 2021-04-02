@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from math import ceil
 from secrets import token_urlsafe
 
-from sqlalchemy import Column, DateTime, ForeignKey, SmallInteger, String, case, or_, select
+from sqlalchemy import Column, DateTime, ForeignKey, SmallInteger, Integer, String, case, or_, select
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .db_init import Base
@@ -58,8 +58,8 @@ class ServerInvite(Base):
     server_id = Column(ForeignKey('servers.id'), nullable=False)
 
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=30))
-    users_limit = Column(SmallInteger, default=10)
-    users_used_invite = Column(SmallInteger, default=0)
+    users_limit = Column(Integer, default=10)
+    users_used_invite = Column(Integer, default=0)
 
     __tablename__ = "server_invites"
 

@@ -1,7 +1,8 @@
 defaults = {
     "Quadrant":
         {
-            "max_upload_file_size": "8M",
+            "debug_mode": False,
+            "max_payload_size": "8M",
             "host_static_files_internally": True,
             "static_folder_location": './static',
             "media_folder_location": "./media",
@@ -13,9 +14,9 @@ defaults = {
                 "kwargs": {}
             },
 
-            "logging": {
-                "logs_dir": "./logging/logs",
-                "format": "'%(asctime)s - %(name)s - %(levelname)s: %(message)s'",  # noqa: logging format
+            "quadrant_logging": {
+                "logs_dir": "./quadrant_logging/logs",
+                "format": "'%(asctime)s - %(name)s - %(levelname)s: %(message)s'",  # noqa: quadrant_logging format
                 "date_format": "%y%m%d %H:%M:%S",
                 "TornadoAppLogLevel": "ERROR",
                 "TornadoAccessLogLevel": "ERROR",
@@ -28,6 +29,15 @@ defaults = {
                     "encoding": "utf-8",
                     'utc': True,
                 }
+            },
+
+            "security": {
+                "cookie_secret": "EXAMPLE_COOKIE_SECRET",
+                "default_host": r"(localhost|127\.0\.0\.1)"
+            },
+
+            "http_chat_server": {
+                "port": 356,
             }
         },
 }

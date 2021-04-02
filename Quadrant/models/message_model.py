@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
 from datetime import datetime
+from typing import Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Column, ForeignKey, String, DateTime, Boolean
-from sqlalchemy.orm import relationship, declared_attr
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
+from sqlalchemy.orm import declared_attr
 
-from .db_init import Base
 from Quadrant import models
+from .db_init import Base
 
 MESSAGES_PER_REQUEST = 100
 # TODO: add messages reactions
@@ -97,7 +97,7 @@ class DM_Message(Base):
 
         return await query.all()
 
-    async def delete_message(self, delete_by: models.User, *, session) -> None:
+    async def delete_message_by_author(self, delete_by: models.User, *, session) -> None:
         if self.author_id != delete_by.id:
             raise PermissionError("User tries to edit message even if he's not an author")
 
@@ -117,6 +117,7 @@ class DM_Message(Base):
         await session.commit()
 
     async def pin_message(self, *, session) -> None:
+        # Warning: permission check required
         if self.pinned:
             raise ValueError("Already pinned")
 
@@ -124,6 +125,7 @@ class DM_Message(Base):
         await session.commit()
 
     async def unpin_message(self, *, session) -> None:
+        # Warning: permission check required
         if not self.pinned:
             raise ValueError("Message isn't pinned")
 
@@ -137,3 +139,15 @@ class GroupMessage(DM_Message):
     @declared_attr
     def channel_id(cls):  # noqa
         return Column(ForeignKey("group_channels.id"), index=True)
+
+    async def delete_by_channel_owner(
+        self, delete_by: models.User, channel: models.GroupMessagesChannel, *, session
+    ) -> GroupMessage.message_id:
+        msg_id = self.id
+        if delete_by.id == channel.owner_id:
+            session.delete(self)
+            await session.commit()
+            return msg_id
+
+        else:
+            raise PermissionError("User isn't a channel owner so can not delete message")

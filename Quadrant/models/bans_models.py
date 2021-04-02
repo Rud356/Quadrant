@@ -54,12 +54,16 @@ class ServerBans(Base):
     id = Column(BigInteger, primary_key=True)
     server_id = Column(ForeignKey("servers.id"), nullable=False, index=True)
     banned_user_id = Column(ForeignKey('users.id'), nullable=False)
-    banned_by_user_id = Column(ForeignKey("servers.id"), nullable=False, index=True)
+    banned_by_user_id = Column(ForeignKey("users.id"), nullable=False, index=True)
     banned_at = Column(DateTime, default=datetime.utcnow)
     reason = Column(String(2048), default="")
 
-    banned_user = relationship("User", lazy='joined', primaryjoin="ServerBans.banned_user_id = User.id", uselist=False)
-    banned_by = relationship("User", lazy="joined", primaryjoin="ServerBans.banned_by_user_id = User.id", uselist=False)
+    banned_user = relationship(
+        "User", lazy='joined', primaryjoin="ServerBans.banned_user_id == User.id", uselist=False
+    )
+    banned_by = relationship(
+        "User", lazy="joined", primaryjoin="ServerBans.banned_by_user_id == User.id", uselist=False
+    )
     __table_args__ = (
         UniqueConstraint("server_id", "banned_user_id", name="_unique_ban_from_server"),
     )

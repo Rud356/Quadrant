@@ -10,7 +10,7 @@ from Quadrant.models import db_init
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
+# Interpret the config file for Python quadrant_logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 

@@ -15,8 +15,8 @@ yaml_path = Path(__file__).parent / "config.yaml"
 if not yaml_path.is_file():
     # Init config
     yaml_path.touch()
-    yaml_loader = loaders.YAMLLoader.load(yaml_path, defaults)
-    yaml_loader.dump(include_defaults=True)
+    yaml_loader = loaders.YAMLLoader(data=defaults, defaults={}, config_path=yaml_path)
+    yaml_loader.dump()
     print(f"Quadrant config has been initialized. Edit config at {yaml_path}")
     exit(1)
 
@@ -27,16 +27,17 @@ composite_loader = loaders.CompositeLoader.load(yaml_loader, env_loader)
 
 class QuadrantConfig(BaseConfig):
     # Represents max size of payloads
-    max_upload_file_size = ConfigVar(
-        "Quadrant/max_upload_file_size", composite_loader, validator=lambda v: v >= 0, default='8M',
+    debug_mode = BoolVar("Quadrant/debug_mode", composite_loader, default=False)
+    max_payload_size = ConfigVar(
+        "Quadrant/max_payload_size", composite_loader, validator=lambda v: v >= 0, default='8M',
         caster=casters.file_size_caster, constant=True
     )
     static_folder_location = ConfigVar(
-        "Quadrant/static_folder_location", composite_loader, caster=Path, validator=Path.is_dir,
+        "Quadrant/static_folder_location", composite_loader, caster=Path,
         default=Path(__file__).parent.parent / "static"
     )
     media_folder_location = ConfigVar(
-        "Quadrant/media_folder_location", composite_loader, caster=Path, validator=Path.is_dir,
+        "Quadrant/media_folder_location", composite_loader, caster=Path,
         default=Path(__file__).parent.parent / "media"
     )
     host_static_files_internally = BoolVar(
@@ -65,28 +66,31 @@ class QuadrantConfig(BaseConfig):
 
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(
-            "Quadrant/logging/logs_dir", composite_loader, caster=Path, validator=Path.is_dir,
-            default=Path(__file__).parent.parent / "logging/logs", constant=True
+            "Quadrant/quadrant_logging/logs_dir", composite_loader, caster=Path,
+            default=Path(__file__).parent.parent / "quadrant_logging/logs", constant=True
         )
         date_format = ConfigVar(
-            "Quadrant/logging/date_format", yaml_loader, validator=datetime.now().strftime, constant=True
+            "Quadrant/quadrant_logging/date_format", yaml_loader, validator=datetime.now().strftime, constant=True
         )
-        log_format = ConfigVar("Quadrant/logging/format", yaml_loader, caster=logging.Formatter, constant=True)
+        log_format = ConfigVar("Quadrant/quadrant_logging/format", yaml_loader, caster=logging.Formatter, constant=True)
         tornado_app_log_level = ConfigVar(
-            "Quadrant/logging/TornadoAppLogLevel", yaml_loader, caster=lambda level: getattr(logging, level),
+            "Quadrant/quadrant_logging/TornadoAppLogLevel", yaml_loader,
+            caster=lambda level: getattr(logging, level),
             constant=True
         )
         tornado_access_log_level = ConfigVar(
-            "Quadrant/logging/TornadoAccessLogLevel", yaml_loader, caster=lambda level: getattr(logging, level),
+            "Quadrant/quadrant_logging/TornadoAccessLogLevel", yaml_loader,
+            caster=lambda level: getattr(logging, level),
             constant=True
         )
         tornado_general_log_level = ConfigVar(
-            "Quadrant/logging/TornadoGeneralLogLevel", yaml_loader, caster=lambda level: getattr(logging, level),
+            "Quadrant/quadrant_logging/TornadoGeneralLogLevel", yaml_loader,
+            caster=lambda level: getattr(logging, level),
             constant=True
         )
 
         def __post_init__(self, *args, **kwargs):
-            self.logs_dir.value.mkdir(exists_ok=True)
+            self.logs_dir.value.mkdir(exist_ok=True)
             self.app_log_path: Path = self.logs_dir.value / "app_log_path"
             self.app_log_path.mkdir(exist_ok=True)
 
@@ -97,19 +101,28 @@ class QuadrantConfig(BaseConfig):
             self.general_log_path.mkdir(exist_ok=True)
 
         class LogsRotationConfig(BaseConfig):
-            when = ConfigVar("Quadrant/logging/rotation/when", yaml_loader, constant=True)
+            when = ConfigVar("Quadrant/quadrant_logging/rotation/when", yaml_loader, constant=True)
             interval = IntVar(
-                "Quadrant/logging/rotation/interval", yaml_loader, validator=lambda v: v >= 1,
+                "Quadrant/quadrant_logging/rotation/interval", yaml_loader, validator=lambda v: v >= 1,
                 constant=True
             )
             backup_count = IntVar(
-                "Quadrant/logging/rotation/backupCount", yaml_loader, validator=lambda v: v >= 1, constant=True
+                "Quadrant/quadrant_logging/rotation/backupCount", yaml_loader, validator=lambda v: v >= 1, constant=True
             )
             encoding = ConfigVar(
-                "Quadrant/logging/rotation/encoding", yaml_loader, validator=validators.validate_encoding,
+                "Quadrant/quadrant_logging/rotation/encoding", yaml_loader, validator=validators.validate_encoding,
                 default='utf-8', constant=True
             )
-            utc_time = BoolVar("Quadrant/logging/rotation/utc", yaml_loader, default=True, constant=True)
+            utc_time = BoolVar("Quadrant/quadrant_logging/rotation/utc", yaml_loader, default=True, constant=True)
+
+    class Security(BaseConfig):
+        cookie_secret = ConfigVar(
+            "Quadrant/security/cookie_secret", composite_loader, validator=lambda v: v != "EXAMPLE_COOKIE_SECRET"
+        )
+        default_host = ConfigVar("Quadrant/security/default_host", composite_loader)
+
+    class HttpChatServer:
+        port = IntVar("Quadrant/http_chat_server/port", composite_loader, validator=lambda v: v in range(1, 65535+1))
 
     def __post_init__(self, *args, **kwargs):
         static_location: Path = self.static_folder_location.value

@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import Optional
-from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, ForeignKey, String, DateTime, func, select, not_
+from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship
 
 from Quadrant import models
 from .db_init import Base
@@ -111,7 +110,7 @@ class GroupMessagesChannel(Base):
 
     async def kick_member(self, kicked_by: models.User, kicking_user: models.User.id, *, session) -> None:
         if kicked_by.id != self.owner_id:
-            raise PermissionError("User isn't owner of group dm")
+            raise PermissionError("User isn't delete_by of group dm")
 
         if kicking_user == kicked_by.id:
             raise ValueError("User can not kick himself")
@@ -122,7 +121,7 @@ class GroupMessagesChannel(Base):
 
     async def ban_member(self, banned_by: models.User, banning_user: models.User.id, reason: str, *, session) -> None:
         if banned_by.id != self.owner_id:
-            raise PermissionError("User isn't owner of group dm")
+            raise PermissionError("User isn't delete_by of group dm")
 
         if banning_user == banned_by.id:
             raise ValueError("User can not ban himself")
@@ -135,7 +134,7 @@ class GroupMessagesChannel(Base):
 
     async def unban_user(self, unban_by: models.User, unbanning_user: models.User.id, *, session) -> None:
         if unban_by.id != self.owner_id:
-            raise PermissionError("User isn't owner of group dm")
+            raise PermissionError("User isn't delete_by of group dm")
 
         if unbanning_user == unban_by.id:
             raise ValueError("User can not unban himself")
@@ -146,7 +145,7 @@ class GroupMessagesChannel(Base):
 
     async def transfer_ownership(self, user_transferring: models.User, other_member_id: UUID, *, session):
         if user_transferring.id != self.owner_id:
-            raise PermissionError("User isn't owner of group dm")
+            raise PermissionError("User isn't delete_by of group dm")
 
         member = await self.members.filter(models.GroupParticipant.user_id == other_member_id).one()
         self.owner_id = member.id

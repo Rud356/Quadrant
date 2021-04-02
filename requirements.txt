@@ -2,5 +2,6 @@ tornado~=6.1
 Alembic~=1.5.7
 sqlalchemy~=1.4.2
 dogpile.cache~=1.1.2
-ConfigFramework==2.0.1
+ConfigFramework~=2.0.6
 asyncpg~=0.22.0
+psycopg2~=2.8.6
