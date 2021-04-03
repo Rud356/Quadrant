@@ -8,14 +8,14 @@ defaults = {
             "media_folder_location": "./media",
 
             "db": {
-                "db_uri": "postgresql://user:pass@hostname/quadrant_chat",
+                "db_uri": "postgresql+asyncpg://user:pass@hostname/quadrant_chat?prepared_statement_cache_size=1000",
                 "pool_size": 15,
-                "statements_cache_size": 1000,
+                "pool_kwargs": {},
                 "kwargs": {}
             },
 
             "quadrant_logging": {
-                "logs_dir": "./quadrant_logging/logs",
+                "logs_dir": "./quadrant_logs",
                 "format": "'%(asctime)s - %(name)s - %(levelname)s: %(message)s'",  # noqa: quadrant_logging format
                 "date_format": "%y%m%d %H:%M:%S",
                 "TornadoAppLogLevel": "ERROR",

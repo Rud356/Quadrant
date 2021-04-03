@@ -8,7 +8,7 @@ from ConfigFramework.variables import ConfigVar, IntVar, BoolVar
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 from Quadrant.config import casters, validators
-from .defaults import defaults
+from Quadrant.config.defaults import defaults
 
 yaml_path = Path(__file__).parent / "config.yaml"
 
@@ -47,27 +47,25 @@ class QuadrantConfig(BaseConfig):
     class DBConfig(BaseConfig):
         # This chat supports only postgresql
         db_uri = ConfigVar("Quadrant/db/db_uri", composite_loader, validator=validators.validate_is_postgresql)
-        # Statements cache is useful to speed up app. If you can - set its value higher
-        statements_cache_size = IntVar(
-            "Quadrant/db/statements_cache_size", composite_loader, default=1000, validator=lambda v: v >= 0
-        )
         # Number of connections to database app will be using
         pool_size = IntVar("Quadrant/db/pool_size", composite_loader, default=15, validator=lambda v: v >= 0)
         # Any keyword args for sqlalchemy engine
         kwargs = ConfigVar("Quadrant/db/kwargs", yaml_loader, default={})
+        pool_kwargs = ConfigVar("Quadrant/db/pool_kwargs", yaml_loader, default={})
 
         def __post_init__(self, *args, **kwargs):
-            self.async_engine = create_async_engine(
-                self.db_uri.value, dialect="asyncpg",
-                prepared_statement_cache_size=self.statements_cache_size.value,
-                pool=AsyncAdaptedQueuePool, pool_size=self.pool_size.value,
+            async_engine = create_async_engine(
+                self.db_uri.value,
                 **self.kwargs.value
             )
+
+            self.pool_kwargs.value.pop('pool_size', None)
+            self.async_engine = AsyncAdaptedQueuePool(async_engine, pool_size=self.pool_size.value)
 
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(
             "Quadrant/quadrant_logging/logs_dir", composite_loader, caster=Path,
-            default=Path(__file__).parent.parent / "quadrant_logging/logs", constant=True
+            default=Path(__file__).parent.parent / "quadrant_logs", constant=True
         )
         date_format = ConfigVar(
             "Quadrant/quadrant_logging/date_format", yaml_loader, validator=datetime.now().strftime, constant=True

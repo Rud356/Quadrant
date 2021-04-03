@@ -2,7 +2,10 @@
 .idea
 alembic.ini
 static/
-config.yaml
+media/
+quadrant_logs/
+*/config.yaml
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

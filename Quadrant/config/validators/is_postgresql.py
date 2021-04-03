@@ -1,5 +1,5 @@
 def validate_is_postgresql(v: str) -> bool:
-    if 'postgresql://' in v:
+    if 'postgresql' in v:
         return True
 
     else:
