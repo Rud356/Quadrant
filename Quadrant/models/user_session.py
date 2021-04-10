@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from uuid import UUID
 from .db_init import Base
 from .caching import FromCache
+from .caching.caching_environment import cache
 
 if TYPE_CHECKING:
     from .user import User
@@ -26,7 +27,9 @@ class UserSession(Base):
 
     @staticmethod
     def user_session_query(user_id: UUID, *, session):
-        return session.query(UserSession).filter(UserSession.user_id == user_id)
+        return session.query(UserSession).filter(
+            UserSession.user_id == user_id, UserSession.is_alive.is_(True)
+        ).options(FromCache("default"))
 
     @classmethod
     async def new_session(cls, user: User, ip_address: str, *, session):
@@ -41,7 +44,7 @@ class UserSession(Base):
         try:
             return await cls.user_session_query(
                 user_id=user_id, session=session
-            ).filter(cls.session_id == session_id).options(FromCache("default")).one()
+            ).filter(cls.session_id == session_id).one()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
@@ -52,25 +55,25 @@ class UserSession(Base):
             raise ValueError("Invalid page")
 
         try:
-            return await cls.user_session_query(
+            return await session.query(cls).filter(
                 user_id=user_id, session=session
-            ).limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page).all()
+            ).limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page).order_by(
+                cls.is_alive.desc(), cls.session_id.desc()
+            ).all()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
 
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
-        async for user_session in UserSession.user_session_query(user_id, session=session) \
-                .filter(UserSession.is_alive.is_(True)).partitions(10):
+        # TODO: Ensure that sessions are closed after this method
+        async for user_session in UserSession.user_session_query(user_id, session=session).partitions(10):
             user_session: UserSession
             user_session.is_alive = False
 
         await session.commit()
         return True
 
-    async def terminate_session(self, instant=True, *, session) -> None:
+    async def terminate_session(self, *, session) -> None:
         self.is_alive = False
-
-        if instant:
-            await session.commit()
+        await session.commit()
