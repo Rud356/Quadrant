@@ -12,6 +12,7 @@ from sqlalchemy.orm import relationship
 
 from Quadrant import models
 from .db_init import Base
+from .caching import FromCache, RelationshipCache
 
 GROUP_MEMBERS_LIMIT = 10
 
@@ -40,7 +41,10 @@ class DirectMessagesChannel(Base):
 
     @classmethod
     async def get_channel_by_id(cls, channel_id: UUID, *, session):
-        return await session.get(cls, channel_id)
+        return await session \
+            .options(FromCache("default")) \
+            .options(RelationshipCache(cls.participants, "default")) \
+            .get(cls, channel_id)
 
     @classmethod
     async def get_channel_by_participants(cls, requester: models.User, with_user: models.User, *, session):
@@ -196,9 +200,9 @@ class GroupMessagesChannel(Base):
             raise PermissionError("User has been banned")
 
         new_member = models.DMParticipant(user_id=user_joining.id, channel_id=group_invite.group_channel_id)
-        group: GroupMessagesChannel = await session.query(GroupMessagesChannel).filter(
-            GroupMessagesChannel.channel_id == group_invite.group_channel_id
-        ).one()
+        group: GroupMessagesChannel = await GroupMessagesChannel.get_group_channel(
+            group_invite.group_channel_id, session=session
+        )
 
         group.members.append(new_member)
         group_invite.users_used_invite += 1
@@ -218,7 +222,10 @@ class GroupMessagesChannel(Base):
 
     @classmethod
     async def get_group_channel(cls, channel_id: UUID, *, session):
-        return await session.query(cls).filter(cls.channel_id == channel_id).one()
+        return await session.query(cls).filter(cls.channel_id == channel_id)\
+            .options(FromCache("default")) \
+            .options(RelationshipCache(cls.members, "default").and_(RelationshipCache(cls.invites, "default"))) \
+            .one()
 
     @classmethod
     async def create_group_channel(cls, channel_name: str, owner: models.User, *, session):

@@ -8,6 +8,7 @@ from sqlalchemy.orm import relationship
 
 from Quadrant import models
 from .db_init import Base
+from .caching import FromCache, RelationshipCache
 
 BANS_PER_PAGE = 25
 
@@ -32,13 +33,13 @@ class GroupBans(Base):
 
     @classmethod
     async def get_ban(cls, group_id: UUID, banned_user_id: models.User.id, *, session):
-        return await cls.get_ban_query(group_id, banned_user_id, session=session).one()
+        return await cls.get_ban_query(group_id, banned_user_id, session=session).options(FromCache("default")).one()
 
     @classmethod
     async def is_user_banned(cls, group_id: UUID, check_user_id: models.User.id, *, session) -> bool:
         return await session.query(
             cls.get_ban_query(group_id, check_user_id, session=session).exists()
-        ).scalar()
+        ).options(FromCache("default")).scalar()
 
     @staticmethod
     async def get_bans_page(group_id: UUID, page: int = 0, *, session):
@@ -76,13 +77,13 @@ class ServerBans(Base):
 
     @classmethod
     async def get_ban(cls, server_id: UUID, banned_user_id: models.User.id, *, session):
-        return await cls.get_ban_query(server_id, banned_user_id, session=session).one()
+        return await cls.get_ban_query(server_id, banned_user_id, session=session).options(FromCache("default")).one()
 
     @classmethod
     async def is_user_banned(cls, server_id: UUID, banned_user_id: models.User.id, *, session) -> bool:
         return await session.query(
             cls.get_ban_query(server_id, banned_user_id, session=session).exists()
-        ).scalar()
+        ).options(FromCache("default")).scalar()
 
     @staticmethod
     async def get_bans_page(server_id: UUID, page: int = 0, *, session):

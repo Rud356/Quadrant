@@ -9,6 +9,7 @@ from sqlalchemy.orm import declared_attr
 
 from Quadrant import models
 from .db_init import Base
+from .caching import FromCache, RelationshipCache
 
 MESSAGES_PER_REQUEST = 100
 # TODO: add messages reactions
@@ -54,7 +55,7 @@ class DM_Message(Base):
 
     @classmethod
     async def get_message(cls, message_id: int, channel_id: UUID, *, session) -> models.DM_Message:
-        return await session.query(cls).filter(
+        return await session.query(cls).options(FromCache("default")).filter(
             cls.channel_id == channel_id, message_id == message_id
         ).one()
 
