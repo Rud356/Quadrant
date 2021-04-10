@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from asyncio import get_running_loop
+from concurrent.futures import ProcessPoolExecutor
 from hmac import compare_digest
 from secrets import token_urlsafe
 
@@ -64,7 +66,10 @@ class UserInternalAuthorization(Base):
             User.is_banned.is_(False),
             UserInternalAuthorization.login == login,
         ).one()
-        password = hash_password(password, auth_user.salt)
+
+        with ProcessPoolExecutor(25) as pool_exec:
+            loop = get_running_loop()
+            password = loop.run_in_executor(pool_exec, hash_password, password, auth_user.salt)
 
         if compare_digest(password, auth_user.password):
             return auth_user
