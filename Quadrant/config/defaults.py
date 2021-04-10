@@ -11,7 +11,16 @@ defaults = {
                 "db_uri": "postgresql+asyncpg://user:pass@hostname/quadrant_chat?prepared_statement_cache_size=1000",
                 "pool_size": 15,
                 "pool_kwargs": {},
-                "kwargs": {}
+                "kwargs": {},
+
+                "caching": {
+                    "enable_caching": False,
+                    "caching_backend": "dogpile.cache.dbm",
+                    "expiration_time": 3600,
+                    "arguments": {
+                        "filename": "path/to/cache/file.dbm"
+                    }
+                }
             },
 
             "quadrant_logging": {

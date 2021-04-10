@@ -5,12 +5,15 @@ from typing import List
 from uuid import uuid4, UUID
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_
+from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 
 from .db_init import Base
 from .users_status import UsersStatus
+from .settings import UsersCommonSettings, UsersAppSpecificSettings
 from .utils import generate_random_color
+from .caching import FromCache, RelationshipCache
 
 MAX_OWNED_BOTS = 20
 
@@ -26,7 +29,8 @@ class User(Base):
     is_bot = Column(Boolean, nullable=False, default=False)
     is_banned = Column(Boolean, nullable=False, default=False)
 
-    bots_owner_id = Column(db_UUID, nullable=True)
+    bot_owner_id = Column(db_UUID, nullable=True)
+    users_common_settings = relationship(UsersCommonSettings, lazy='joined', uselist=False)
 
     __tablename__ = "users"
 
@@ -52,8 +56,8 @@ class User(Base):
 
     async def get_owned_bot(self, bot_id: int, *, session) -> User:
         try:
-            bot = await session.query(User).filter(
-                and_(User.is_bot.is_(True), User.bots_owner_id == self.id, User.id == bot_id)
+            bot = await session.query(User).options(FromCache("default")).filter(
+                and_(User.is_bot.is_(True), User.bot_owner_id == self.id, User.id == bot_id)
             ).one()
 
         except OverflowError:
@@ -66,14 +70,20 @@ class User(Base):
             raise ValueError("Bots can't own other bots")
 
         bots = await session.query(User).filter(
-            and_(User.is_bot.is_(True), User.bots_owner_id == self.id)
+            and_(User.is_bot.is_(True), User.bot_owner_id == self.id)
         ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc()).all()
 
         return bots
 
+    async def get_app_specific_settings(self, app_id: str, *, session) -> UsersAppSpecificSettings:
+        return await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
+
     @classmethod
     async def get_user(cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False):
-        user_query = session.query(cls).filter(cls.id == user_id)
+        user_query = session.query(cls) \
+            .options(FromCache("default")) \
+            .options(RelationshipCache(cls.users_common_settings, "default")) \
+            .filter(cls.id == user_id)
         if filter_deleted:
             user_query = user_query.filter(cls.is_banned.is_(False))
 

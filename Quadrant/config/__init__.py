@@ -62,6 +62,12 @@ class QuadrantConfig(BaseConfig):
             self.pool_kwargs.value.pop('pool_size', None)
             self.async_engine = AsyncAdaptedQueuePool(async_engine, pool_size=self.pool_size.value)
 
+    class DBCachingConfig(BaseConfig):
+        enable_caching = BoolVar("Quadrant/db/caching/enable_caching", yaml_loader, default=False)
+        caching_backend = ConfigVar("Quadrant/db/caching/caching_backend", yaml_loader)
+        cache_expiration_time = IntVar("Quadrant/db/caching/expiration_time", yaml_loader, validator=lambda v: v > 0)
+        arguments = ConfigVar("Quadrant/db/caching/arguments", yaml_loader)
+
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(
             "Quadrant/quadrant_logging/logs_dir", composite_loader, caster=Path,

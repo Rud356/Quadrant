@@ -2,7 +2,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 
 from Quadrant.models.db_init import Base
-from .channels_overwrites_models import RolesOverwrites
+from .channels_overwrites import RolesOverwrites
 
 
 class ServerRole(Base):

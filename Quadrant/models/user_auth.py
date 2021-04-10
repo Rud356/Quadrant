@@ -7,9 +7,10 @@ from sqlalchemy import BigInteger, Column, ForeignKey, String
 from sqlalchemy.orm import backref, relationship
 
 from .db_init import Base
-from .user_model import User
+from .user import User
 from .utils import generate_internal_token
 from .utils.hashing import hash_login, hash_password
+from .caching import FromCache, RelationshipCache
 
 
 class UserInternalAuthorization(Base):
@@ -48,9 +49,12 @@ class UserInternalAuthorization(Base):
 
     @staticmethod
     async def authorize_with_token(token: str, *, session) -> UserInternalAuthorization:
-        return await session.query(UserInternalAuthorization).join(User).filter(
-            UserInternalAuthorization.internal_token == token,
-            User.is_banned.is_(False)
+        return await session.query(UserInternalAuthorization)\
+            .options(FromCache("default"))\
+            .options(RelationshipCache(UserInternalAuthorization.user, "default"))\
+            .join(User).filter(
+                UserInternalAuthorization.internal_token == token,
+                User.is_banned.is_(False)
         ).one()
 
     @staticmethod
@@ -79,7 +83,8 @@ class OauthUserAuthorization(Base):
 
     user: User = relationship(
         UserInternalAuthorization,
-        primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id"
+        primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id",
+        lazy='joined'
     )
 
 # TODO: finish oauth later

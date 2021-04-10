@@ -6,7 +6,7 @@ from sqlalchemy import BigInteger, Column, Enum, ForeignKey, and_, or_
 
 from .db_init import Base
 from .relations_types import UsersRelationType
-from .user_model import User
+from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
 
