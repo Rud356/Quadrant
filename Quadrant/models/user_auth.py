@@ -49,9 +49,9 @@ class UserInternalAuthorization(Base):
 
     @staticmethod
     async def authorize_with_token(token: str, *, session) -> UserInternalAuthorization:
-        return await session.query(UserInternalAuthorization)\
-            .options(FromCache("default"))\
-            .options(RelationshipCache(UserInternalAuthorization.user, "default"))\
+        return await session.query(UserInternalAuthorization) \
+            .options(FromCache("default")) \
+            .options(RelationshipCache(UserInternalAuthorization.user, "default")) \
             .join(User).filter(
                 UserInternalAuthorization.internal_token == token,
                 User.is_banned.is_(False)
