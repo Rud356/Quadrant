@@ -71,6 +71,11 @@ class UserSession(Base):
             user_session: UserSession
             user_session.is_alive = False
 
+            session_get_query = UserSession.user_session_query(
+                user_id=user_id, session=session
+            ).filter(User.session_id == user_session.session_id)
+            cache.invalidate(UserSession, session_get_query, FromCache("default"))
+
         await session.commit()
         return True
 
