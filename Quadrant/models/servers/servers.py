@@ -9,12 +9,15 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
+import Quadrant.models.servers.invites
 from Quadrant import models
 from Quadrant.models.db_init import Base
+from .members import ServerMember
+from .. import ServerBans, ServerInvite
 
 INVITES_COUNT_LIMIT_PER_USER = 1000
 
-ServerInvites = models.ServerInvite
+ServerInvites = Quadrant.models.servers.invites.ServerInvite
 InvitesExceptions = models.InvitesExceptions
 
 
@@ -24,9 +27,9 @@ class Server(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     server_id = Column(db_UUID, primary_key=True, default=uuid4)
 
-    bans = relationship("ServerBans", lazy="noload")
-    members = relationship("ServerMembers", lazy="noload")
-    invited = relationship("ServerInvite", lazy="noload")
+    _bans = relationship(ServerBans, lazy="noload", cascade="all, delete-orphan")
+    _members = relationship(ServerMember, lazy="noload", cascade="all, delete-orphan")
+    _invites = relationship(ServerInvite, lazy="noload", cascade="all, delete-orphan")
 
     __tablename__ = "servers"
 
@@ -38,6 +41,31 @@ class Server(Base):
         await session.commit()
 
         return new_server
+
+    @staticmethod
+    async def is_member(server_id: UUID, user: models.User, *, session):
+        return await session.query(
+            session.query(Server).filter(
+                ServerMember.member_id == user.id,
+                Server.server_id == server_id
+            ).exists()
+        ).scalar() or False
+
+    async def update_name(self, new_name: str, update_by: models.User, *, session) -> None:
+        # TODO: validate name
+        # TODO: check permissions
+        self.name = new_name
+        await session.commit()
+
+    async def transfer_ownership(self, from_user: models.User, to_user: models.User, *, session) -> None:
+        if not (await self.is_member(self.id, to_user, session=session)):
+            raise ValueError("User is not a member of this server")
+
+        if self.owner_id != from_user.id:
+            raise PermissionError("User can not transfer ownership because he's not an owner")
+
+        self.owner_id = to_user.id
+        await session.commit()
 
     async def delete_server(self, delete_by: models.User, *, session) -> bool:
         if delete_by.id != self.owner_id:
