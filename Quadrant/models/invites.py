@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from math import ceil
 from secrets import token_urlsafe
 
-from sqlalchemy import Column, DateTime, ForeignKey, SmallInteger, Integer, String, case, or_, select
+from sqlalchemy import Column, DateTime, ForeignKey, SmallInteger, String, case, or_, select
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .db_init import Base
@@ -36,32 +36,6 @@ class GroupInvite(Base):
     users_used_invite = Column(SmallInteger, default=0)
 
     __tablename__ = "group_invites"
-
-    @hybrid_property
-    def is_expired(self):
-        return datetime.utcnow() > self.expires_at or self.users_used_invite > self.users_used_invite
-
-    @is_expired.expression
-    def is_expired(cls):  # noqa
-        return select(
-            case(
-                (or_(datetime.utcnow() > cls.expires_at, cls.users_used_invite > cls.users_used_invite), True),
-                else_=False
-            )
-        )
-
-
-class ServerInvite(Base):
-    invite_code = Column(
-        String(invite_code_len), default=lambda: token_urlsafe(INVITE_CODE_BIT_LENGTH), primary_key=True
-    )
-    server_id = Column(ForeignKey('servers.id'), nullable=False)
-
-    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=30))
-    users_limit = Column(Integer, default=10)
-    users_used_invite = Column(Integer, default=0)
-
-    __tablename__ = "server_invites"
 
     @hybrid_property
     def is_expired(self):

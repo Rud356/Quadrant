@@ -80,11 +80,12 @@ class DirectMessagesChannel(Base):
             )
         )
 
-    async def is_member(self, user: models.User, *, session) -> bool:
+    @staticmethod
+    async def is_member(channel_id: UUID, user: models.User, *, session) -> bool:
         return await session.query(
             session.query(models.DMParticipant).filter(
                 models.DMParticipant.user_id == user.id,
-                models.DMParticipant.channel_id == self.channel_id
+                models.DMParticipant.channel_id == channel_id
             ).exists()
         ).scalar() or False
 
@@ -240,15 +241,19 @@ class GroupMessagesChannel(Base):
         return new_group_channel
 
     async def delete_channel(self, delete_by: models.User, *, session) -> bool:
+        if delete_by.id != self.owner_id:
+            raise PermissionError("User can not delete this group channel")
+
         session.delete(self)
         await session.commit()
 
         return True
 
-    async def is_member(self, user: models.User, *, session) -> bool:
+    @staticmethod
+    async def is_member(channel_id: UUID, user: models.User, *, session) -> bool:
         return await session.query(
             session.query(models.GroupParticipant).filter(
                 models.GroupParticipant.user_id == user.id,
-                models.GroupParticipant.channel_id == self.channel_id
+                models.GroupParticipant.channel_id == channel_id
             ).exists()
         ).scalar() or False
