@@ -18,6 +18,7 @@ class ChannelsPermissionsProxy:
         self.session = session
 
     async def get_permissions(self) -> Union[PermissionsSet, TextChannelPermissions]:
+        default_permission = self.channel.permissions
         roles: List[ServerRole] = self.member.roles
         users_overwrites = await UsersOverwrites.get_overwrites_for_channel(
             self.server_id, self.channel.id, self.member.id, session=self.session
@@ -30,17 +31,16 @@ class ChannelsPermissionsProxy:
         for role in roles:
             # Looking for administrator permission since it's one of the most powerful
             if role.permissions.administrator:
-                return role
+                return role.permissions
 
             roles_ids.append(role.role_id)
 
-        try:
-            permission: PermissionsSet = await RolesOverwrites.get_permissions_overwrites_by_roles(
-                self.server_id, self.channel.channel_id, roles_ids, session=self.session
-            )
+        permissions: PermissionsSet = await RolesOverwrites.get_permissions_overwrites_by_roles(
+            self.server_id, self.channel.channel_id, roles_ids, session=self.session
+        )
 
-        except IndexError:
-            return self.channel.permissions
+        if not permissions:
+            return default_permission
 
         else:
-            return permission
+            return permissions
