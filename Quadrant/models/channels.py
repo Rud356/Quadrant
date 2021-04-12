@@ -20,7 +20,8 @@ GROUP_MEMBERS_LIMIT = 10
 class DirectMessagesChannel(Base):
     channel_id = Column(db_UUID, primary_key=True, default=uuid4)
 
-    participants = relationship(models.DMParticipant, lazy='joined')
+    participants = relationship(models.DMParticipant, lazy='joined', cascade="all, delete-orphan")
+    _messages = relationship(models.DM_Message, lazy="noload", cascade="all, delete-orphan")
     __tablename__ = "dm_channels"
 
     async def other_participant(self, requester_user: models.User) -> models.User:
@@ -94,7 +95,8 @@ class GroupMessagesChannel(Base):
     owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    members = relationship(models.GroupParticipant, lazy='joined')
+    members = relationship(models.GroupParticipant, lazy='joined', cascade="all, delete-orphan")
+    _messages = relationship(models.GroupMessage, lazy="noload", cascade="all, delete-orphan")
     invites = relationship(
         models.GroupInvite, lazy='joined',
         primaryjoin="""
@@ -102,7 +104,7 @@ class GroupMessagesChannel(Base):
                 GroupMessagesChannel.channel_id == models.GroupInvite,
                 models.GroupInvite.is_expired.is_(False)
             )
-        """
+        """, cascade="all, delete-orphan"
     )
 
     __tablename__ = "group_channels"
@@ -236,6 +238,12 @@ class GroupMessagesChannel(Base):
         )
         await session.commit()
         return new_group_channel
+
+    async def delete_channel(self, delete_by: models.User, *, session) -> bool:
+        session.delete(self)
+        await session.commit()
+
+        return True
 
     async def is_member(self, user: models.User, *, session) -> bool:
         return await session.query(

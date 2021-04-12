@@ -2,6 +2,7 @@ from functools import wraps
 
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from Quadrant.config import quadrant_config
 
 Base = declarative_base()
@@ -12,6 +13,10 @@ async def async_session(f):
     @wraps(f)
     async def grab_session(*args, **kwargs):
         async with Session() as session:
-            return await f(*args, **kwargs, session=session)
-    return grab_session
+            try:
+                return await f(*args, **kwargs, session=session)
 
+            except IntegrityError as err:
+                await session.rollback()
+                raise err
+    return grab_session

@@ -30,7 +30,14 @@ class User(Base):
     is_banned = Column(Boolean, nullable=False, default=False)
 
     bot_owner_id = Column(db_UUID, nullable=True)
-    users_common_settings = relationship(UsersCommonSettings, lazy='joined', uselist=False)
+    users_common_settings = relationship(
+        UsersCommonSettings, lazy='joined', uselist=False, cascade="all, delete-orphan"
+    )
+    _owned_bots = relationship(
+        "User", primaryjoin="and_(User.is_bot.is_(True), User.id == User.bot_owner_id)",
+        cascade="all, delete-orphan", lazy='noload'
+    )
+    _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
 
     __tablename__ = "users"
 
@@ -54,14 +61,10 @@ class User(Base):
         self.text_status = text_status
         await session.commit()
 
-    async def get_owned_bot(self, bot_id: int, *, session) -> User:
-        try:
-            bot = await session.query(User).options(FromCache("default")).filter(
-                and_(User.is_bot.is_(True), User.bot_owner_id == self.id, User.id == bot_id)
-            ).one()
-
-        except OverflowError:
-            raise NoResultFound("Bot with that id not found")
+    async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
+        bot = await session.query(User).options(FromCache("default")).filter(
+            and_(User.is_bot.is_(True), User.bot_owner_id == self.id, User.id == bot_id)
+        ).one()
 
         return bot
 

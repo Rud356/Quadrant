@@ -38,3 +38,12 @@ class Server(Base):
         await session.commit()
 
         return new_server
+
+    async def delete_server(self, delete_by: models.User, *, session) -> bool:
+        if delete_by.id != self.owner_id:
+            raise PermissionError("You can not delete the server!")
+
+        session.delete(self)
+        await session.commit()
+
+        return True
