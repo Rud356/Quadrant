@@ -69,13 +69,19 @@ class UserInternalAuthorization(Base):
 
         with ProcessPoolExecutor(25) as pool_exec:
             loop = get_running_loop()
-            password = loop.run_in_executor(pool_exec, hash_password, password, auth_user.salt)
+            password = await loop.run_in_executor(pool_exec, hash_password, password, auth_user.salt)
 
         if compare_digest(password, auth_user.password):
             return auth_user
 
         else:
             raise ValueError("Invalid password")
+
+    async def delete_account(self, *, session) -> bool:
+        session.delete(self)
+        await session.commit()
+
+        return True
 
 
 class OauthUserAuthorization(Base):
