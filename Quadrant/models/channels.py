@@ -92,7 +92,7 @@ class DirectMessagesChannel(Base):
 
 class GroupMessagesChannel(Base):
     channel_id = Column(db_UUID, primary_key=True, default=uuid4)
-    channel_name = Column(String(50), default="Untitled channel")
+    channel_name = Column(String(50), default="Untitled text_channel")
     owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -232,7 +232,7 @@ class GroupMessagesChannel(Base):
 
     @classmethod
     async def create_group_channel(cls, channel_name: str, owner: models.User, *, session):
-        # TODO: validate channel name
+        # TODO: validate text_channel name
         new_group_channel = cls(
             channel_name=channel_name, owner_id=owner.id,
             members=[models.GroupParticipant(user_id=owner.id)], invites=[models.GroupInvite()]
@@ -242,7 +242,7 @@ class GroupMessagesChannel(Base):
 
     async def delete_channel(self, delete_by: models.User, *, session) -> bool:
         if delete_by.id != self.owner_id:
-            raise PermissionError("User can not delete this group channel")
+            raise PermissionError("User can not delete this group text_channel")
 
         session.delete(self)
         await session.commit()

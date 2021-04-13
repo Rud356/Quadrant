@@ -10,7 +10,7 @@ from .permissions_managment.permissions import PermissionsSet, TextChannelPermis
 
 class ServerChannel(Base):
     channel_id = Column(BigInteger, primary_key=True)
-    channel_name = Column(String(50), default="New channel")
+    channel_name = Column(String(50), default="New text_channel")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     server_id = Column(ForeignKey("servers.id"), nullable=False)

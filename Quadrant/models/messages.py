@@ -151,4 +151,4 @@ class GroupMessage(DM_Message):
             return msg_id
 
         else:
-            raise PermissionError("User isn't a channel owner so can not delete message")
+            raise PermissionError("User isn't a text_channel owner so can not delete message")
