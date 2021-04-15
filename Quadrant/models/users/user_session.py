@@ -7,9 +7,9 @@ from sqlalchemy import Column, BigInteger, DateTime, String, ForeignKey, Boolean
 from sqlalchemy.exc import IntegrityError
 
 from uuid import UUID
-from .db_init import Base
-from .caching import FromCache
-from .caching.caching_environment import cache
+from Quadrant.models.db_init import Base
+from Quadrant.models.caching import FromCache
+from Quadrant.models.caching.caching_environment import cache
 
 if TYPE_CHECKING:
     from .user import User

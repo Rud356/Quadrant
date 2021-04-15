@@ -7,13 +7,12 @@ from uuid import uuid4, UUID
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.exc import NoResultFound
 
-from .db_init import Base
+from Quadrant.models.db_init import Base
 from .users_status import UsersStatus
-from .settings import UsersCommonSettings, UsersAppSpecificSettings
-from .utils import generate_random_color
-from .caching import FromCache, RelationshipCache
+from Quadrant.models.users.settings import UsersCommonSettings, UsersAppSpecificSettings
+from Quadrant.models.utils import generate_random_color
+from Quadrant.models.caching import FromCache, RelationshipCache
 
 MAX_OWNED_BOTS = 20
 

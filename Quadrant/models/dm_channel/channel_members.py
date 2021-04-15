@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey
 from sqlalchemy.orm import relationship
 
 from Quadrant import models
-from .db_init import Base
+from Quadrant.models.db_init import Base
 
 
 class DMParticipant(Base):
@@ -15,10 +15,3 @@ class DMParticipant(Base):
     user: models.User = relationship("User", lazy='joined', uselist=False)
 
     __tablename__ = "dm_channel_participants"
-
-
-class GroupParticipant(DMParticipant):
-    channel_id = Column(ForeignKey('group_channels.channel_id'))
-
-    __tablename__ = "group_channel_participants"
-

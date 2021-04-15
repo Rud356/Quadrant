@@ -5,7 +5,7 @@ from secrets import token_urlsafe
 from sqlalchemy import Column, DateTime, ForeignKey, SmallInteger, String, case, or_, select
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from .db_init import Base
+from Quadrant.models.db_init import Base
 
 INVITE_CODE_BIT_LENGTH = 12
 # Because token_urlsafe encodes bytes using base64, which splits bits sequence per 6 bits and encodes it as 8 bit chars,

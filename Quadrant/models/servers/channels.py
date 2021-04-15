@@ -1,11 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import Column, ForeignKey, String, BigInteger, DateTime, Boolean
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.orm import relationship
 
-from Quadrant import models
 from Quadrant.models.db_init import Base
-from .permissions_managment.permissions import PermissionsSet, TextChannelPermissions
+from .permissions_managment.permissions import TextChannelPermissions
 
 
 class ServerChannel(Base):
