@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 
 from Quadrant import models
 from Quadrant.models import Base, FromCache
-from Quadrant.models.group_channels_bans import BANS_PER_PAGE
+from Quadrant.models.group_channel.group_channels_bans import BANS_PER_PAGE
 
 
 class ServerBans(Base):

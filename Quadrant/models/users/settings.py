@@ -7,9 +7,9 @@ from sqlalchemy import BigInteger, ForeignKey, Column, and_, or_, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
-from .db_init import Base
-from .utils.common_settings_validators import COMMON_SETTINGS
-from .caching import FromCache
+from Quadrant.models.db_init import Base
+from Quadrant.models.utils.common_settings_validators import COMMON_SETTINGS
+from Quadrant.models.caching import FromCache
 
 if TYPE_CHECKING:
     from .user import User

@@ -7,8 +7,8 @@ from sqlalchemy import BigInteger, Column, ForeignKey, UniqueConstraint, DateTim
 from sqlalchemy.orm import relationship
 
 from Quadrant import models
-from .db_init import Base
-from .caching import FromCache
+from Quadrant.models.db_init import Base
+from Quadrant.models.caching import FromCache
 
 BANS_PER_PAGE = 25
 

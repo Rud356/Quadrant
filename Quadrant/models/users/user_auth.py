@@ -8,11 +8,11 @@ from secrets import token_urlsafe
 from sqlalchemy import BigInteger, Column, ForeignKey, String
 from sqlalchemy.orm import backref, relationship
 
-from .db_init import Base
+from Quadrant.models.db_init import Base
 from .user import User
-from .utils import generate_internal_token
-from .utils.hashing import hash_login, hash_password
-from .caching import FromCache, RelationshipCache
+from Quadrant.models.utils import generate_internal_token
+from Quadrant.models.utils.hashing import hash_login, hash_password
+from Quadrant.models.caching import FromCache, RelationshipCache
 
 
 class UserInternalAuthorization(Base):

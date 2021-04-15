@@ -1,93 +1,17 @@
-from __future__ import annotations
-
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
-from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
+import Quadrant.models
+import Quadrant.models.group_channel.group_messages
 from Quadrant import models
-from .db_init import Base
-from .caching import FromCache, RelationshipCache
-
-GROUP_MEMBERS_LIMIT = 10
-
-
-class DirectMessagesChannel(Base):
-    channel_id = Column(db_UUID, primary_key=True, default=uuid4)
-
-    participants = relationship(models.DMParticipant, lazy='joined', cascade="all, delete-orphan")
-    _messages = relationship(models.DM_Message, lazy="noload", cascade="all, delete-orphan")
-    __tablename__ = "dm_channels"
-
-    async def other_participant(self, requester_user: models.User) -> models.User:
-        participant = await self.participants.filter(models.DMParticipant.user_id != requester_user.id).one()
-        return participant.user
-
-    @classmethod
-    async def create_channel(cls, initiator: models.User, with_user: models.User, *, session):
-        new_channel = DirectMessagesChannel(
-            participants=[
-                models.DMParticipant(user_id=initiator.id),
-                models.DMParticipant(user_id=with_user.id)
-            ]
-        )
-        await session.commit()
-
-        return new_channel
-
-    @classmethod
-    async def get_channel_by_id(cls, channel_id: UUID, *, session):
-        return await session \
-            .options(FromCache("default")) \
-            .options(RelationshipCache(cls.participants, "default")) \
-            .get(cls, channel_id)
-
-    @classmethod
-    async def get_channel_by_participants(cls, requester: models.User, with_user: models.User, *, session):
-        return await cls._channel_by_participants(cls, requester, with_user, session=session).one()
-
-    @classmethod
-    async def create_or_get_channel_by_participants(cls, requester: models.User, with_user: models.User, *, session):
-        try:
-            return await cls.get_channel_by_participants(requester, with_user, session=session)
-
-        except NoResultFound:
-            # TODO: add check on if user wants to add dms with anyone
-            return await cls.create_channel(requester, with_user, session=session)
-
-    @staticmethod
-    async def participants_have_channel(
-        cls: DirectMessagesChannel, requester: models.User, with_user: models.User, *, session
-    ) -> bool:
-        return await session.query(
-            cls._channel_by_participants(
-                cls, requester, with_user, session=session
-            ).exists()
-        ).scalar() or False
-
-    @staticmethod
-    def _channel_by_participants(cls, requester: models.User, with_user: models.User, *, session):
-        return session.query(cls).filter(
-            cls.participants.all_(
-                models.DMParticipant.user_id.in_(
-                    (requester.id, with_user.id)
-                )
-            )
-        )
-
-    @staticmethod
-    async def is_member(channel_id: UUID, user: models.User, *, session) -> bool:
-        return await session.query(
-            session.query(models.DMParticipant).filter(
-                models.DMParticipant.user_id == user.id,
-                models.DMParticipant.channel_id == channel_id
-            ).exists()
-        ).scalar() or False
+from Quadrant.models import Base, FromCache, RelationshipCache
+from Quadrant.models.dm_channel.channels import GROUP_MEMBERS_LIMIT
 
 
 class GroupMessagesChannel(Base):
@@ -96,8 +20,8 @@ class GroupMessagesChannel(Base):
     owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    members = relationship(models.GroupParticipant, lazy='joined', cascade="all, delete-orphan")
-    _messages = relationship(models.GroupMessage, lazy="noload", cascade="all, delete-orphan")
+    members = relationship(Quadrant.models.group_channel_models.group_participant.GroupParticipant, lazy='joined', cascade="all, delete-orphan")
+    _messages = relationship(Quadrant.models.group_channel.group_messages.GroupMessage, lazy="noload", cascade="all, delete-orphan")
     invites = relationship(
         models.GroupInvite, lazy='joined',
         primaryjoin="""
@@ -111,7 +35,8 @@ class GroupMessagesChannel(Base):
     __tablename__ = "group_channels"
 
     async def leave_group(self, user_leaving: models.User, *, session) -> None:
-        member = await self.members.filter(models.GroupParticipant.user_id == user_leaving.id).one()
+        member = await self.members.filter(
+            Quadrant.models.group_channel_models.group_participant.GroupParticipant.user_id == user_leaving.id).one()
         self.members.remove(member)
         await session.commit()
 
@@ -122,7 +47,8 @@ class GroupMessagesChannel(Base):
         if kicking_user == kicked_by.id:
             raise ValueError("User can not kick himself")
 
-        member = await self.members.filter(models.GroupParticipant.user_id == kicking_user).one()
+        member = await self.members.filter(
+            Quadrant.models.group_channel_models.group_participant.GroupParticipant.user_id == kicking_user).one()
         self.members.remove(member)
         await session.commit()
 
@@ -133,7 +59,8 @@ class GroupMessagesChannel(Base):
         if banning_user == banned_by.id:
             raise ValueError("User can not ban himself")
 
-        member = await self.members.filter(models.GroupParticipant.user_id == banning_user).one()
+        member = await self.members.filter(
+            Quadrant.models.group_channel_models.group_participant.GroupParticipant.user_id == banning_user).one()
         models.GroupBans(reason=reason, group_id=self.channel_id, banned_user_id=banning_user)
         self.members.remove(member)
 
@@ -154,7 +81,8 @@ class GroupMessagesChannel(Base):
         if user_transferring.id != self.owner_id:
             raise PermissionError("User isn't delete_by of group dm")
 
-        member = await self.members.filter(models.GroupParticipant.user_id == other_member_id).one()
+        member = await self.members.filter(
+            Quadrant.models.group_channel_models.group_participant.GroupParticipant.user_id == other_member_id).one()
         self.owner_id = member.id
 
         await session.commit()
@@ -219,8 +147,8 @@ class GroupMessagesChannel(Base):
 
     @members_count.expression
     def members_count(cls):  # noqa
-        return select(func.count()).select_from(models.GroupParticipant).where(
-            models.GroupParticipant.channel_id == cls.channel_id
+        return select(func.count()).select_from(Quadrant.models.group_channel_models.group_participant.GroupParticipant).where(
+            Quadrant.models.group_channel_models.group_participant.GroupParticipant.channel_id == cls.channel_id
         )
 
     @classmethod
@@ -235,7 +163,7 @@ class GroupMessagesChannel(Base):
         # TODO: validate text_channel name
         new_group_channel = cls(
             channel_name=channel_name, owner_id=owner.id,
-            members=[models.GroupParticipant(user_id=owner.id)], invites=[models.GroupInvite()]
+            members=[Quadrant.models.group_channel_models.group_participant.GroupParticipant(user_id=owner.id)], invites=[models.GroupInvite()]
         )
         await session.commit()
         return new_group_channel
@@ -252,8 +180,8 @@ class GroupMessagesChannel(Base):
     @staticmethod
     async def is_member(channel_id: UUID, user: models.User, *, session) -> bool:
         return await session.query(
-            session.query(models.GroupParticipant).filter(
-                models.GroupParticipant.user_id == user.id,
-                models.GroupParticipant.channel_id == channel_id
+            session.query(Quadrant.models.group_channel_models.group_participant.GroupParticipant).filter(
+                Quadrant.models.group_channel_models.group_participant.GroupParticipant.user_id == user.id,
+                Quadrant.models.group_channel_models.group_participant.GroupParticipant.channel_id == channel_id
             ).exists()
         ).scalar() or False

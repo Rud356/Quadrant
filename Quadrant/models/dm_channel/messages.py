@@ -8,8 +8,8 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.orm import declared_attr
 
 from Quadrant import models
-from .db_init import Base
-from .caching import FromCache, RelationshipCache
+from Quadrant.models.db_init import Base
+from Quadrant.models.caching import FromCache
 
 MESSAGES_PER_REQUEST = 100
 # TODO: add messages reactions
@@ -132,23 +132,3 @@ class DM_Message(Base):
 
         self.pinned = False
         await session.commit()
-
-
-class GroupMessage(DM_Message):
-    __tablename__ = "group_messages"
-
-    @declared_attr
-    def channel_id(cls):  # noqa
-        return Column(ForeignKey("group_channels.id"), index=True)
-
-    async def delete_by_channel_owner(
-        self, delete_by: models.User, channel: models.GroupMessagesChannel, *, session
-    ) -> GroupMessage.message_id:
-        msg_id = self.id
-        if delete_by.id == channel.owner_id:
-            session.delete(self)
-            await session.commit()
-            return msg_id
-
-        else:
-            raise PermissionError("User isn't a text_channel owner so can not delete message")
