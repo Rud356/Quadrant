@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import Column, BigInteger, DateTime, String, ForeignKey, Boolean
+from sqlalchemy import Column, BigInteger, DateTime, String, ForeignKey, Boolean, select
 from sqlalchemy.exc import IntegrityError
 
 from uuid import UUID
@@ -26,9 +26,10 @@ class UserSession(Base):
     is_alive = Column(Boolean, default=True)
 
     @staticmethod
-    def user_session_query(user_id: UUID, *, session):
-        return session.query(UserSession).filter(
-            UserSession.user_id == user_id, UserSession.is_alive.is_(True)
+    def user_session_query(user_id: UUID):
+        return select(UserSession).filter(
+            UserSession.user_id == user_id,
+            UserSession.is_alive.is_(True)
         ).options(FromCache("default"))
 
     @classmethod
@@ -42,9 +43,11 @@ class UserSession(Base):
     @classmethod
     async def get_user_session(cls, user_id: UUID, session_id: int, *, session):
         try:
-            return await cls.user_session_query(
-                user_id=user_id, session=session
-            ).filter(cls.session_id == session_id).one()
+            return await (
+                await session.execute(
+                    cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
+                )
+            ).one()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
@@ -55,10 +58,12 @@ class UserSession(Base):
             raise ValueError("Invalid page")
 
         try:
-            return await session.query(cls).filter(
-                user_id=user_id, session=session
-            ).limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page).order_by(
-                cls.is_alive.desc(), cls.session_id.desc()
+            return await (
+                await session.execute(
+                    select(cls).filter(user_id=user_id, session=session)
+                    .limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page)
+                    .order_by(cls.is_alive.desc(), cls.session_id.desc())
+                )
             ).all()
 
         except (IntegrityError, OverflowError):
@@ -67,14 +72,10 @@ class UserSession(Base):
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
         # TODO: Ensure that sessions are closed after this method
-        async for user_session in UserSession.user_session_query(user_id, session=session).partitions(10):
+        users_sessions_query = await session.execute(UserSession.user_session_query(user_id))
+        async for user_session in users_sessions_query.partitions(10):
             user_session: UserSession
             user_session.is_alive = False
-
-            session_get_query = UserSession.user_session_query(
-                user_id=user_id, session=session
-            ).filter(User.session_id == user_session.session_id)
-            cache.invalidate(UserSession, session_get_query, FromCache("default"))
 
         await session.commit()
         return True

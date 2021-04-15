@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4, UUID
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_, select
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 
@@ -61,8 +61,16 @@ class User(Base):
         await session.commit()
 
     async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
-        bot = await session.query(User).options(FromCache("default")).filter(
-            and_(User.is_bot.is_(True), User.bot_owner_id == self.id, User.id == bot_id)
+        bot = await (
+            await session.execute(
+                select(User).options(FromCache("default")).filter(
+                    and_(
+                        User.is_bot.is_(True),
+                        User.bot_owner_id == self.id,
+                        User.id == bot_id
+                    )
+                )
+            )
         ).one()
 
         return bot
@@ -71,9 +79,16 @@ class User(Base):
         if self.is_bot:
             raise ValueError("Bots can't own other bots")
 
-        bots = await session.query(User).filter(
-            and_(User.is_bot.is_(True), User.bot_owner_id == self.id)
-        ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc()).all()
+        bots = await (
+            await session.execute(
+                select(User).options(FromCache("default")).filter(
+                    and_(
+                        User.is_bot.is_(True),
+                        User.bot_owner_id == self.id
+                    )
+                ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc())
+            )
+        ).all()
 
         return bots
 
@@ -82,16 +97,19 @@ class User(Base):
 
     @classmethod
     async def get_user(cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False):
-        user_query = session.query(cls) \
-            .options(FromCache("default")) \
-            .options(RelationshipCache(cls.users_common_settings, "default")) \
+        user_query = (
+            select(cls).options(FromCache("default"))
             .filter(cls.id == user_id)
+        )
+
         if filter_deleted:
             user_query = user_query.filter(cls.is_banned.is_(False))
 
         if filter_bots:
             user_query = user_query.filter(cls.is_bot.is_(False))
 
-        user = await user_query.one()
+        user = await (
+            await session.execute(user_query)
+        ).one()
 
         return user
