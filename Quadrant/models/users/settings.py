@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 from contextlib import suppress
 
-from sqlalchemy import BigInteger, ForeignKey, Column, and_, or_, String
+from sqlalchemy import BigInteger, ForeignKey, Column, and_, or_, String, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
@@ -47,7 +47,11 @@ class UsersAppSpecificSettings(Base):
 
     @classmethod
     async def get_app_specific_settings(cls, user: User, app_id: str, *, session):
-        settings = await session.query(cls).options(FromCache("default")) \
-            .filter(cls.user_id == user.id, cls.app_id == app_id)
+        settings = await (
+            await session.execute(
+                select(cls).options(FromCache("default"))
+                .filter(cls.user_id == user.id, cls.app_id == app_id)
+            )
+        ).one()
 
         return settings
