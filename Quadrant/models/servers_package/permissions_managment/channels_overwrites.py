@@ -15,7 +15,7 @@ from .roles import ServerRole
 class RolesOverwrites(Base):
     overwrite_id = Column(BigInteger, primary_key=True)
     channel_id = Column(ForeignKey("server_channels.id"), nullable=False)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     permissions_for_role_id = Column(ForeignKey('server_roles.id'), nullable=False)
     permissions_id = Column(ForeignKey("roles_overwritten_permissions.member_id"), nullable=False)
 
@@ -49,7 +49,7 @@ class RolesOverwrites(Base):
 class UsersOverwrites(Base):
     overwrite_id = Column(BigInteger, primary_key=True)
     channel_id = Column(ForeignKey("server_channels.id"), nullable=False)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     permissions_for_members_id = Column(ForeignKey('server_members.id'), nullable=False)
 
     permissions: UsersPermissionsOverwrites = relationship(

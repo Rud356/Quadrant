@@ -6,14 +6,14 @@ from sqlalchemy.orm import relationship
 
 from Quadrant import models
 from Quadrant.models import Base, FromCache
-from Quadrant.models.group_channel.group_channels_bans import BANS_PER_PAGE
+from Quadrant.models.group_channel_package.group_channels_bans import BANS_PER_PAGE
 
 
 class ServerBans(Base):
     id = Column(BigInteger, primary_key=True)
-    server_id = Column(ForeignKey("servers.id"), nullable=False, index=True)
-    banned_user_id = Column(ForeignKey('users.id'), nullable=False)
-    banned_by_user_id = Column(ForeignKey("users.id"), nullable=False, index=True)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False, index=True)
+    banned_user_id = Column(ForeignKey('users_package.id'), nullable=False)
+    banned_by_user_id = Column(ForeignKey("users_package.id"), nullable=False, index=True)
     banned_at = Column(DateTime, default=datetime.utcnow)
     reason = Column(String(2048), default="")
 

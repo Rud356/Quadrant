@@ -8,16 +8,16 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 import Quadrant.models
-import Quadrant.models.group_channel.group_messages
+import Quadrant.models.group_channel_package.group_messages
 from Quadrant import models
 from Quadrant.models import Base, FromCache, RelationshipCache
-from Quadrant.models.dm_channel.channels import GROUP_MEMBERS_LIMIT
+from Quadrant.models.dm_channel_package.dm_channels import GROUP_MEMBERS_LIMIT
 
 
 class GroupMessagesChannel(Base):
     channel_id = Column(db_UUID, primary_key=True, default=uuid4)
     channel_name = Column(String(50), default="Untitled text_channel")
-    owner_id = Column(ForeignKey("users.id"), nullable=False)
+    owner_id = Column(ForeignKey("users_package.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     members = relationship(Quadrant.models.group_channel_models.group_participant.GroupParticipant, lazy='joined', cascade="all, delete-orphan")

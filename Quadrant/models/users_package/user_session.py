@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from datetime import datetime
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import Column, BigInteger, DateTime, String, ForeignKey, Boolean, select
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
 from sqlalchemy.exc import IntegrityError
 
-from uuid import UUID
-from Quadrant.models.db_init import Base
 from Quadrant.models.caching import FromCache
-from Quadrant.models.caching.caching_environment import cache
+from Quadrant.models.db_init import Base
 
 if TYPE_CHECKING:
     from .user import User
@@ -19,7 +18,7 @@ SESSIONS_PER_PAGE = 10
 
 class UserSession(Base):
     session_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey("users.id"), index=True)
+    user_id = Column(ForeignKey("users_package.id"), index=True)
     started_at = Column(DateTime, default=datetime.utcnow)
     # Max length of IPv6 address as string
     ip_address = Column(String(45))
@@ -72,7 +71,7 @@ class UserSession(Base):
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
         # TODO: Ensure that sessions are closed after this method
-        users_sessions_query = await session.execute(UserSession.user_session_query(user_id))
+        users_sessions_query = await session.stream(UserSession.user_session_query(user_id))
         async for user_session in users_sessions_query.partitions(10):
             user_session: UserSession
             user_session.is_alive = False

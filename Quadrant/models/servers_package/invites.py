@@ -5,7 +5,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, case, or_,
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from Quadrant.models import Base
-from Quadrant.models.group_channel.invites import INVITE_CODE_BIT_LENGTH, invite_code_len
+from Quadrant.models.group_channel_package.invites import INVITE_CODE_BIT_LENGTH, invite_code_len
 
 
 class ServerInvite(Base):
@@ -13,7 +13,7 @@ class ServerInvite(Base):
         String(invite_code_len), default=lambda: token_urlsafe(INVITE_CODE_BIT_LENGTH), primary_key=True
     )
     created_by_id = Column(ForeignKey("server_members.id"), nullable=False)
-    server_id = Column(ForeignKey('servers.id'), nullable=False)
+    server_id = Column(ForeignKey('servers_package.id'), nullable=False)
 
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=30))
     users_limit = Column(Integer, default=10)

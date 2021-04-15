@@ -12,7 +12,7 @@ class ServerChannel(Base):
     channel_name = Column(String(50), default="New text_channel")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     category_id = Column(ForeignKey("server_categories_channels.id"))
     sync_overwrites_with_category = Column(Boolean, default=True)
 
