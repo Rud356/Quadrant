@@ -8,7 +8,7 @@ from .permissions_managment.roles import ServerRole
 class RolesToMember(Base):
     role_assignment_id = Column(BigInteger, primary_key=True)
     role_id = Column(ForeignKey("server_roles.member_id"), nullable=False)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     member_id = Column(ForeignKey("server_members.member_id"), nullable=False)
 
     role = relationship(ServerRole, lazy="joined", uselist=False)

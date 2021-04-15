@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 
 from Quadrant.models.db_init import Base
 from .users_status import UsersStatus
-from Quadrant.models.users.settings import UsersCommonSettings, UsersAppSpecificSettings
+from Quadrant.models.users_package.settings import UsersCommonSettings, UsersAppSpecificSettings
 from Quadrant.models.utils import generate_random_color
 from Quadrant.models.caching import FromCache, RelationshipCache
 
@@ -38,7 +38,7 @@ class User(Base):
     )
     _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
 
-    __tablename__ = "users"
+    __tablename__ = "users_package"
 
     async def update_user(self, *, fields: dict, session) -> None:
         updatable_fields = {"username", "status", "text_status"}

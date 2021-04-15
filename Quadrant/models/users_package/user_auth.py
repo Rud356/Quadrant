@@ -8,16 +8,16 @@ from secrets import token_urlsafe
 from sqlalchemy import BigInteger, Column, ForeignKey, String, select
 from sqlalchemy.orm import backref, relationship
 
+from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
-from .user import User
 from Quadrant.models.utils import generate_internal_token
 from Quadrant.models.utils.hashing import hash_login, hash_password
-from Quadrant.models.caching import FromCache, RelationshipCache
+from .user import User
 
 
 class UserInternalAuthorization(Base):
     record_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
+    user_id = Column(ForeignKey('users_package.id'), nullable=False, unique=True, index=True)
     internal_token = Column(String(128), default=generate_internal_token, index=True, nullable=False)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
@@ -91,7 +91,7 @@ class UserInternalAuthorization(Base):
 
 class OauthUserAuthorization(Base):
     record_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users.id'), nullable=False)
+    user_id = Column(ForeignKey('users_package.id'), nullable=False)
 
     oauth_provider = Column(String(100), nullable=True)
     oauth_token = Column(String(100), unique=True, index=True, nullable=True)

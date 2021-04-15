@@ -12,8 +12,8 @@ MAX_ROLES_PER_USER = 100
 
 
 class ServerMember(Base):
-    member_id = Column(ForeignKey('users.id'), nullable=False)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    member_id = Column(ForeignKey('users_package.id'), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     joined_at = Column(DateTime, default=datetime.utcnow)
 
     nickname = Column(String(50), nullable=True)

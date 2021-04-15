@@ -6,7 +6,7 @@ from sqlalchemy import BigInteger, Column, Enum, ForeignKey, and_, or_, select, 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from Quadrant.models.db_init import Base
-from Quadrant.models.users.relations_types import UsersRelationType
+from Quadrant.models.users_package.relations_types import UsersRelationType
 from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
@@ -14,8 +14,8 @@ USERS_RELATIONS_PER_PAGE = 50
 
 class UsersRelations(Base):
     relation_id = Column(BigInteger, primary_key=True)
-    initiator_id = Column(ForeignKey('users.id'), nullable=False, index=True)
-    relation_with_id = Column(ForeignKey('users.id'), nullable=False, index=True)
+    initiator_id = Column(ForeignKey('users_package.id'), nullable=False, index=True)
+    relation_with_id = Column(ForeignKey('users_package.id'), nullable=False, index=True)
     relation_status = Column(Enum(UsersRelationType), default=UsersRelationType.none, nullable=False)
 
     @staticmethod
