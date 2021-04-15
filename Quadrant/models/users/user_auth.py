@@ -5,7 +5,7 @@ from concurrent.futures import ProcessPoolExecutor
 from hmac import compare_digest
 from secrets import token_urlsafe
 
-from sqlalchemy import BigInteger, Column, ForeignKey, String
+from sqlalchemy import BigInteger, Column, ForeignKey, String, select
 from sqlalchemy.orm import backref, relationship
 
 from Quadrant.models.db_init import Base
@@ -41,30 +41,35 @@ class UserInternalAuthorization(Base):
         password = hash_password(password, salt)
 
         user = User(username=username)
-        user_auth = UserInternalAuthorization(login=login, password=password, salt=salt)
+        user_auth = UserInternalAuthorization(login=login, password=password, salt=salt, user=user)
 
-        session.add(user)
-        user_auth.user.append(user)
-
+        session.add(user_auth)
         await session.commit()
         return user_auth
 
     @staticmethod
     async def authorize_with_token(token: str, *, session) -> UserInternalAuthorization:
-        return await session.query(UserInternalAuthorization) \
-            .options(FromCache("default")) \
-            .options(RelationshipCache(UserInternalAuthorization.user, "default")) \
-            .join(User).filter(
-                UserInternalAuthorization.internal_token == token,
-                User.is_banned.is_(False)
+        return await (
+            await session.execute(
+                select(UserInternalAuthorization)
+                .options(FromCache("default"))
+                .join(User).filter(
+                    UserInternalAuthorization.internal_token == token,
+                    User.is_banned.is_(False)
+                )
+            )
         ).one()
 
     @staticmethod
     async def authorize(login: str, password: str, *, session) -> UserInternalAuthorization:
         login = hash_login(login)
-        auth_user: UserInternalAuthorization = await session.query(UserInternalAuthorization).join(User).filter(
-            User.is_banned.is_(False),
-            UserInternalAuthorization.login == login,
+        auth_user: UserInternalAuthorization = await (
+            await session.execute(
+                select(UserInternalAuthorization).join(User).filter(
+                    User.is_banned.is_(False),
+                    UserInternalAuthorization.login == login,
+                )
+            )
         ).one()
 
         with ProcessPoolExecutor(25) as pool_exec:
