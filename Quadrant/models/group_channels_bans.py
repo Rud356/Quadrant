@@ -46,6 +46,6 @@ class GroupBans(Base):
         if page < 0:
             raise ValueError("Invalid page number")
 
-        return await session.filter(GroupBans.group_id == group_id).order_by(
+        return await session.query(GroupBans).filter(GroupBans.group_id == group_id).order_by(
             GroupBans.banned_user_id.desc()
         ).limit(BANS_PER_PAGE).offset(page * BANS_PER_PAGE).all()
