@@ -5,8 +5,8 @@ from .permissions import PermissionsSet, TextChannelPermissions
 from .roles import ServerRole
 
 if TYPE_CHECKING:
-    from Quadrant.models.servers.members import ServerMember
-    from Quadrant.models.servers.channels import ServerChannel
+    from Quadrant.models.servers_package.members import ServerMember
+    from Quadrant.models.servers_package.channels import ServerChannel
 
 
 class TextChannelsPermissionsProxy:
@@ -19,7 +19,7 @@ class TextChannelsPermissionsProxy:
 
     async def get_permissions(self) -> Union[PermissionsSet, TextChannelPermissions]:
         """
-        Looking up for users permissions in order:
+        Looking up for users_package permissions in order:
         Is user admin?
         Does user have any overwrites on that channel?
         First found overwrite for role from those that user has (ordered by roles position).

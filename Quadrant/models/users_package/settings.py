@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class UsersCommonSettings(Base):
     settings_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
+    user_id = Column(ForeignKey('users_package.id'), index=True, nullable=False)
 
     common_settings = Column(MutableDict.as_mutable(JSONB), default={})
 
@@ -41,7 +41,7 @@ class UsersCommonSettings(Base):
 class UsersAppSpecificSettings(Base):
     settings_id = Column(BigInteger, primary_key=True)
     app_id = Column(String(50), index=True)
-    user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
+    user_id = Column(ForeignKey('users_package.id'), index=True, nullable=False)
 
     app_specific_settings = Column(MutableDict.as_mutable(JSONB), default={})
 

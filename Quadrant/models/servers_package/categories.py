@@ -11,14 +11,14 @@ class Categories(Base):
     category_name = Column(String(50), nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
 
     __tablename__ = "server_categories"
 
 
 class CategoriesChannels(Base):
     category_id = Column(ForeignKey("server_categories.id"), nullable=False)
-    server_id = Column(ForeignKey("servers.id"), nullable=False)
+    server_id = Column(ForeignKey("servers_package.id"), nullable=False)
     channel_id = Column(ForeignKey("server_channels.id"), nullable=False)
 
     __tablename__ = "server_categories_channels"

@@ -12,7 +12,7 @@ permissions_columns_names = {c.name for c in RolesPermissions.columns}
 
 class ServerRole(Base):
     role_id = Column(BigInteger, primary_key=True)
-    server_id = Column(ForeignKey("servers.id"))
+    server_id = Column(ForeignKey("servers_package.id"))
 
     role_name = Column(String(length=50), nullable=False)
     role_position = Column(Integer, default=0)

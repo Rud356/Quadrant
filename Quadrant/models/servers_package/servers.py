@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
-import Quadrant.models.servers.invites
+import Quadrant.models.servers_package.invites
 from Quadrant import models
 from Quadrant.models.db_init import Base
 from .members import ServerMember
@@ -23,7 +23,7 @@ InvitesExceptions = models.InvitesExceptions
 
 class Server(Base):
     name = Column(String(50), nullable=False)
-    owner_id = Column(ForeignKey('users.id'), nullable=False)
+    owner_id = Column(ForeignKey('users_package.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     server_id = Column(db_UUID, primary_key=True, default=uuid4)
 
@@ -31,7 +31,7 @@ class Server(Base):
     _members = relationship(ServerMember, lazy="noload", cascade="all, delete-orphan")
     _invites = relationship(ServerInvite, lazy="noload", cascade="all, delete-orphan")
 
-    __tablename__ = "servers"
+    __tablename__ = "servers_package"
 
     @classmethod
     async def create_server(cls, owner: models.User, name: str, *, session):
