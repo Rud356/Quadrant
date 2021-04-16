@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Column, ForeignKey
+from sqlalchemy import BigInteger, Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 
 from Quadrant.models.caching import FromCache
@@ -28,22 +28,29 @@ class RolesOverwrites(Base):
     async def get_overwrites_by_role(
         cls, server_id: UUID, channel_id: int, role_id: int, *, session
     ) -> Optional[RolesOverwrites]:
-        return await session.query(cls).filter(
-            cls.server_id == server_id,
-            cls.channel_id == channel_id,
-            cls.permissions_for_role_id == role_id
-        ).options(FromCache("default")).one_or_none()
+        query_result = await session.execute(
+            select(cls).filter(
+                cls.server_id == server_id,
+                cls.channel_id == channel_id,
+                cls.permissions_for_role_id == role_id
+            )
+        )
+
+        return await query_result.one_or_none()
 
     @classmethod
     async def get_permissions_overwrites_by_roles(
         cls, server_id: UUID, channel_id: int, roles_ids: List[int], *, session
     ) -> RolesOverwrites.permissions:
-        return await session.query(cls.permissions).filter(
-            cls.server_id == server_id,
-            cls.channel_id == channel_id,
-            cls.permissions_for_role_id.in_(roles_ids)
-        ).options(FromCache("default")) \
-            .join(ServerRole).order_by(ServerRole.role_position).one_or_none()
+        query_result = await session.execute(
+            select(cls.permissions).filter(
+                cls.server_id == server_id,
+                cls.channel_id == channel_id,
+                cls.permissions_for_role_id.in_(roles_ids)
+                .join(ServerRole).order_by(ServerRole.role_position)
+            )
+        )
+        return await query_result.one_or_none()
 
 
 class UsersOverwrites(Base):
@@ -59,10 +66,13 @@ class UsersOverwrites(Base):
 
     @classmethod
     async def get_overwrites_for_channel(
-            cls, server_id: UUID, channel_id: int, member_id: int, *, session
+        cls, server_id: UUID, channel_id: int, member_id: int, *, session
     ) -> Optional[UsersOverwrites]:
-        return await session.query(cls).filter(
-            cls.server_id == server_id,
-            cls.channel_id == channel_id,
-            cls.permissions_for_members_id == member_id
-        ).options(FromCache("default")).one_or_none()
+        query_result = await session.execute(
+            select(cls).filter(
+                cls.server_id == server_id,
+                cls.channel_id == channel_id,
+                cls.permissions_for_members_id == member_id
+            ).options(FromCache("default"))
+        )
+        return await query_result.one_or_none()

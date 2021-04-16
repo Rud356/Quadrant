@@ -5,7 +5,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, case, or_,
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from Quadrant.models import Base
-from Quadrant.models.group_channel_package.invites import INVITE_CODE_BIT_LENGTH, invite_code_len
+from Quadrant.models.group_channel_package.group_invite import INVITE_CODE_BIT_LENGTH, invite_code_len
 
 
 class ServerInvite(Base):

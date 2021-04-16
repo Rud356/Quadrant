@@ -9,16 +9,14 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
-import Quadrant.models.servers_package.invites
+import Quadrant.models.servers_package.server_invite
 from Quadrant import models
 from Quadrant.models.db_init import Base
-from .members import ServerMember
-from .. import ServerBans, ServerInvite
+from .server_member import ServerMember
+from .server_ban import ServerBan
+from .server_invite import ServerInvite
 
 INVITES_COUNT_LIMIT_PER_USER = 1000
-
-ServerInvites = Quadrant.models.servers.invites.ServerInvite
-InvitesExceptions = models.InvitesExceptions
 
 
 class Server(Base):
@@ -27,7 +25,7 @@ class Server(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     server_id = Column(db_UUID, primary_key=True, default=uuid4)
 
-    _bans = relationship(ServerBans, lazy="noload", cascade="all, delete-orphan")
+    _bans = relationship(ServerBan, lazy="noload", cascade="all, delete-orphan")
     _members = relationship(ServerMember, lazy="noload", cascade="all, delete-orphan")
     _invites = relationship(ServerInvite, lazy="noload", cascade="all, delete-orphan")
 
