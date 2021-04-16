@@ -1,0 +1,2 @@
+class AuthorIsBannedException(PermissionError):
+    pass

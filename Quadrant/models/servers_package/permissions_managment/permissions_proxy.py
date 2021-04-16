@@ -5,8 +5,8 @@ from .permissions import PermissionsSet, TextChannelPermissions
 from .roles import ServerRole
 
 if TYPE_CHECKING:
-    from Quadrant.models.servers_package.members import ServerMember
-    from Quadrant.models.servers_package.channels import ServerChannel
+    from Quadrant.models.servers_package.server_member import ServerMember
+    from Quadrant.models.servers_package.server_channel import ServerChannel
 
 
 class TextChannelsPermissionsProxy:
