@@ -7,13 +7,11 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
-from Quadrant.models.db_init import Base
 from Quadrant.models import users_package
-from Quadrant.models.caching import FromCache, RelationshipCache
-from .dm_messages import DM_Message
+from Quadrant.models.caching import FromCache
+from Quadrant.models.db_init import Base
 from .channel_members import DMParticipant
-
-GROUP_MEMBERS_LIMIT = 10
+from .dm_messages import DM_Message
 
 
 class DirectMessagesChannel(Base):

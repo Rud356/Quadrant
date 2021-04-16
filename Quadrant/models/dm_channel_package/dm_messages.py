@@ -36,18 +36,23 @@ class DM_Message(Base):
     def channel_id(cls):  # noqa
         return Column(ForeignKey("dm_channels.id"), index=True)
 
+    async def user_can_send_message_check(self, author: users_package.User, *, session):
+        if users_package.UsersRelations.get_relationships_status_with(
+            author.id, await self.other_participant(author), session=session
+        ) == users_package.UsersRelationType.blocked:
+            raise BlockedByOtherParticipantException("User has been blocked by other participant")
+
     @classmethod
     async def send_message(
         cls, channel: DirectMessagesChannel, author: users_package.User, text: str, attached_file: Optional = None,
         *, session
     ) -> DM_Message:
+
         if not (await channel.is_member(channel.id, author, session=session)):
             raise UserIsNotAMemberException("You're not a member of chat")
 
-        if users_package.UsersRelations.get_relationships_status_with(
-            author.id, await channel.other_participant(author), session=session
-        ) == users_package.UsersRelationType.blocked:
-            raise BlockedByOtherParticipantException("User has been blocked by other participant")
+        # Raises exception if this user can send a message
+        await cls.user_can_send_message_check(channel, author, session=session)
 
         if attached_file is None and len(text) == 0:
             raise ValueError("No content been posted")
