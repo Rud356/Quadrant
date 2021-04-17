@@ -29,7 +29,7 @@ class GroupInvite(Base):
     invite_code = Column(
         String(invite_code_len), default=lambda: token_urlsafe(INVITE_CODE_BIT_LENGTH), primary_key=True
     )
-    group_channel_id = Column(ForeignKey('group_channels'))
+    group_channel_id = Column(ForeignKey('group_channels.channel_id'))
 
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=1))
     users_limit = Column(SmallInteger, default=10)

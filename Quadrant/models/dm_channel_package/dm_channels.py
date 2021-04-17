@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Column, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declared_attr
 
 from Quadrant.models import users_package
 from Quadrant.models.caching import FromCache
@@ -18,8 +18,14 @@ class DirectMessagesChannel(Base):
     channel_id = Column(db_UUID, primary_key=True, default=uuid4)
 
     participants = relationship(DMParticipant, lazy='joined', cascade="all, delete-orphan")
-    _messages = relationship(DM_Message, lazy="noload", cascade="all, delete-orphan")
     __tablename__ = "dm_channels"
+
+    @declared_attr
+    def _messages(cls):
+        _messages = relationship(
+            DM_Message, lazy="noload", cascade="all, delete-orphan",
+            primaryjoin=lambda: DM_Message.channel_id == DirectMessagesChannel.channel_id
+        )
 
     async def other_participant(self, requester_user: users_package.User) -> DMParticipant:
         participant = await self.participants.filter(DMParticipant.user_id != requester_user.id).one()

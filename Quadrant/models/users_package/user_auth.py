@@ -17,7 +17,7 @@ from .user import User
 
 class UserInternalAuthorization(Base):
     record_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users_package.id'), nullable=False, unique=True, index=True)
+    user_id = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
     internal_token = Column(String(128), default=generate_internal_token, index=True, nullable=False)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
@@ -91,7 +91,7 @@ class UserInternalAuthorization(Base):
 
 class OauthUserAuthorization(Base):
     record_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users_package.id'), nullable=False)
+    user_id = Column(ForeignKey('users.id'), nullable=False)
 
     oauth_provider = Column(String(100), nullable=True)
     oauth_token = Column(String(100), unique=True, index=True, nullable=True)
@@ -102,5 +102,6 @@ class OauthUserAuthorization(Base):
         primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id",
         lazy='joined'
     )
+    __abstract__ = True
 
 # TODO: finish oauth later

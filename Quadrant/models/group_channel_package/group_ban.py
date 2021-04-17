@@ -19,13 +19,14 @@ class GroupBan(Base):
     id = Column(BigInteger, primary_key=True)
     reason = Column(String(2048), default="")
     group_id = Column(ForeignKey("group_channels.channel_id"), nullable=False, index=True)
-    banned_user_id = Column(ForeignKey('users_package.id'), nullable=False)
+    banned_user_id = Column(ForeignKey('users.id'), nullable=False)
     banned_at = Column(DateTime, default=datetime.utcnow)
 
     banned_user = relationship("User", lazy='joined', uselist=False)
     __table_args__ = (
-        UniqueConstraint("server_id", "banned_user_id", name="_unique_ban_from_group"),
+        UniqueConstraint("group_id", "banned_user_id", name="_unique_ban_from_group"),
     )
+    __tablename__ = "group_bans"
 
     @staticmethod
     def get_ban_query(group_id: UUID, banned_user_id: users_package.User.id):

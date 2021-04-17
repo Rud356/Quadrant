@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, declared_attr
 
 from Quadrant.models import Base, FromCache, users_package
 from .group_ban import GroupBan
@@ -19,14 +19,17 @@ GROUP_MEMBERS_LIMIT = 10
 
 
 class GroupMessagesChannel(Base):
-    channel_id = Column(db_UUID, primary_key=True, default=uuid4)
+    channel_id = Column(db_UUID, primary_key=True, default=uuid4, unique=True)
     channel_name = Column(String(50), default="Untitled text_channel")
-    owner_id = Column(ForeignKey("users_package.id"), nullable=False)
+    owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     members = relationship(GroupParticipant, lazy='joined', cascade="all, delete-orphan")
-    _messages = relationship(GroupMessage, lazy="noload", cascade="all, delete-orphan")
     _bans = relationship(GroupBan, lazy='noload', cascade="all, delete-orphan")
+    _messages = relationship(
+        GroupMessage, lazy="noload", cascade="all, delete-orphan",
+        primaryjoin=lambda: GroupMessage.channel_id == GroupMessagesChannel.channel_id
+    )
     invites = relationship(
         GroupInvite, lazy='joined',
         primaryjoin="""

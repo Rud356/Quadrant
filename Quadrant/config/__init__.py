@@ -54,13 +54,13 @@ class QuadrantConfig(BaseConfig):
         pool_kwargs = ConfigVar("Quadrant/db/pool_kwargs", yaml_loader, default={})
 
         def __post_init__(self, *args, **kwargs):
-            async_engine = create_async_engine(
+            self.async_base_engine = create_async_engine(
                 self.db_uri.value,
                 **self.kwargs.value
             )
 
             self.pool_kwargs.value.pop('pool_size', None)
-            self.async_engine = AsyncAdaptedQueuePool(async_engine, pool_size=self.pool_size.value)
+            self.async_engine = AsyncAdaptedQueuePool(self.async_base_engine, pool_size=self.pool_size.value)
 
     class DBCachingConfig(BaseConfig):
         enable_caching = BoolVar("Quadrant/db/caching/enable_caching", yaml_loader, default=False)
