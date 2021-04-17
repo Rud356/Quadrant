@@ -17,9 +17,11 @@ if TYPE_CHECKING:
 
 class UsersCommonSettings(Base):
     settings_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users_package.id'), index=True, nullable=False)
+    user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
 
     common_settings = Column(MutableDict.as_mutable(JSONB), default={})
+
+    __tablename__ = "users_common_settings"
 
     async def update_common_settings(self, *, settings: dict, session) -> dict:
         # Validate settings values
@@ -41,9 +43,10 @@ class UsersCommonSettings(Base):
 class UsersAppSpecificSettings(Base):
     settings_id = Column(BigInteger, primary_key=True)
     app_id = Column(String(50), index=True)
-    user_id = Column(ForeignKey('users_package.id'), index=True, nullable=False)
+    user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
 
     app_specific_settings = Column(MutableDict.as_mutable(JSONB), default={})
+    __tablename__ = "users_app_specific_settings"
 
     @classmethod
     async def get_app_specific_settings(cls, user: User, app_id: str, *, session):

@@ -9,7 +9,7 @@ Base = declarative_base()
 Session = sessionmaker(quadrant_config.DBConfig.async_engine, expire_on_commit=False, class_=AsyncSession)
 
 
-async def async_session(f):
+def async_session(f):
     @wraps(f)
     async def grab_session(*args, **kwargs):
         async with Session() as session:

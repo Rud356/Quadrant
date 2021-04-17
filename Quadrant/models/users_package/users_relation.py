@@ -14,9 +14,11 @@ USERS_RELATIONS_PER_PAGE = 50
 
 class UsersRelations(Base):
     relation_id = Column(BigInteger, primary_key=True)
-    initiator_id = Column(ForeignKey('users_package.id'), nullable=False, index=True)
-    relation_with_id = Column(ForeignKey('users_package.id'), nullable=False, index=True)
+    initiator_id = Column(ForeignKey('users.id'), nullable=False, index=True)
+    relation_with_id = Column(ForeignKey('users.id'), nullable=False, index=True)
     relation_status = Column(Enum(UsersRelationType), default=UsersRelationType.none, nullable=False)
+
+    __tablename__ = "users_relations"
 
     @staticmethod
     def any_user_initialized_relationship(user_id: User.id, with_user_id: User.id):

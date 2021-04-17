@@ -18,9 +18,9 @@ MAX_OWNED_BOTS = 20
 
 
 class User(Base):
-    id = Column(db_UUID, primary_key=True, default=uuid4)
+    id = Column(db_UUID, primary_key=True, default=uuid4, unique=True)
     color_id = Column(Integer, default=generate_random_color, nullable=False)
-    username = Column(String(length='50'), nullable=False)
+    username = Column(String(length=50), nullable=False)
     status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
     text_status = Column(String(256), nullable=True)
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -38,7 +38,7 @@ class User(Base):
     )
     _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
 
-    __tablename__ = "users_package"
+    __tablename__ = "users"
 
     async def update_user(self, *, fields: dict, session) -> None:
         updatable_fields = {"username", "status", "text_status"}

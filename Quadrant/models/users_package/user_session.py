@@ -18,11 +18,13 @@ SESSIONS_PER_PAGE = 10
 
 class UserSession(Base):
     session_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey("users_package.id"), index=True)
+    user_id = Column(ForeignKey("users.id"), index=True)
     started_at = Column(DateTime, default=datetime.utcnow)
     # Max length of IPv6 address as string
     ip_address = Column(String(45))
     is_alive = Column(Boolean, default=True)
+
+    __tablename__ = "users_sessions"
 
     @staticmethod
     def user_session_query(user_id: UUID):

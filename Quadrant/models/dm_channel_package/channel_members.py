@@ -8,7 +8,7 @@ from Quadrant.models.db_init import Base
 
 
 class DMParticipant(Base):
-    user_id = Column(ForeignKey('users_package.id'), nullable=False)
+    user_id = Column(ForeignKey('users.id'), nullable=False)
     channel_id = Column(ForeignKey('dm_channels.channel_id'))
 
     user: users_package.User = relationship("User", lazy='joined', uselist=False)
