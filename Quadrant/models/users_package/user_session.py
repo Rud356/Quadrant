@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
 from sqlalchemy.exc import IntegrityError
 
-from Quadrant.models.caching import FromCache
+from Quadrant.models.caching import FromCache, caching_environment
 from Quadrant.models.db_init import Base
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class UserSession(Base):
         return select(UserSession).filter(
             UserSession.user_id == user_id,
             UserSession.is_alive.is_(True)
-        ).options(FromCache("default"))
+        )
 
     @classmethod
     async def new_session(cls, user: User, ip_address: str, *, session):
@@ -47,6 +47,8 @@ class UserSession(Base):
             return await (
                 await session.execute(
                     cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
+                    # TODO: separate cache for sessions
+                    .options(FromCache("default"))
                 )
             ).one()
 
@@ -78,6 +80,11 @@ class UserSession(Base):
             user_session: UserSession
             user_session.is_alive = False
 
+            concrete_session_query = UserSession.user_session_query(
+                user_id=user_id
+            ).filter(UserSession.session_id == user_session.session_id)
+            # TODO: separate cache for sessions
+            caching_environment.cache.invalidate(concrete_session_query, {}, FromCache("default"))
         await session.commit()
         return True
 
