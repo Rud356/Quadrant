@@ -71,7 +71,7 @@ class QuadrantConfig(BaseConfig):
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(
             "Quadrant/quadrant_logging/logs_dir", composite_loader, caster=Path,
-            default=Path(__file__).parent.parent / "quadrant_logs", constant=True
+            default=Path(__file__).parent.parent / "logs", constant=True
         )
         date_format = ConfigVar(
             "Quadrant/quadrant_logging/date_format", yaml_loader, validator=datetime.now().strftime, constant=True

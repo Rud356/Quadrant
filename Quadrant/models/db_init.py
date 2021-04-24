@@ -1,5 +1,5 @@
 from functools import wraps
-
+from tornado.log import app_log
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -18,5 +18,6 @@ def async_session(f):
 
             except IntegrityError as err:
                 await session.rollback()
-                raise err
+                app_log.exception(err)
+
     return grab_session

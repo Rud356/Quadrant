@@ -21,8 +21,8 @@ class UserInternalAuthorization(Base):
     internal_token = Column(String(128), default=generate_internal_token, index=True, nullable=False)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
-    salt = Column(String(40), nullable=True)
     password = Column(String(64), nullable=True)
+    salt = Column(String(40), nullable=True)
 
     user: User = relationship(
         User, uselist=False, backref=backref('internal_auth', cascade="all, delete-orphan"),
@@ -37,8 +37,10 @@ class UserInternalAuthorization(Base):
     ) -> UserInternalAuthorization:
         login = hash_login(login)
         salt = token_urlsafe(30)
-        # TODO: add way to run asynchronously
-        password = hash_password(password, salt)
+
+        with ProcessPoolExecutor(25) as pool_exec:
+            loop = get_running_loop()
+            password = await loop.run_in_executor(pool_exec, hash_password, password, salt)
 
         user = User(username=username)
         user_auth = UserInternalAuthorization(login=login, password=password, salt=salt, user=user)

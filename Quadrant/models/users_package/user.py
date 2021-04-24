@@ -22,14 +22,14 @@ class User(Base):
     color_id = Column(Integer, default=generate_random_color, nullable=False)
     username = Column(String(length=50), nullable=False)
     status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
-    text_status = Column(String(256), nullable=True)
+    text_status = Column(String(256), nullable=False, default="")
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     is_bot = Column(Boolean, nullable=False, default=False)
     is_banned = Column(Boolean, nullable=False, default=False)
 
     bot_owner_id = Column(db_UUID, nullable=True)
-    users_common_settings = relationship(
+    users_common_settings: UsersCommonSettings = relationship(
         UsersCommonSettings, lazy='joined', uselist=False, cascade="all, delete-orphan"
     )
     _owned_bots = relationship(
@@ -40,14 +40,9 @@ class User(Base):
 
     __tablename__ = "users"
 
-    async def update_user(self, *, fields: dict, session) -> None:
-        updatable_fields = {"username", "status", "text_status"}
-
-        for updatable_field in updatable_fields:
-            if updatable_field in fields:
-                # Apply validators
-                setattr(self, updatable_field, fields[updatable_field])
-
+    async def set_username(self, username: str, *, session) -> None:
+        # TODO: add validations and clean up
+        self.username = username
         await session.commit()
 
     async def set_status(self, status: str, *, session) -> None:
@@ -57,38 +52,34 @@ class User(Base):
         await session.commit()
 
     async def set_text_status(self, text_status: str, *, session) -> None:
+        # TODO: add validations and clean up
         self.text_status = text_status
         await session.commit()
 
     async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
-        bot = await (
-            await session.execute(
-                select(User).options(FromCache("default")).filter(
-                    and_(
-                        User.is_bot.is_(True),
-                        User.bot_owner_id == self.id,
-                        User.id == bot_id
-                    )
-                )
+        bot_query = select(User).options(FromCache("default")).filter(
+            and_(
+                User.is_bot.is_(True),
+                User.bot_owner_id == self.id,
+                User.id == bot_id
             )
-        ).one()
+        )
+        result = await session.execute(bot_query)
+        bot = await result.one()
 
         return bot
 
     async def get_owned_bots(self, *, session) -> List[User]:
         if self.is_bot:
             raise ValueError("Bots can't own other bots")
-
-        bots = await (
-            await session.execute(
-                select(User).options(FromCache("default")).filter(
-                    and_(
-                        User.is_bot.is_(True),
-                        User.bot_owner_id == self.id
-                    )
-                ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc())
+        bots_query = select(User).options(FromCache("default")).filter(
+            and_(
+                User.is_bot.is_(True),
+                User.bot_owner_id == self.id
             )
-        ).all()
+        ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc())
+        result = await session.execute(bots_query)
+        bots = await result.all()
 
         return bots
 
@@ -96,7 +87,9 @@ class User(Base):
         return await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
 
     @classmethod
-    async def get_user(cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False):
+    async def get_user(
+        cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False
+    ) -> User:
         user_query = (
             select(cls).options(FromCache("default"))
             .filter(cls.id == user_id)
@@ -108,8 +101,7 @@ class User(Base):
         if filter_bots:
             user_query = user_query.filter(cls.is_bot.is_(False))
 
-        user = await (
-            await session.execute(user_query)
-        ).one()
+        result = await session.execute(user_query)
+        user = await result.one()
 
         return user
