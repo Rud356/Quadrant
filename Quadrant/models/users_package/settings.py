@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
 from Quadrant.models.db_init import Base
-from Quadrant.models.utils.common_settings_validators import COMMON_SETTINGS
+from Quadrant.models.utils.common_settings_validators import COMMON_SETTINGS, DEFAULT_COMMON_SETTINGS_DICT
 from Quadrant.models.caching import FromCache
 
 if TYPE_CHECKING:
@@ -19,11 +19,21 @@ class UsersCommonSettings(Base):
     settings_id = Column(BigInteger, primary_key=True)
     user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
 
-    common_settings = Column(MutableDict.as_mutable(JSONB), default={})
+    common_settings = Column(MutableDict.as_mutable(JSONB), default=DEFAULT_COMMON_SETTINGS_DICT)
 
     __tablename__ = "users_common_settings"
 
-    async def update_common_settings(self, *, settings: dict, session) -> dict:
+    async def get_setting(self, key: str, *, session):
+        try:
+            return self.common_settings[key]
+
+        except KeyError:
+            default_value = DEFAULT_COMMON_SETTINGS_DICT[key]
+            self.common_settings[key] = default_value
+            await session.commit()
+            return default_value
+
+    async def update_settings(self, *, settings: dict, session) -> dict:
         # Validate settings values
         updated_settings = {}
 
