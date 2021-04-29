@@ -51,8 +51,11 @@ class UsersCommonSettings(Base):
 
 
 class UsersAppSpecificSettings(Base):
+    """
+    Class that helps users create and change settings for their apps and sync them through cloud.
+    """
     settings_id = Column(BigInteger, primary_key=True)
-    app_id = Column(String(50), index=True)
+    app_id = Column(String(length=50), nullable=False, index=True)
     user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
 
     app_specific_settings = Column(MutableDict.as_mutable(JSONB), default={})
@@ -60,9 +63,17 @@ class UsersAppSpecificSettings(Base):
 
     @classmethod
     async def get_app_specific_settings(cls, user: User, app_id: str, *, session):
+        """
+        Gives app settings for specific user.
+
+        :param user: user instance of the one, who requests those.
+        :param app_id: string with max length of 50 symbols.
+        :param session: sqlalchemy session.
+        :return: instance of app specific settings.
+        """
         settings = await (
             await session.execute(
-                select(cls).options(FromCache("default"))
+                select(cls).options(FromCache("users_app_settings"))
                 .filter(cls.user_id == user.id, cls.app_id == app_id)
             )
         ).one()
