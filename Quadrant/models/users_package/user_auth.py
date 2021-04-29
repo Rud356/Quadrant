@@ -54,7 +54,7 @@ class UserInternalAuthorization(Base):
         return await (
             await session.execute(
                 select(UserInternalAuthorization)
-                .options(FromCache("default"))
+                .options(FromCache("users_auth"))
                 .join(User).filter(
                     UserInternalAuthorization.internal_token == token,
                     User.is_banned.is_(False)

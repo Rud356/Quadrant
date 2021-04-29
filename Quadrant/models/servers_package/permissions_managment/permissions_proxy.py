@@ -1,7 +1,7 @@
 from typing import List, TYPE_CHECKING, Union
 
 from .channels_overwrites import RolesOverwrites, UsersOverwrites
-from .permissions import PermissionsSet, TextChannelPermissions
+from .permissions import PermissionsSet, AbstractTextChannelPermissions
 from .roles import ServerRole
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ class TextChannelsPermissionsProxy:
 
         self.session = session
 
-    async def get_permissions(self) -> Union[PermissionsSet, TextChannelPermissions]:
+    async def get_permissions(self) -> Union[AbstractTextChannelPermissions, PermissionsSet]:
         """
         Looking up for users_package permissions in order:
         Is user admin?

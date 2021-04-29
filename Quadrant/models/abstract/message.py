@@ -69,7 +69,7 @@ class ABCMessage(Base):
     @classmethod
     async def get_message(cls, message_id: int, channel_id: UUID, *, session) -> ABCMessage:
         query_result = await session.execute(
-            select(cls).options(FromCache("default")).filter(
+            select(cls).options(FromCache("messages")).filter(
                 cls.channel_id == channel_id, message_id == message_id
             )
         )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
@@ -28,6 +28,12 @@ class UserSession(Base):
 
     @staticmethod
     def user_session_query(user_id: UUID):
+        """
+        Gives prepared base for querying sessions of exact user with id.
+
+        :param user_id: user id of one user, whose sessions we must get.
+        :return: sqlalchemy query.
+        """
         return select(UserSession).filter(
             UserSession.user_id == user_id,
             UserSession.is_alive.is_(True)
@@ -35,6 +41,14 @@ class UserSession(Base):
 
     @classmethod
     async def new_session(cls, user: User, ip_address: str, *, session):
+        """
+        Creates new session.
+
+        :param user: user instance for whom we create session.
+        :param ip_address: session ip address from which we got authorization request.
+        :param session: sqlalchemy session.
+        :return: new user session.
+        """
         user_session = UserSession(user_id=user.id, ip_address=ip_address)
         session.add(user_session)
         session.commit()
@@ -43,12 +57,21 @@ class UserSession(Base):
 
     @classmethod
     async def get_user_session(cls, user_id: UUID, session_id: int, *, session):
+        """
+        Gives exact session.
+
+        :param user_id: user id of one user, whose sessions we must get.
+        :param session_id: id of exact session.
+        :param session: sqlalchemy session.
+        :return: session instance.
+        """
+
         try:
             return await (
                 await session.execute(
                     cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
                     # TODO: separate cache for sessions
-                    .options(FromCache("default"))
+                    .options(FromCache("sessions"))
                 )
             ).one()
 
@@ -56,7 +79,14 @@ class UserSession(Base):
             raise ValueError("No such session")
 
     @classmethod
-    async def get_user_sessions_page(cls, user_id: UUID, page: int, *, session):
+    async def get_user_sessions_page(cls, user_id: UUID, page: int, *, session) -> Tuple[UserSession]:
+        """
+        Gives one page of sessions or empty list.
+
+        :param user_id: user id of one user, whose sessions we must get.
+        :param session: sqlalchemy session.
+        :return: session instances tuple.
+        """
         if page < 0:
             raise ValueError("Invalid page")
 
@@ -74,6 +104,14 @@ class UserSession(Base):
 
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
+        """
+        Terminates all sessions started by that user. Can be used in case user got hacked and wants to nullify
+        access to his account.
+
+        :param user_id: user id of one user, whose sessions we must get
+        :param session: sqlalchemy session.
+        :return: session instances tuple.
+        """
         # TODO: Ensure that sessions are closed after this method
         users_sessions_query = await session.stream(UserSession.user_session_query(user_id))
         async for user_session in users_sessions_query.partitions(10):
@@ -83,8 +121,8 @@ class UserSession(Base):
             concrete_session_query = UserSession.user_session_query(
                 user_id=user_id
             ).filter(UserSession.session_id == user_session.session_id)
-            # TODO: separate cache for sessions
-            caching_environment.cache.invalidate(concrete_session_query, {}, FromCache("default"))
+            caching_environment.cache.invalidate(concrete_session_query, {}, FromCache("sessions"))
+
         await session.commit()
         return True
 

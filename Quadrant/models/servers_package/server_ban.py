@@ -33,7 +33,7 @@ class ServerBan(Base):
         return select(ServerBan).filter(
             ServerBan.server_id == server_id,
             ServerBan.banned_user_id == banned_user_id
-        ).options(FromCache("default"))
+        ).options(FromCache("server_bans"))
 
     @classmethod
     async def get_ban(cls, server_id: UUID, banned_user_id: models.User.id, *, session):

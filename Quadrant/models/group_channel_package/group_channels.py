@@ -140,7 +140,10 @@ class GroupMessagesChannel(Base):
         )
 
         if await GroupBan.is_user_banned(group_invite.group_channel_id, user_joining.id, session=session):
-            raise PermissionError("User has been banned")
+            raise GroupMessagesChannel.exc.UserIsBannedError("User has been banned")
+
+        if await GroupMessagesChannel.is_member(group_invite.group_channel_id, user_joining, session=session):
+            raise GroupMessagesChannel.exc.AlreadyIsMemberError("User already a channel participant")
 
         new_member = GroupParticipant(user_id=user_joining.id, channel_id=group_invite.group_channel_id)
         group: GroupMessagesChannel = await GroupMessagesChannel.get_group_channel(
@@ -167,7 +170,7 @@ class GroupMessagesChannel(Base):
     async def get_group_channel(cls, channel_id: UUID, *, session):
         query_result = await session.execute(
             select(cls).filter(cls.channel_id == channel_id)
-            .options(FromCache("default"))
+            .options(FromCache("group_channels"))
         )
         return await query_result.one()
 
@@ -199,3 +202,10 @@ class GroupMessagesChannel(Base):
         exists_query_result = await session.execute(exists_query)
 
         return (await exists_query_result.scalar()) or False
+
+    class exc:
+        class AlreadyIsMemberError(PermissionError):
+            pass
+
+        class UserIsBannedError(PermissionError):
+            pass

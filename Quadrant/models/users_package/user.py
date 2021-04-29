@@ -2,17 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import List
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
+from tornado.log import gen_log
 from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_, select
-from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
+from sqlalchemy.orm import relationship
 
+from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
-from .users_status import UsersStatus
-from Quadrant.models.users_package.settings import UsersCommonSettings, UsersAppSpecificSettings
+from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
 from Quadrant.models.utils import generate_random_color
-from Quadrant.models.caching import FromCache, RelationshipCache
+from .users_status import UsersStatus
 
 MAX_OWNED_BOTS = 20
 
@@ -22,7 +23,7 @@ class User(Base):
     color_id = Column(Integer, default=generate_random_color, nullable=False)
     username = Column(String(length=50), nullable=False)
     status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
-    text_status = Column(String(256), nullable=False, default="")
+    text_status = Column(String(length=256), nullable=False, default="")
     registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     is_bot = Column(Boolean, nullable=False, default=False)
@@ -41,23 +42,56 @@ class User(Base):
     __tablename__ = "users"
 
     async def set_username(self, username: str, *, session) -> None:
-        # TODO: add validations and clean up
+        """
+        Sets user a new username.
+
+        :param username: new username that was validated on previous stage.
+        :param session: sqlalchemy session.
+        :return: nothing.
+        """
         self.username = username
         await session.commit()
 
+        gen_log.debug(f"User with id {self.user.id} has updated nickname to {username}")
+
     async def set_status(self, status: str, *, session) -> None:
+        """
+        Sets user a new status.
+
+        :param status: one of string names from Quadrant.models.users_package.users_status.UsersStatus enum.
+        :param session: sqlalchemy session.
+        :return: nothing.
+        """
         # Raises KeyError if there's no such status in enum
         status = UsersStatus[status]
         self.status = status
         await session.commit()
 
+        gen_log.debug(f"{self.user.id} has updated status to {status}")
+
     async def set_text_status(self, text_status: str, *, session) -> None:
+        """
+        Sets user a new text status.
+
+        :param text_status:
+        :param session: sqlalchemy session.
+        :return: nothing.
+        """
         # TODO: add validations and clean up
         self.text_status = text_status
         await session.commit()
 
+        gen_log.debug(f"User with id {self.user.id} has updated text status to {text_status}")
+
     async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
-        bot_query = select(User).options(FromCache("default")).filter(
+        """
+        Gives specific bot that belongs to user by bots id.
+
+        :param bot_id: bots id that user wants to get and owns.
+        :param session: sqlalchemy session.
+        :return: nothing.
+        """
+        bot_query = select(User).filter(
             and_(
                 User.is_bot.is_(True),
                 User.bot_owner_id == self.id,
@@ -70,9 +104,17 @@ class User(Base):
         return bot
 
     async def get_owned_bots(self, *, session) -> List[User]:
+        """
+        Gives a list of bot users that belong to user.
+
+        :param session: sqlalchemy session.
+        :return: list of User instances, that are bots belonging to requester.
+        """
         if self.is_bot:
+            gen_log.info(f"Bot with id {self.id} requested his bots list (bots can't own other bots)")
             raise ValueError("Bots can't own other bots")
-        bots_query = select(User).options(FromCache("default")).filter(
+
+        bots_query = select(User).filter(
             and_(
                 User.is_bot.is_(True),
                 User.bot_owner_id == self.id
@@ -81,21 +123,44 @@ class User(Base):
         result = await session.execute(bots_query)
         bots = await result.all()
 
+        gen_log.debug(f"User with id {self.id} got {len(bots)} bots")
         return bots
 
     async def get_app_specific_settings(self, app_id: str, *, session) -> UsersAppSpecificSettings:
-        return await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
+        """
+        Gives an instance of settings on specific application that users uses.
+        This is basically an key-value storage for user to have any sort of configs for his apps.
+
+        :param app_id: application id (can be string with max length of 50 and not 0 symbols)
+        :param session: sqlalchemy session.
+        :return: UsersAppSpecificSettings instance that can be modified if needed.
+        """
+        settings = await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
+
+        if settings is None:
+            gen_log.debug(f"App with id {app_id} not found for that user")
+
+        return settings
 
     @classmethod
     async def get_user(
-        cls, user_id: UUID, *, session, filter_deleted: bool = True, filter_bots: bool = False
+        cls, user_id: UUID, *, session, filter_banned: bool = True, filter_bots: bool = False
     ) -> User:
+        """
+        Gives an user by specific id.
+
+        :param user_id: id of user someone wants to get.
+        :param session: sqlalchemy session.
+        :param filter_banned: flag that shows if we must include banned users.
+        :param filter_bots: flag that shows if we must include bots.
+        :return: user instance.
+        """
         user_query = (
-            select(cls).options(FromCache("default"))
+            select(cls).options(FromCache("users"))
             .filter(cls.id == user_id)
         )
 
-        if filter_deleted:
+        if filter_banned:
             user_query = user_query.filter(cls.is_banned.is_(False))
 
         if filter_bots:

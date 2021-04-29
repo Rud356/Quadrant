@@ -46,7 +46,7 @@ class DirectMessagesChannel(Base):
     @classmethod
     async def get_channel_by_id(cls, channel_id: UUID, *, session):
         try:
-            return await session.options(FromCache("default")).get(cls, channel_id)
+            return await session.options(FromCache("dm_channels")).get(cls, channel_id)
 
         except (NoResultFound, OverflowError):
             raise ValueError("No such dm channel with specified id")
