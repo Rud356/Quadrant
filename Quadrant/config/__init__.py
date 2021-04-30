@@ -1,12 +1,13 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 from sys import exit
-from datetime import datetime
 
 from ConfigFramework import BaseConfig, loaders
-from ConfigFramework.variables import ConfigVar, IntVar, BoolVar
+from ConfigFramework.variables import BoolVar, ConfigVar, IntVar
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import AsyncAdaptedQueuePool
+
 from Quadrant.config import casters, validators
 from Quadrant.config.defaults import defaults
 
@@ -61,12 +62,6 @@ class QuadrantConfig(BaseConfig):
 
             self.pool_kwargs.value.pop('pool_size', None)
             self.async_engine = AsyncAdaptedQueuePool(self.async_base_engine, pool_size=self.pool_size.value)
-
-    class DBCachingConfig(BaseConfig):
-        enable_caching = BoolVar("Quadrant/db/caching/enable_caching", yaml_loader, default=False)
-        caching_backend = ConfigVar("Quadrant/db/caching/caching_backend", yaml_loader)
-        cache_expiration_time = IntVar("Quadrant/db/caching/expiration_time", yaml_loader, validator=lambda v: v > 0)
-        arguments = ConfigVar("Quadrant/db/caching/arguments", yaml_loader)
 
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(

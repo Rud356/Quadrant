@@ -67,13 +67,9 @@ class UserSession(Base):
         """
 
         try:
-            return await (
-                await session.execute(
-                    cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
-                    # TODO: separate cache for sessions
-                    .options(FromCache("sessions"))
-                )
-            ).one()
+            query = cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
+            query_result = await session.execute(query)
+            return await query_result.one()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
@@ -91,13 +87,12 @@ class UserSession(Base):
             raise ValueError("Invalid page")
 
         try:
-            return await (
-                await session.execute(
-                    select(cls).filter(user_id=user_id, session=session)
-                    .limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page)
-                    .order_by(cls.is_alive.desc(), cls.session_id.desc())
-                )
-            ).all()
+            query = select(cls).filter(user_id=user_id, session=session) \
+                .limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page) \
+                .order_by(cls.is_alive.desc(), cls.session_id.desc())
+
+            query_result = await session.execute(query)
+            return await query_result.all()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
@@ -117,11 +112,6 @@ class UserSession(Base):
         async for user_session in users_sessions_query.partitions(10):
             user_session: UserSession
             user_session.is_alive = False
-
-            concrete_session_query = UserSession.user_session_query(
-                user_id=user_id
-            ).filter(UserSession.session_id == user_session.session_id)
-            caching_environment.cache.invalidate(concrete_session_query, {}, FromCache("sessions"))
 
         await session.commit()
         return True

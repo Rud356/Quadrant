@@ -6,7 +6,6 @@ from uuid import UUID
 from sqlalchemy import BigInteger, Column, ForeignKey, select
 from sqlalchemy.orm import relationship
 
-from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
 from .permissions import RolesPermissionsOverwrites, UsersPermissionsOverwrites
 from .roles import ServerRole
@@ -68,11 +67,10 @@ class UsersOverwrites(Base):
     async def get_overwrites_for_channel(
         cls, server_id: UUID, channel_id: int, member_id: int, *, session
     ) -> Optional[UsersOverwrites]:
-        query_result = await session.execute(
-            select(cls).filter(
-                cls.server_id == server_id,
-                cls.channel_id == channel_id,
-                cls.permissions_for_members_id == member_id
-            ).options(FromCache("default"))
+        query = select(cls).filter(
+            cls.server_id == server_id,
+            cls.channel_id == channel_id,
+            cls.permissions_for_members_id == member_id
         )
+        query_result = await session.execute(query)
         return await query_result.one_or_none()

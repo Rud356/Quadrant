@@ -71,12 +71,10 @@ class UsersRelations(Base):
         :param session: sqlalchemy session.
         :return: UsersRelations instance and instance of User with whom requester have some relationship.
         """
-        result = await session.execute(
-            select(UsersRelations, User).filter(
-                UsersRelations.any_user_initialized_relationship(user.id, with_user_id)
-            ).join(User, User.id == with_user_id)
-        )
-
+        query = select(UsersRelations, User).filter(
+            UsersRelations.any_user_initialized_relationship(user.id, with_user_id)
+        ).join(User, User.id == with_user_id)
+        result = await session.execute(query)
         relation, relation_with = await result.one()
 
         return relation, relation_with
@@ -93,12 +91,11 @@ class UsersRelations(Base):
         :param session: sqlalchemy session.
         :return: returns exact relationship instance of
         """
-        result = await session.execute(
-            select(cls).filter(
-                UsersRelations.initiator_id == user_id,
-                UsersRelations.relation_with_id == with_user_id
-            )
+        query = select(cls).filter(
+            UsersRelations.initiator_id == user_id,
+            UsersRelations.relation_with_id == with_user_id
         )
+        result = await session.execute(query)
         relation = await result.one_or_none()
 
         return relation
@@ -113,14 +110,12 @@ class UsersRelations(Base):
         :param session: sqlalchemy session.
         :return: one of UsersRelationType.
         """
-        relation = await (
-            await session.execute(
-                select(UsersRelations.relation_status).filter(
-                    UsersRelations.initiator_id == user_id,
-                    UsersRelations.relation_with_id == with_user_id
-                )
-            )
-        ).scalar_one_or_none()
+        query = select(UsersRelations.relation_status).filter(
+            UsersRelations.initiator_id == user_id,
+            UsersRelations.relation_with_id == with_user_id
+        )
+        query_result = await session.execute(query)
+        relation = await query_result.scalar_one_or_none()
 
         if relation is None:
             return UsersRelationType.none

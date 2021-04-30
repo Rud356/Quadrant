@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, declared_attr
 
-from Quadrant.models import Base, FromCache, users_package
+from Quadrant.models import Base, users_package
 from .group_ban import GroupBan
 from .group_invite import GroupInvite, InvitesExceptions
 from .group_message import GroupMessage
@@ -168,10 +168,8 @@ class GroupMessagesChannel(Base):
 
     @classmethod
     async def get_group_channel(cls, channel_id: UUID, *, session):
-        query_result = await session.execute(
-            select(cls).filter(cls.channel_id == channel_id)
-            .options(FromCache("group_channels"))
-        )
+        query = select(cls).filter(cls.channel_id == channel_id)
+        query_result = await session.execute(query)
         return await query_result.one()
 
     @classmethod

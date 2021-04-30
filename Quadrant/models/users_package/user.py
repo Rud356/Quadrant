@@ -9,7 +9,6 @@ from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_, s
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.orm import relationship
 
-from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
 from Quadrant.models.utils import generate_random_color
@@ -155,10 +154,7 @@ class User(Base):
         :param filter_bots: flag that shows if we must include bots.
         :return: user instance.
         """
-        user_query = (
-            select(cls).options(FromCache("users"))
-            .filter(cls.id == user_id)
-        )
+        user_query = select(cls).filter(cls.id == user_id)
 
         if filter_banned:
             user_query = user_query.filter(cls.is_banned.is_(False))

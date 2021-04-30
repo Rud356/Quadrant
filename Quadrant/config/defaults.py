@@ -12,15 +12,6 @@ defaults = {
                 "pool_size": 15,
                 "pool_kwargs": {},
                 "kwargs": {},
-
-                "caching": {
-                    "enable_caching": False,
-                    "caching_backend": "dogpile.cache.dbm",
-                    "expiration_time": 3600,
-                    "arguments": {
-                        "filename": "path/to/cache/file.dbm"
-                    }
-                }
             },
 
             "quadrant_logging": {
