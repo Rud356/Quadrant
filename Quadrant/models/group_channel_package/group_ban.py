@@ -9,7 +9,6 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from Quadrant.models import users_package
-from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
 
 BANS_PER_PAGE = 25
@@ -38,7 +37,7 @@ class GroupBan(Base):
     @classmethod
     async def get_ban(cls, group_id: UUID, banned_user_id: users_package.User.id, *, session) -> Optional[GroupBan]:
         query_result = await session.execute(
-            cls.get_ban_query(group_id, banned_user_id).options(FromCache("default"))
+            cls.get_ban_query(group_id, banned_user_id)
         )
 
         return await query_result.one()

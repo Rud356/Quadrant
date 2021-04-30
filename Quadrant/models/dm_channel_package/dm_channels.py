@@ -8,7 +8,6 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship, declared_attr
 
 from Quadrant.models import users_package
-from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
 from .channel_members import DMParticipant
 from .dm_messages import DM_Message
@@ -69,7 +68,7 @@ class DirectMessagesChannel(Base):
         :return:
         """
         try:
-            return await session.options(FromCache("dm_channels")).filter(
+            return await session.filter(
                 cls.participants.id.is_(requester.id)
             ).get(cls, channel_id)
 
