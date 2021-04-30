@@ -8,7 +8,6 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.orm import declared_attr
 
 from Quadrant.models import users_package
-from Quadrant.models.caching import FromCache
 from Quadrant.models.db_init import Base
 
 MESSAGES_PER_REQUEST = 100
@@ -103,12 +102,11 @@ class ABCMessage(Base):
         :param session: sqlalchemy session.
         :return: message (raises exception if didn't found any).
         """
-        query_result = await session.execute(
-            select(cls).options(FromCache("messages")).filter(
-                cls.channel_id == channel_id, message_id == message_id
-            )
+        query = select(cls).filter(
+            cls.channel_id == channel_id,
+            message_id == message_id
         )
-
+        query_result = await session.execute(query)
         return await query_result.one()
 
     @classmethod
@@ -170,7 +168,8 @@ class ABCMessage(Base):
         :return: messages that came after specified one.
         """
         query = select(cls).filter(
-            cls.channel_id == channel_id, cls.message_id > message_id
+            cls.channel_id == channel_id,
+            cls.message_id > message_id
         ).limit(MESSAGES_PER_REQUEST).order_by(cls.message_id.desc())
 
         if select_pinned_only:

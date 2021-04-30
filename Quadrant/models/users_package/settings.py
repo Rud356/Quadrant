@@ -9,7 +9,6 @@ from sqlalchemy.ext.mutable import MutableDict
 
 from Quadrant.models.db_init import Base
 from Quadrant.models.utils.common_settings_validators import COMMON_SETTINGS, DEFAULT_COMMON_SETTINGS_DICT
-from Quadrant.models.caching import FromCache
 
 if TYPE_CHECKING:
     from .user import User
@@ -71,11 +70,8 @@ class UsersAppSpecificSettings(Base):
         :param session: sqlalchemy session.
         :return: instance of app specific settings.
         """
-        settings = await (
-            await session.execute(
-                select(cls).options(FromCache("users_app_settings"))
-                .filter(cls.user_id == user.id, cls.app_id == app_id)
-            )
-        ).one()
+        query = select(cls).filter(cls.user_id == user.id, cls.app_id == app_id)
+        query_result = await session.execute(query)
+        settings = await query_result.one()
 
         return settings
