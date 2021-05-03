@@ -45,7 +45,7 @@ class GroupBan(Base):
     @staticmethod
     async def is_user_banned(group_id: UUID, user_id: users_package.User.id, *, session) -> bool:
         try:
-            # If user is banned - we can obtain ban information (most likely from cache)
+            # If participant is banned - we can obtain ban information (most likely from cache)
             await GroupBan.get_ban(group_id, user_id, session=session)
             return True
 

@@ -74,7 +74,7 @@ class ABCMessage(Base):
         if not (await channel.is_member(channel.id, author, session=session)):
             raise cls.common_exc.UserIsNotAMemberException("You're not a member of chat")
 
-        # Raises exception if this user can send a message
+        # Raises exception if this participant can send a message
         await cls.user_can_send_message_check(channel, author, session=session)
 
         if attached_file is None and len(text) == 0:
@@ -180,9 +180,9 @@ class ABCMessage(Base):
 
     async def delete_message_by_author(self, delete_by: users_package.User, *, session) -> None:
         """
-        Deletes message that been sent by exact user.
+        Deletes message that been sent by exact participant.
 
-        :param delete_by: the user that asked to delete message.
+        :param delete_by: the participant that asked to delete message.
         :param session: sqlalchemy session.
         :return: nothing (raises exceptions).
         """
@@ -243,6 +243,6 @@ class ABCMessage(Base):
     class common_exc:
         class UserIsNotAMemberException(PermissionError):
             """
-            Exception that represents that user isn't a channel member anymore.
+            Exception that represents that participant isn't a channel member anymore.
             """
             pass

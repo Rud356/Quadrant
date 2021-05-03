@@ -52,16 +52,16 @@ class QuadrantConfig(BaseConfig):
         pool_size = IntVar("Quadrant/db/pool_size", composite_loader, default=15, validator=lambda v: v >= 0)
         # Any keyword args for sqlalchemy engine
         kwargs = ConfigVar("Quadrant/db/kwargs", yaml_loader, default={})
-        pool_kwargs = ConfigVar("Quadrant/db/pool_kwargs", yaml_loader, default={})
 
         def __post_init__(self, *args, **kwargs):
+            self.kwargs.value.pop('pool_size', None)
+            self.kwargs.value.pop('poolclass', None)
             self.async_base_engine = create_async_engine(
                 self.db_uri.value,
-                **self.kwargs.value
+                poolclass=AsyncAdaptedQueuePool,
+                pool_size=self.pool_size.value,
+                ** self.kwargs.value
             )
-
-            self.pool_kwargs.value.pop('pool_size', None)
-            self.async_engine = AsyncAdaptedQueuePool(self.async_base_engine, pool_size=self.pool_size.value)
 
     class LoggingConfig(BaseConfig):
         logs_dir = ConfigVar(

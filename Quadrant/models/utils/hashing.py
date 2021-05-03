@@ -7,6 +7,6 @@ def hash_login(login: str) -> str:
 
 def hash_password(password: str, salt: str):
     # 64 digits is defined in auth table
-    hashing_algorithm = blake2b(digest_size=64, key=salt.encode('utf-8'))
+    hashing_algorithm = blake2b(digest_size=32, key=salt.encode('utf-8'))
     hashing_algorithm.update(password.encode('utf-8'))
     return hashing_algorithm.hexdigest()

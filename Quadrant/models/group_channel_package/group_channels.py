@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, declared_attr
+from sqlalchemy.orm import relationship
 
 from Quadrant.models import Base, users_package
 from .group_ban import GroupBan
@@ -15,30 +15,19 @@ from .group_invite import GroupInvite, InvitesExceptions
 from .group_message import GroupMessage
 from .group_participant import GroupParticipant
 
-GROUP_MEMBERS_LIMIT = 10
+MAX_GROUP_MEMBERS_COUNT = 10
 
 
 class GroupMessagesChannel(Base):
-    channel_id = Column(db_UUID, primary_key=True, default=uuid4, unique=True)
+    channel_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
     channel_name = Column(String(50), default="Untitled text_channel")
     owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     members = relationship(GroupParticipant, lazy='joined', cascade="all, delete-orphan")
     _bans = relationship(GroupBan, lazy='noload', cascade="all, delete-orphan")
-    _messages = relationship(
-        GroupMessage, lazy="noload", cascade="all, delete-orphan",
-        primaryjoin=lambda: GroupMessage.channel_id == GroupMessagesChannel.channel_id
-    )
-    invites = relationship(
-        GroupInvite, lazy='joined',
-        primaryjoin="""
-            and_(
-                GroupMessagesChannel.channel_id == models.GroupInvite,
-                models.GroupInvite.is_expired.is_(False)
-            )
-        """, cascade="all, delete-orphan"
-    )
+    _messages = relationship(GroupMessage, lazy="noload", cascade="all, delete-orphan")
+    _invites = relationship(GroupInvite, lazy='noload', cascade="all, delete-orphan")
 
     __tablename__ = "group_channels"
 
@@ -95,49 +84,52 @@ class GroupMessagesChannel(Base):
         await session.commit()
 
     async def add_invite(
-        self, expires_at: Optional[datetime] = None, users_limit: Optional[int] = 1, *, session
+        self, created_by: GroupParticipant,
+        expires_at: Optional[datetime] = None, users_limit: Optional[int] = 1, *, session
     ) -> GroupInvite:
-        if self.invites.count() > GROUP_MEMBERS_LIMIT:
-            raise InvitesExceptions.TooManyInvites("Too many invites for dm group")
+        if created_by.channel_id != self.channel_id:
+            raise PermissionError("User isn't a channel member")
 
-        if expires_at is None:
-            expires_at = datetime.utcnow() + timedelta(days=1)
-
-        elif datetime.utcnow() - expires_at < timedelta(minutes=5):
-            raise InvitesExceptions.TooShortLifespan("Invite must live at least 5 minutes")
-
-        if users_limit < 1:
-            raise InvitesExceptions.InvalidUsersLimitValue(
-                "You must have at least 1 user being able to use invite"
+        try:
+            new_invite = await GroupInvite.new_invite(
+                self.channel_id, created_by.user_id,
+                expires_at, users_limit, session=session
             )
 
-        new_invite = GroupInvite(
-            group_channel_id=self.channel_id,
-            expires_at=expires_at,
-            users_limit=users_limit
-        )
-
-        self.invites.append(new_invite)
-        await session.commit()
+        except OverflowError:
+            raise ValueError("User limit for group invite must be 32 bits number at max")
 
         return new_invite
 
-    async def delete_invite(self, invite_code: str, user: users_package.User, *, session) -> None:
-        if user.id != self.owner_id:
-            raise PermissionError("User can not delete invites")
+    async def delete_invite(self, invite_code: str, participant: GroupParticipant, *, session) -> None:
+        if participant.channel_id != self.channel_id:
+            raise self.exc.UserIsNotAMemberError("User isn't a channel member")
 
-        invite = await self.invites.filter(GroupInvite.invite_code == invite_code).one()
-        self.invites.remove(invite)
+        invite = await GroupInvite.get_invite_by_code(invite_code, session=session)
+        if participant.id != self.owner_id or invite.created_by_participant_id != participant.id:
+            raise self.exc.CanNotDeleteInviteError("User can not delete invites")
+
+        if invite.group_channel_id != self.channel_id:
+            raise ValueError("Invalid invite id")
+
+        session.delete(invite)
         await session.commit()
 
     @staticmethod
     async def use_join_via_invite(
         user_joining: users_package.User, invite_code: str, *, session
     ) -> GroupMessagesChannel:
-        group_invite: GroupInvite = await session.query(GroupInvite).filter(
-            GroupInvite.invite_code == invite_code,
-            not_(GroupInvite.is_expired)
+        group_invite: GroupInvite = await GroupInvite.get_invite_by_code(invite_code, session=session)
+
+        # Fetching number of users in channel to not let too many of them into group channel
+        group_members_count_query = select(GroupMessagesChannel.members_count).filter(
+            GroupMessagesChannel.channel_id == group_invite.group_channel_id
         )
+        group_members_count_query_result = await session.execute(group_members_count_query)
+        group_members_count = await group_members_count_query_result.scalar()
+
+        if group_members_count >= MAX_GROUP_MEMBERS_COUNT:
+            raise GroupMessagesChannel.exc.TooManyUsersError("There's already max number of users in group")
 
         if await GroupBan.is_user_banned(group_invite.group_channel_id, user_joining.id, session=session):
             raise GroupMessagesChannel.exc.UserIsBannedError("User has been banned")
@@ -206,4 +198,16 @@ class GroupMessagesChannel(Base):
             pass
 
         class UserIsBannedError(PermissionError):
+            pass
+
+        class TooManyUsersError(ValueError):
+            pass
+
+        class UserIsNotAMemberError(PermissionError):
+            pass
+
+        class UserIsNotAnOwnerError(PermissionError):
+            pass
+
+        class CanNotDeleteInviteError(PermissionError):
             pass

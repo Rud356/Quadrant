@@ -1,5 +1,5 @@
 class BlockedByOtherParticipantException(PermissionError):
     """
-    Represents that user can not dm other user because he was blocked.
+    Represents that participant can not dm other participant because he was blocked.
     """
     pass

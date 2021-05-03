@@ -8,9 +8,8 @@ defaults = {
             "media_folder_location": "./media",
 
             "db": {
-                "db_uri": "postgresql+asyncpg://user:pass@hostname/quadrant_chat?prepared_statement_cache_size=1000",
+                "db_uri": "postgresql+asyncpg://participant:pass@hostname/quadrant_chat?prepared_statement_cache_size=1000",
                 "pool_size": 15,
-                "pool_kwargs": {},
                 "kwargs": {},
             },
 

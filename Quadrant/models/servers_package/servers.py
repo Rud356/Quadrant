@@ -23,7 +23,7 @@ class Server(Base):
     name = Column(String(50), nullable=False)
     owner_id = Column(ForeignKey('users_package.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    server_id = Column(db_UUID, primary_key=True, default=uuid4)
+    server_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     _bans = relationship(ServerBan, lazy="noload", cascade="all, delete-orphan")
     _members = relationship(ServerMember, lazy="noload", cascade="all, delete-orphan")

@@ -14,7 +14,7 @@ from .dm_messages import DM_Message
 
 
 class DirectMessagesChannel(Base):
-    channel_id = Column(db_UUID, primary_key=True, default=uuid4)
+    channel_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     participants = relationship(DMParticipant, lazy='joined', cascade="all, delete-orphan")
     __tablename__ = "dm_channels"
@@ -30,7 +30,7 @@ class DirectMessagesChannel(Base):
         """
         Gives other participant instance.
 
-        :param requester_user: user that asks for instance of other participant.
+        :param requester_user: participant that asks for instance of other participant.
         :return: DMParticipant instance.
         """
         participant = await self.participants.filter(DMParticipant.user_id != requester_user.id).one()
@@ -41,8 +41,8 @@ class DirectMessagesChannel(Base):
         """
         Initializes new dm channel.
 
-        :param initiator: user who initiates dm channel.
-        :param with_user: user instance with whom we create dm channel.
+        :param initiator: participant who initiates dm channel.
+        :param with_user: participant instance with whom we create dm channel.
         :param session: sqlalchemy session.
         :return: new dm channel instance.
         """
@@ -63,7 +63,7 @@ class DirectMessagesChannel(Base):
         """
         Gives exact dm channel
         :param channel_id: channel id.
-        :param requester: user instance of someone who asks for channel.
+        :param requester: participant instance of someone who asks for channel.
         :param session: sqlalchemy session.
         :return:
         """
@@ -89,8 +89,8 @@ class DirectMessagesChannel(Base):
         """
         Gets channel by participants and in case it wasn't found - creates new one.
 
-        :param requester: user instance of someone who asks for channel.
-        :param with_user: user instance with whom we want to get channel in too.
+        :param requester: participant instance of someone who asks for channel.
+        :param with_user: participant instance with whom we want to get channel in too.
         :param session: sqlalchemy session.
         :return: dm channel.
         """
@@ -98,7 +98,7 @@ class DirectMessagesChannel(Base):
             return await cls.get_channel_by_participants(requester, with_user, session=session)
 
         except NoResultFound:
-            # TODO: add check on if user wants to add dms with anyone
+            # TODO: add check on if participant wants to add dms with anyone
             return await cls.create_channel(requester, with_user, session=session)
 
     @staticmethod
@@ -109,8 +109,8 @@ class DirectMessagesChannel(Base):
         Checks if participants have channel.
 
         :param cls: DirectMessagesChannel class.
-        :param requester: user instance of someone who asks for channel.
-        :param with_user: user instance with whom we want to get channel in too.
+        :param requester: participant instance of someone who asks for channel.
+        :param with_user: participant instance with whom we want to get channel in too.
         :param session: sqlalchemy session.
         :return: dm channel.
         """
@@ -126,8 +126,8 @@ class DirectMessagesChannel(Base):
         Gives query that helps finding channels where both participants are in.
 
         :param cls: DirectMessagesChannel class.
-        :param requester: user instance of someone who asks for channel.
-        :param with_user: user instance with whom we want to get channel in too.
+        :param requester: participant instance of someone who asks for channel.
+        :param with_user: participant instance with whom we want to get channel in too.
         :return: sqlalchemy query.
         """
         return select(cls).filter(
@@ -139,12 +139,12 @@ class DirectMessagesChannel(Base):
     @staticmethod
     async def is_member(channel_id: UUID, user: users_package.User, *, session) -> bool:
         """
-        Checks if user is member of this channel.
+        Checks if participant is member of this channel.
 
         :param channel_id: channel id.
-        :param user: user instance of someone who asks for channel.
+        :param user: participant instance of someone who asks for channel.
         :param session: sqlalchemy session.
-        :return: bool value representing if user is a member.
+        :return: bool value representing if participant is a member.
         """
         exists_query = select(DMParticipant).filter(
             DMParticipant.user_id == user.id,

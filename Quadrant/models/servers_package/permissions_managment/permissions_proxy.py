@@ -20,9 +20,9 @@ class TextChannelsPermissionsProxy:
     async def get_permissions(self) -> Union[AbstractTextChannelPermissions, PermissionsSet]:
         """
         Looking up for users_package permissions in order:
-        Is user admin?
-        Does user have any overwrites on that channel?
-        First found overwrite for role from those that user has (ordered by roles position).
+        Is participant admin?
+        Does participant have any overwrites on that channel?
+        First found overwrite for role from those that participant has (ordered by roles position).
         Default permissions.
 
         :return: permissions set (has all fields of TextChannelPermissions).

@@ -6,7 +6,10 @@ from sqlalchemy.exc import IntegrityError
 from Quadrant.config import quadrant_config
 
 Base = declarative_base()
-Session = sessionmaker(quadrant_config.DBConfig.async_engine, expire_on_commit=False, class_=AsyncSession)
+Session = sessionmaker(
+    quadrant_config.DBConfig.async_base_engine,
+    expire_on_commit=False, class_=AsyncSession,
+)
 
 
 def async_session(f):

@@ -7,7 +7,6 @@ from uuid import UUID
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
 from sqlalchemy.exc import IntegrityError
 
-from Quadrant.models.caching import FromCache, caching_environment
 from Quadrant.models.db_init import Base
 
 if TYPE_CHECKING:
@@ -29,9 +28,9 @@ class UserSession(Base):
     @staticmethod
     def user_session_query(user_id: UUID):
         """
-        Gives prepared base for querying sessions of exact user with id.
+        Gives prepared base for querying sessions of exact participant with id.
 
-        :param user_id: user id of one user, whose sessions we must get.
+        :param user_id: participant id of one participant, whose sessions we must get.
         :return: sqlalchemy query.
         """
         return select(UserSession).filter(
@@ -44,10 +43,10 @@ class UserSession(Base):
         """
         Creates new session.
 
-        :param user: user instance for whom we create session.
+        :param user: participant instance for whom we create session.
         :param ip_address: session ip address from which we got authorization request.
         :param session: sqlalchemy session.
-        :return: new user session.
+        :return: new participant session.
         """
         user_session = UserSession(user_id=user.id, ip_address=ip_address)
         session.add(user_session)
@@ -60,7 +59,7 @@ class UserSession(Base):
         """
         Gives exact session.
 
-        :param user_id: user id of one user, whose sessions we must get.
+        :param user_id: participant id of one participant, whose sessions we must get.
         :param session_id: id of exact session.
         :param session: sqlalchemy session.
         :return: session instance.
@@ -79,7 +78,7 @@ class UserSession(Base):
         """
         Gives one page of sessions or empty list.
 
-        :param user_id: user id of one user, whose sessions we must get.
+        :param user_id: participant id of one participant, whose sessions we must get.
         :param session: sqlalchemy session.
         :return: session instances tuple.
         """
@@ -100,10 +99,10 @@ class UserSession(Base):
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
         """
-        Terminates all sessions started by that user. Can be used in case user got hacked and wants to nullify
+        Terminates all sessions started by that participant. Can be used in case participant got hacked and wants to nullify
         access to his account.
 
-        :param user_id: user id of one user, whose sessions we must get
+        :param user_id: participant id of one participant, whose sessions we must get
         :param session: sqlalchemy session.
         :return: session instances tuple.
         """

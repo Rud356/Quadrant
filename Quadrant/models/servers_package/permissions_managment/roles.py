@@ -37,7 +37,7 @@ class ServerRole(Base):
         except (OverflowError, exc.NoResultFound):
             raise ValueError("No such role")
 
-    # TODO: make safe method with permission checking so user doesn't edits higher roles
+    # TODO: make safe method with permission checking so participant doesn't edits higher roles
     async def _edit_role_permissions(self, *permissions_names_to_change: str, session) -> None:
         anything_changed = False
         for permission_id in permissions_names_to_change:

@@ -17,7 +17,7 @@ from .user import User
 class UserInternalAuthorization(Base):
     record_id = Column(BigInteger, primary_key=True)
     user_id = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
-    internal_token = Column(String(128), default=generate_internal_token, index=True, nullable=False)
+    internal_token = Column(String(128), index=True, nullable=False)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
     password = Column(String(64), nullable=True)
@@ -40,9 +40,13 @@ class UserInternalAuthorization(Base):
         with ProcessPoolExecutor(25) as pool_exec:
             loop = get_running_loop()
             password = await loop.run_in_executor(pool_exec, hash_password, password, salt)
+            internal_token = await loop.run_in_executor(pool_exec, generate_internal_token)
 
         user = User(username=username)
-        user_auth = UserInternalAuthorization(login=login, password=password, salt=salt, user=user)
+        user_auth = UserInternalAuthorization(
+            login=login, password=password, internal_token=internal_token,
+            salt=salt, user=user
+        )
 
         session.add(user_auth)
         await session.commit()

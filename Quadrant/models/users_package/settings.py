@@ -63,9 +63,9 @@ class UsersAppSpecificSettings(Base):
     @classmethod
     async def get_app_specific_settings(cls, user: User, app_id: str, *, session):
         """
-        Gives app settings for specific user.
+        Gives app settings for specific participant.
 
-        :param user: user instance of the one, who requests those.
+        :param user: participant instance of the one, who requests those.
         :param app_id: string with max length of 50 symbols.
         :param session: sqlalchemy session.
         :return: instance of app specific settings.

@@ -5,7 +5,7 @@ from typing import List
 from uuid import UUID, uuid4
 
 from tornado.log import gen_log
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, and_, select
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, ForeignKey, and_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.orm import relationship
 
@@ -18,7 +18,7 @@ MAX_OWNED_BOTS = 20
 
 
 class User(Base):
-    id = Column(db_UUID, primary_key=True, default=uuid4, unique=True)
+    id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
     color_id = Column(Integer, default=generate_random_color, nullable=False)
     username = Column(String(length=50), nullable=False)
     status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
@@ -28,21 +28,18 @@ class User(Base):
     is_bot = Column(Boolean, nullable=False, default=False)
     is_banned = Column(Boolean, nullable=False, default=False)
 
-    bot_owner_id = Column(db_UUID, nullable=True)
+    bot_owner_id = Column(ForeignKey("users.id"), nullable=True)
     users_common_settings: UsersCommonSettings = relationship(
         UsersCommonSettings, lazy='joined', uselist=False, cascade="all, delete-orphan"
     )
-    _owned_bots = relationship(
-        "User", primaryjoin="and_(User.is_bot.is_(True), User.id == User.bot_owner_id)",
-        cascade="all, delete-orphan", lazy='noload'
-    )
+    _owned_bots = relationship("User", cascade="all, delete-orphan", lazy='noload')
     _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
 
     __tablename__ = "users"
 
     async def set_username(self, username: str, *, session) -> None:
         """
-        Sets user a new username.
+        Sets participant a new username.
 
         :param username: new username that was validated on previous stage.
         :param session: sqlalchemy session.
@@ -55,7 +52,7 @@ class User(Base):
 
     async def set_status(self, status: str, *, session) -> None:
         """
-        Sets user a new status.
+        Sets participant a new status.
 
         :param status: one of string names from Quadrant.models.users_package.users_status.UsersStatus enum.
         :param session: sqlalchemy session.
@@ -70,7 +67,7 @@ class User(Base):
 
     async def set_text_status(self, text_status: str, *, session) -> None:
         """
-        Sets user a new text status.
+        Sets participant a new text status.
 
         :param text_status:
         :param session: sqlalchemy session.
@@ -84,9 +81,9 @@ class User(Base):
 
     async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
         """
-        Gives specific bot that belongs to user by bots id.
+        Gives specific bot that belongs to participant by bots id.
 
-        :param bot_id: bots id that user wants to get and owns.
+        :param bot_id: bots id that participant wants to get and owns.
         :param session: sqlalchemy session.
         :return: nothing.
         """
@@ -104,7 +101,7 @@ class User(Base):
 
     async def get_owned_bots(self, *, session) -> List[User]:
         """
-        Gives a list of bot users that belong to user.
+        Gives a list of bot users that belong to participant.
 
         :param session: sqlalchemy session.
         :return: list of User instances, that are bots belonging to requester.
@@ -128,7 +125,7 @@ class User(Base):
     async def get_app_specific_settings(self, app_id: str, *, session) -> UsersAppSpecificSettings:
         """
         Gives an instance of settings on specific application that users uses.
-        This is basically an key-value storage for user to have any sort of configs for his apps.
+        This is basically an key-value storage for participant to have any sort of configs for his apps.
 
         :param app_id: application id (can be string with max length of 50 and not 0 symbols)
         :param session: sqlalchemy session.
@@ -137,7 +134,7 @@ class User(Base):
         settings = await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
 
         if settings is None:
-            gen_log.debug(f"App with id {app_id} not found for that user")
+            gen_log.debug(f"App with id {app_id} not found for that participant")
 
         return settings
 
@@ -146,13 +143,13 @@ class User(Base):
         cls, user_id: UUID, *, session, filter_banned: bool = True, filter_bots: bool = False
     ) -> User:
         """
-        Gives an user by specific id.
+        Gives an participant by specific id.
 
-        :param user_id: id of user someone wants to get.
+        :param user_id: id of participant someone wants to get.
         :param session: sqlalchemy session.
         :param filter_banned: flag that shows if we must include banned users.
         :param filter_bots: flag that shows if we must include bots.
-        :return: user instance.
+        :return: participant instance.
         """
         user_query = select(cls).filter(cls.id == user_id)
 
