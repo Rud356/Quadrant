@@ -5,8 +5,8 @@ from sqlalchemy import exc
 from Quadrant.migrations import db_utils
 from Quadrant.models import users_package
 from Quadrant.models.db_init import async_session
-from .datasets import create_user
-from .utils import clean_tests_folders, make_async_call
+from tests.datasets import create_user
+from tests.utils import clean_tests_folders, make_async_call
 
 
 class TestUserInDBCreation(unittest.TestCase):

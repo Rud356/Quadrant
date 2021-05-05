@@ -1,7 +1,6 @@
-from Quadrant.models import db_init
-from Tests.utils import make_async_call
-from Quadrant.models import users_package, dm_channel_package, group_channel_package  # noqa: inits models
 from Quadrant.config import quadrant_config
+from Quadrant.models import db_init, dm_channel_package, group_channel_package, users_package  # noqa: inits models
+from tests.utils import make_async_call
 
 metadata = db_init.Base.metadata
 

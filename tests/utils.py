@@ -16,5 +16,5 @@ def make_async_call(f):
 
 
 def clean_tests_folders():
-    rmtree(quadrant_config.static_folder_location.value)
-    rmtree(quadrant_config.media_folder_location.value)
+    rmtree(quadrant_config.static_folder_location.value, ignore_errors=True)
+    rmtree(quadrant_config.media_folder_location.value, ignore_errors=True)

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package.relations_types import UsersRelationType
+from Quadrant.models.users_package.users_status import UsersStatus
 from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
@@ -36,7 +37,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def get_any_relationships_status_with(
-            user_id: User.id, with_user_id: User.id, *, session
+        user_id: User.id, with_user_id: User.id, *, session
     ) -> UsersRelationType:
         """
         Gives relationship status between any of two users.
@@ -51,7 +52,7 @@ class UsersRelations(Base):
                 UsersRelations.any_user_initialized_relationship(user_id, with_user_id)
             )
         )
-        relation = await relation_result.scalar_one_or_none()
+        relation = relation_result.scalar()
 
         if relation is None:
             return UsersRelationType.none
@@ -60,7 +61,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def get_exact_relationship_with_user(
-            user: User, with_user_id: User.id, *, session: AsyncSession
+        user: User, with_user_id: User.id, *, session: AsyncSession
     ) -> Tuple[UsersRelations, User]:
         """
         Gives exact relationship depending of who is requester. Needed for cases when we want unblock other participant
@@ -96,7 +97,7 @@ class UsersRelations(Base):
             UsersRelations.relation_with_id == with_user_id
         )
         result = await session.execute(query)
-        relation = await result.one_or_none()
+        relation = result.scalar_one_or_none()
 
         return relation
 
@@ -115,7 +116,7 @@ class UsersRelations(Base):
             UsersRelations.relation_with_id == with_user_id
         )
         query_result = await session.execute(query)
-        relation = await query_result.scalar_one_or_none()
+        relation = query_result.scalar_one_or_none()
 
         if relation is None:
             return UsersRelationType.none
@@ -131,7 +132,7 @@ class UsersRelations(Base):
 
         :param user: participant instance of someone who asks for this.
         :param page: page number.
-        :param relationship_type: filter by relationship type.
+        :param relationship_type: filter by type of requester to other user relation.
         :param session: sqlalchemy session.
         :return: relationship status and User instance with whom we have it.
         """
@@ -139,24 +140,29 @@ class UsersRelations(Base):
             raise ValueError("Invalid page")
 
         query = select(UsersRelations.relation_status, User).filter(
-            or_(
-                UsersRelations.initiator_id == user.id,
-                UsersRelations.relation_with_id == user.id
-            ),
-            UsersRelations.relation_status.is_(relationship_type)
+            UsersRelations.initiator_id == user.id,
+            UsersRelations.relation_status == relationship_type
         ).join(User, User.id != user.id) \
-            .limit(UsersRelations).offset(USERS_RELATIONS_PER_PAGE * page) \
-            .order_by(User.username)
+            .limit(USERS_RELATIONS_PER_PAGE).offset(USERS_RELATIONS_PER_PAGE * page) \
+            .order_by(
+                User.status == UsersStatus.online,
+                User.status == UsersStatus.away,
+                User.status == UsersStatus.asleep,
+                User.status == UsersStatus.offline,
+                User.username
+            )
 
         result = await session.execute(query)
-        relations = result.scalars().all()
+        relations = result.all()
 
-        return tuple(  # noqa: sqlalchemy objects
-            ((relation_status, relation_with) for relation_status, relation_with in relations)
-        )
+        packed_relations = []
+        for relation, user in relations:
+            packed_relations.append((relation, user))
+
+        return relations
 
     @staticmethod
-    async def add_friend_request(request_from: User, request_to: User, *, session) -> None:
+    async def send_friend_request(request_from: User, request_to: User, *, session) -> None:
         """
         Sending friend request to someone.
 
@@ -166,17 +172,20 @@ class UsersRelations(Base):
         :return: nothing (raises exception if something's wrong).
         """
         relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
-            request_from, request_to.id, session=session
+            request_from.id, request_to.id, session=session
         )
+
+        if request_to.id == request_from.id:
+            raise ValueError("User can not become friend with himself")
 
         if relationships_status == UsersRelationType.none:
             friend_request_outgoing = UsersRelations(
                 initiator_id=request_from.id, relation_with_id=request_to.id,
-                relationships_status=UsersRelationType.friend_request_sender
+                relation_status=UsersRelationType.friend_request_sender
             )
             friend_request_incoming = UsersRelations(
                 initiator_id=request_to.id, relation_with_id=request_from.id,
-                relationships_status=UsersRelationType.friend_request_receiver
+                relation_status=UsersRelationType.friend_request_receiver
             )
 
             session.add_all([friend_request_outgoing, friend_request_incoming])
@@ -186,22 +195,52 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationship type")
 
     @staticmethod
-    async def respond_on_friend_request(from_user: User, to_user_id: User.id, accept_request: bool, *, session) -> None:
+    async def cancel_friend_request(canceller: User, friend_request_to: User, *, session) -> None:
         """
-        Responds on friend request by adding a new friend or cancelling request.
+        Cancels sent friend request.
+
+        :param canceller: user that received friend request.
+        :param friend_request_to: user id of someone who authored request.
+        :param session: sqlalchemy session.
+        :return: nothing (raises exception if something's wrong).
+        """
+        relationships_status: UsersRelationType = await UsersRelations.get_exact_relationship_status(
+            canceller.id, friend_request_to.id, session=session
+        )
+
+        if relationships_status != UsersRelationType.friend_request_sender:
+            raise UsersRelations.exc.RelationshipsException("You can not cancel not existing friend request")
+
+        users_relations_query = UsersRelations.any_user_initialized_relationship(canceller.id, friend_request_to.id)
+        query = delete(UsersRelations).where(
+            and_(
+                users_relations_query,
+                UsersRelations.relation_status.in_(
+                    [UsersRelationType.friend_request_receiver, UsersRelationType.friend_request_sender]
+                )
+            )
+        ).execution_options(synchronize_session="fetch")
+
+        await session.execute(query)
+        await session.commit()
+
+    @staticmethod
+    async def respond_on_friend_request(from_user: User, to_user: User, accept_request: bool, *, session) -> None:
+        """
+        Responds on friend request by adding a new friend or rejecting request.
 
         :param from_user: participant that received friend request.
-        :param to_user_id: participant id of someone who authored request.
+        :param to_user: participant id of someone who authored request.
         :param accept_request: bool flag that shows that request was accepted or not.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
         relationships_status: UsersRelationType = await UsersRelations.get_exact_relationship_status(
-            to_user_id, from_user.id, session=session
+            to_user.id, from_user.id, session=session
         )
 
         if relationships_status == UsersRelationType.friend_request_receiver:
-            users_relations_query = UsersRelations.any_user_initialized_relationship(from_user.id, to_user_id)
+            users_relations_query = UsersRelations.any_user_initialized_relationship(from_user.id, to_user.id)
 
             if accept_request:
                 query = update(UsersRelations).where(users_relations_query).values(
@@ -211,10 +250,44 @@ class UsersRelations(Base):
 
             else:
                 query = delete(UsersRelations).where(
-                    users_relations_query
+                    and_(
+                        users_relations_query,
+                        UsersRelations.relation_status.in_(
+                            [UsersRelationType.friend_request_receiver, UsersRelationType.friend_request_sender]
+                        )
+                    )
                 ).execution_options(synchronize_session="fetch")
                 await session.execute(query)
 
+            await session.commit()
+
+        else:
+            raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
+
+    @staticmethod
+    async def remove_user_from_friends(from_user: User, to_user: User, *, session) -> None:
+        """
+        Removes friend from friend list if he's in or if user isn't in - raises error.
+
+        :param from_user: participant that received friend request.
+        :param to_user: participant id of someone who authored request.
+        :param session: sqlalchemy session.
+        :return: nothing (raises exception if something's wrong).
+        """
+        relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
+            to_user.id, from_user.id, session=session
+        )
+
+        if relationships_status == UsersRelationType.friends:
+            users_relations_query = UsersRelations.any_user_initialized_relationship(from_user.id, to_user.id)
+            query = delete(UsersRelations).where(
+                and_(
+                    users_relations_query,
+                    UsersRelations.relation_status == UsersRelationType.friends
+                )
+            ).execution_options(synchronize_session="fetch")
+
+            await session.execute(query)
             await session.commit()
 
         else:
@@ -225,7 +298,8 @@ class UsersRelations(Base):
         """
         Destroys friends relationship, requester or receiver of friend request and sets relationship status, that
         initiated by blocking_by participant, to UsersRelationType.blocked.
-        Must not remove all relationships to be able keep other's participant possible block relationship still existing.
+        Must not remove all relationships to be able keep other's participant
+        possible block relationship still existing.
 
         :param blocking_by: participant instance of someone who blocks other participant.
         :param blocking_user: participant instance of someone who blocking_by participant wants to block.
@@ -233,11 +307,14 @@ class UsersRelations(Base):
         :return: updated or relationship, initialized by blocking_by.
         """
         # There only max of two relations and we should make sure that we're not unblocking someone unintentionally
+        if blocking_user.id == blocking_by.id:
+            raise ValueError("Can not block yourself")
+
         initialized_by_blocker: UsersRelations = await UsersRelations.get_exact_relationship(
-            blocking_by, blocking_user, session=session
+            blocking_by.id, blocking_user.id, session=session
         )
         initialized_by_blocking_user: UsersRelations = await UsersRelations.get_exact_relationship(
-            blocking_user, blocking_by, session=session
+            blocking_user.id, blocking_by.id, session=session
         )
 
         if initialized_by_blocker is None:
@@ -249,7 +326,7 @@ class UsersRelations(Base):
             session.add(initialized_by_blocker)
 
         elif initialized_by_blocker.relation_status == UsersRelationType.blocked:
-            raise ValueError("User is already blocked")
+            raise UsersRelations.exc.AlreadyBlockedException("User is already blocked")
 
         else:
             initialized_by_blocker.relation_status = UsersRelationType.blocked
@@ -258,7 +335,7 @@ class UsersRelations(Base):
             (initialized_by_blocking_user is not None) and
             (initialized_by_blocking_user.relation_status != UsersRelationType.blocked)
         ):
-            session.delete(initialized_by_blocking_user)
+            await session.delete(initialized_by_blocking_user)
 
         await session.commit()
         return initialized_by_blocker
@@ -274,7 +351,7 @@ class UsersRelations(Base):
         :return: nothing (may raise exceptions).
         """
         relation = await UsersRelations.get_exact_relationship_status(
-            user_unblock_initializer, unblocking_user.id, session=session
+            user_unblock_initializer.id, unblocking_user.id, session=session
         )
 
         if relation != UsersRelationType.blocked:
@@ -300,4 +377,7 @@ class UsersRelations(Base):
             """
             One participant blocked another and so anything beside blocking each other can not be performed.
             """
+            pass
+
+        class AlreadyBlockedException(BlockedRelationshipException):
             pass

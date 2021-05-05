@@ -5,8 +5,8 @@ from sqlalchemy import exc
 
 from Quadrant.models.db_init import Session
 from Quadrant.models.utils.common_settings_validators import DEFAULT_COMMON_SETTINGS_DICT
-from .datasets import create_user, async_init_db, async_drop_db
-from .utils import clean_tests_folders, make_async_call
+from tests.datasets import create_user, async_init_db, async_drop_db
+from tests.utils import clean_tests_folders, make_async_call
 
 
 class TestUsersFunctionality(unittest.TestCase):
@@ -93,4 +93,3 @@ class TestUsersFunctionality(unittest.TestCase):
     async def tearDownClass(cls) -> None:
         clean_tests_folders()
         await async_drop_db()
-        await cls.session.close()  # noqa: setted in setUpClass

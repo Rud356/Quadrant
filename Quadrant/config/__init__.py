@@ -67,6 +67,7 @@ class QuadrantConfig(BaseConfig):
         def __post_init__(self, *args, **kwargs):
             self.kwargs.value.pop('pool_size', None)
             self.kwargs.value.pop('poolclass', None)
+
             self.async_base_engine = create_async_engine(
                 self.db_uri.value,
                 poolclass=AsyncAdaptedQueuePool,

@@ -19,3 +19,4 @@ async def async_init_db():
 async def async_drop_db():
     async with quadrant_config.DBConfig.async_base_engine.begin() as conn:
         await conn.run_sync(db_utils.metadata.drop_all)
+        await conn.commit()
