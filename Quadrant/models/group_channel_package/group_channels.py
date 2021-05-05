@@ -20,7 +20,7 @@ MAX_GROUP_MEMBERS_COUNT = 10
 
 class GroupMessagesChannel(Base):
     channel_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
-    channel_name = Column(String(50), default="Untitled text_channel")
+    channel_name = Column(String(50), default="Untitled text channel")
     owner_id = Column(ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 

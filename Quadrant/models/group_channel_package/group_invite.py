@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import Optional
 from datetime import datetime, timedelta
 from math import ceil
 from secrets import token_urlsafe
-
+from typing import Optional
 from uuid import UUID
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, select, and_, or_, not_
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, not_, or_, select, ForeignKeyConstraint
 
 from Quadrant.models.db_init import Base
+from .group_participant import GroupParticipant
 
 GROUP_INVITES_LIMIT = 25
 INVITE_CODE_BIT_LENGTH = 12
@@ -35,13 +36,19 @@ class GroupInvite(Base):
         default=lambda: token_urlsafe(INVITE_CODE_BIT_LENGTH), primary_key=True
     )
     group_channel_id = Column(ForeignKey('group_channels.channel_id'), index=True, nullable=False)
-    created_by_participant_id = Column(ForeignKey("group_channel_participants.user_id"))
+    created_by_participant_id = Column(ForeignKey("users.id"))
 
     expires_at = Column(DateTime(), default=lambda: datetime.utcnow() + timedelta(days=1))
     users_limit = Column(Integer(), default=10)
     users_used_invite = Column(Integer(), default=0)
 
     __tablename__ = "group_invites"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            (group_channel_id, created_by_participant_id),
+            (GroupParticipant.channel_id, GroupParticipant.user_id), name="fk_participants"
+        ),
+    )
 
     @property
     def is_expired(self):

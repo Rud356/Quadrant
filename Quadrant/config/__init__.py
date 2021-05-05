@@ -1,4 +1,5 @@
 import logging
+from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
 from sys import exit
@@ -11,10 +12,20 @@ from sqlalchemy.pool import AsyncAdaptedQueuePool
 from Quadrant.config import casters, validators
 from Quadrant.config.defaults import defaults
 
-yaml_path = Path(__file__).parent / "config.yaml"
+parser = ArgumentParser()
+parser.add_argument(
+    "--config", "-c", action="store", dest="config_path",
+    default=Path(__file__).parent / "config.yaml", type=Path
+)
+parser.add_argument("--make-config", "--new-config", action="store_true", dest="create_config", default=False)
 
-if not yaml_path.is_file():
-    # Init config
+launch_args = parser.parse_args()
+if not launch_args.config_path.is_file() and not launch_args.create_config:
+    raise ValueError("[--config] launch argument accepts path to config file only")
+
+yaml_path = launch_args.config_path
+
+if launch_args.create_config:
     yaml_path.touch()
     yaml_loader = loaders.YAMLLoader(data=defaults, defaults={}, config_path=yaml_path)
     yaml_loader.dump()
@@ -60,7 +71,7 @@ class QuadrantConfig(BaseConfig):
                 self.db_uri.value,
                 poolclass=AsyncAdaptedQueuePool,
                 pool_size=self.pool_size.value,
-                ** self.kwargs.value
+                **self.kwargs.value
             )
 
     class LoggingConfig(BaseConfig):
