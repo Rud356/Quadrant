@@ -92,4 +92,5 @@ class TestUsersFunctionality(unittest.TestCase):
     @make_async_call
     async def tearDownClass(cls) -> None:
         clean_tests_folders()
+        await async_drop_db()
         await cls.session.close()  # noqa: setted in setUpClass

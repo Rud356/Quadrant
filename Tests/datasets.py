@@ -2,6 +2,7 @@ from Quadrant.models import users_package
 from Quadrant.config import quadrant_config
 from Quadrant.migrations import db_utils
 
+
 async def create_user(
     username: str, login: str, password: str, session
 ) -> users_package.user_auth.UserInternalAuthorization:

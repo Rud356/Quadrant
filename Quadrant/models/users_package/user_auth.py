@@ -36,12 +36,11 @@ class UserInternalAuthorization(Base):
     ) -> UserInternalAuthorization:
         login = hash_login(login)
         salt = token_urlsafe(30)
-
-        with ProcessPoolExecutor(25) as pool_exec:
-            loop = get_running_loop()
-            password = await loop.run_in_executor(pool_exec, hash_password, password, salt)
-            internal_token = await loop.run_in_executor(pool_exec, generate_internal_token)
-
+        # Somehow without async loops it runs way faster than with
+        # When was ran locally through ProcessPoolExecutor 3 users were created in 4 seconds
+        # while in sync mode just 300ms
+        password = hash_password(password, salt)
+        internal_token = generate_internal_token()
         user = User(username=username, users_common_settings=UsersCommonSettings())
         user_auth = UserInternalAuthorization(
             login=login, password=password, internal_token=internal_token,
