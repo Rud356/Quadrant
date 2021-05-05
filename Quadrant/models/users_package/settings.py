@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Dict, Any
 from contextlib import suppress
 
 from sqlalchemy import BigInteger, ForeignKey, Column, and_, or_, String, select
@@ -8,7 +8,9 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
 from Quadrant.models.db_init import Base
-from Quadrant.models.utils.common_settings_validators import COMMON_SETTINGS, DEFAULT_COMMON_SETTINGS_DICT
+from Quadrant.models.utils.common_settings_validators import (
+    COMMON_SETTINGS, DEFAULT_COMMON_SETTINGS_DICT, CommonSettingsValidator
+)
 
 if TYPE_CHECKING:
     from .user import User
@@ -32,21 +34,23 @@ class UsersCommonSettings(Base):
             await session.commit()
             return default_value
 
-    async def update_settings(self, *, settings: dict, session) -> dict:
+    async def update_settings(self, *, settings: Dict[str, Any], session) -> Dict[str, Dict[str, Any]]:
         # Validate settings values
         updated_settings = {}
 
-        for settings_validator in COMMON_SETTINGS:
+        for key in set(settings.keys()) & set(COMMON_SETTINGS.keys()):
             with suppress(ValueError, KeyError):
-                value = settings[settings_validator.key]
-                settings_validator.validate(value)
-                self.common_settings[settings_validator.key] = value
+                validator: CommonSettingsValidator = COMMON_SETTINGS[key]
+                value = settings[key]
+                validator.validate(value)
+                updated_settings[key] = value
+                self.common_settings[key] = value
 
         if not updated_settings:
             raise ValueError("No settings was updated")
 
         await session.commit()
-        return {"updated_settings": tuple(updated_settings.keys())}
+        return {"updated_settings": updated_settings}
 
 
 class UsersAppSpecificSettings(Base):
@@ -72,6 +76,6 @@ class UsersAppSpecificSettings(Base):
         """
         query = select(cls).filter(cls.user_id == user.id, cls.app_id == app_id)
         query_result = await session.execute(query)
-        settings = await query_result.one()
+        settings = await query_result.scalar_one()
 
         return settings

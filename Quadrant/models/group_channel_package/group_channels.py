@@ -32,7 +32,7 @@ class GroupMessagesChannel(Base):
     __tablename__ = "group_channels"
 
     async def leave_group(self, user_leaving: users_package.User, *, session) -> None:
-        member = await self.members.filter(GroupParticipant.user_id == user_leaving.id).one()
+        member = self.members.filter(GroupParticipant.user_id == user_leaving.id).scalar_one()
         self.members.remove(member)
         await session.commit()
 
@@ -43,7 +43,7 @@ class GroupMessagesChannel(Base):
         if kicking_user == kicked_by.id:
             raise ValueError("User can not kick himself")
 
-        member = await self.members.filter(GroupParticipant.user_id == kicking_user).one()
+        member = self.members.filter(GroupParticipant.user_id == kicking_user).scalar_one()
         self.members.remove(member)
         await session.commit()
 
@@ -56,7 +56,7 @@ class GroupMessagesChannel(Base):
         if banning_user == banned_by.id:
             raise ValueError("User can not ban himself")
 
-        member = await self.members.filter(GroupParticipant.user_id == banning_user).one()
+        member = self.members.filter(GroupParticipant.user_id == banning_user).scalar_one()
         new_ban = GroupBan(reason=reason, group_id=self.channel_id, banned_user_id=banning_user)
 
         session.add(new_ban)
@@ -78,7 +78,7 @@ class GroupMessagesChannel(Base):
         if user_transferring.id != self.owner_id:
             raise PermissionError("User isn't delete_by of group dm")
 
-        member = await self.members.filter(GroupParticipant.user_id == other_member_id).one()
+        member = await self.members.filter(GroupParticipant.user_id == other_member_id).scalar_one()
         self.owner_id = member.id
 
         await session.commit()
@@ -162,7 +162,7 @@ class GroupMessagesChannel(Base):
     async def get_group_channel(cls, channel_id: UUID, *, session):
         query = select(cls).filter(cls.channel_id == channel_id)
         query_result = await session.execute(query)
-        return await query_result.one()
+        return await query_result.scalar_one()
 
     @classmethod
     async def create_group_channel(cls, channel_name: str, owner: users_package.User, *, session):

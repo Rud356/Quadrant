@@ -107,7 +107,7 @@ class ABCMessage(Base):
             message_id == message_id
         )
         query_result = await session.execute(query)
-        return await query_result.one()
+        return query_result.scalar_one()
 
     @classmethod
     async def get_last_message(
@@ -129,7 +129,7 @@ class ABCMessage(Base):
             query = query.filter(cls.pinned.is_(True))
 
         query_result = await session.execute(query)
-        return await query_result.one_or_none()
+        return query_result.scalar_one_or_none()
 
     @classmethod
     async def get_messages_before(
@@ -152,7 +152,7 @@ class ABCMessage(Base):
             query = query.filter(cls.pinned.is_(True))
 
         query_result = await session.execute(query)
-        return await query_result.all()
+        return query_result.scalars().all()
 
     @classmethod
     async def get_messages_after(
@@ -176,7 +176,7 @@ class ABCMessage(Base):
             query = query.filter(cls.pinned.is_(True))
 
         query_result = await session.execute(query)
-        return await query_result.all()
+        return query_result.scalars().all()
 
     async def delete_message_by_author(self, delete_by: users_package.User, *, session) -> None:
         """

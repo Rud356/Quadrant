@@ -40,7 +40,7 @@ class GroupBan(Base):
             cls.get_ban_query(group_id, banned_user_id)
         )
 
-        return await query_result.one()
+        return await query_result.scalar_one()
 
     @staticmethod
     async def is_user_banned(group_id: UUID, user_id: users_package.User.id, *, session) -> bool:

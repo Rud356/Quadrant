@@ -11,7 +11,7 @@ from sqlalchemy.orm import backref, relationship
 from Quadrant.models.db_init import Base
 from Quadrant.models.utils import generate_internal_token
 from Quadrant.models.utils.hashing import hash_login, hash_password
-from .user import User
+from .user import User, UsersCommonSettings
 
 
 class UserInternalAuthorization(Base):
@@ -42,7 +42,7 @@ class UserInternalAuthorization(Base):
             password = await loop.run_in_executor(pool_exec, hash_password, password, salt)
             internal_token = await loop.run_in_executor(pool_exec, generate_internal_token)
 
-        user = User(username=username)
+        user = User(username=username, users_common_settings=UsersCommonSettings())
         user_auth = UserInternalAuthorization(
             login=login, password=password, internal_token=internal_token,
             salt=salt, user=user
@@ -60,7 +60,7 @@ class UserInternalAuthorization(Base):
                 User.is_banned.is_(False)
             )
         query_result = await session.execute(query)
-        return await query_result.one()
+        return query_result.scalar_one()
 
     @staticmethod
     async def authorize(login: str, password: str, *, session) -> UserInternalAuthorization:
@@ -70,7 +70,7 @@ class UserInternalAuthorization(Base):
             UserInternalAuthorization.login == login,
         )
         query_result = await session.execute(query)
-        auth_user: UserInternalAuthorization = await query_result.one()
+        auth_user: UserInternalAuthorization = await query_result.scalar_one()
 
         with ProcessPoolExecutor(25) as pool_exec:
             loop = get_running_loop()

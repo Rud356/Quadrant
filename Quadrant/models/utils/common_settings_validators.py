@@ -16,8 +16,9 @@ class CommonSettingsValidator:
             raise ValueError("Invalid setting value")
 
 
-COMMON_SETTINGS = (
-    CommonSettingsValidator("enable_sites_preview", False, lambda v: isinstance(v, bool)),
-)
-DEFAULT_COMMON_SETTINGS_DICT = {i.key: i.default for i in COMMON_SETTINGS}
+COMMON_SETTINGS = {
+    "enable_sites_preview": CommonSettingsValidator("enable_sites_preview", False, lambda v: isinstance(v, bool)),
+}
+
+DEFAULT_COMMON_SETTINGS_DICT = {i.key: i.default for i in COMMON_SETTINGS.values()}
 

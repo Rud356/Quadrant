@@ -118,7 +118,7 @@ class GroupInvite(Base):
         query = cls.get_alive_invites_query().filter(cls.invite_code == invite_code)
         query_result = await session.execute(query)
 
-        return await query_result.one()
+        return query_result.scalar_one()
 
     @classmethod
     async def new_invite(

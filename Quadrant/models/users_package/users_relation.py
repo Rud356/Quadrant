@@ -75,7 +75,7 @@ class UsersRelations(Base):
             UsersRelations.any_user_initialized_relationship(user.id, with_user_id)
         ).join(User, User.id == with_user_id)
         result = await session.execute(query)
-        relation, relation_with = await result.one()
+        relation, relation_with = result.scalar_one()
 
         return relation, relation_with
 
@@ -149,7 +149,7 @@ class UsersRelations(Base):
             .order_by(User.username)
 
         result = await session.execute(query)
-        relations = await result.all()
+        relations = result.scalars().all()
 
         return tuple(  # noqa: sqlalchemy objects
             ((relation_status, relation_with) for relation_status, relation_with in relations)

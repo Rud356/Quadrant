@@ -118,7 +118,7 @@ class DirectMessagesChannel(Base):
             cls._channel_by_participants(cls, requester, with_user).exists()
         ).scalar() or False
 
-        return await query_result.scalar()
+        return query_result.scalar()
 
     @staticmethod
     def _channel_by_participants(cls, requester: users_package.User, with_user: users_package.User):

@@ -48,7 +48,7 @@ class User(Base):
         self.username = username
         await session.commit()
 
-        gen_log.debug(f"User with id {self.user.id} has updated nickname to {username}")
+        gen_log.debug(f"User with id {self.id} has updated nickname to {username}")
 
     async def set_status(self, status: str, *, session) -> None:
         """
@@ -63,7 +63,7 @@ class User(Base):
         self.status = status
         await session.commit()
 
-        gen_log.debug(f"{self.user.id} has updated status to {status}")
+        gen_log.debug(f"{self.id} has updated status to {status}")
 
     async def set_text_status(self, text_status: str, *, session) -> None:
         """
@@ -77,7 +77,7 @@ class User(Base):
         self.text_status = text_status
         await session.commit()
 
-        gen_log.debug(f"User with id {self.user.id} has updated text status to {text_status}")
+        gen_log.debug(f"User with id {self.id} has updated text status to {text_status}")
 
     async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
         """
@@ -95,7 +95,7 @@ class User(Base):
             )
         )
         result = await session.execute(bot_query)
-        bot = await result.one()
+        bot = result.scalar_one()
 
         return bot
 
@@ -117,7 +117,7 @@ class User(Base):
             )
         ).limit(MAX_OWNED_BOTS).order_by(User.registered_at.desc())
         result = await session.execute(bots_query)
-        bots = await result.all()
+        bots = result.scalars().all()
 
         gen_log.debug(f"User with id {self.id} got {len(bots)} bots")
         return bots
@@ -160,6 +160,6 @@ class User(Base):
             user_query = user_query.filter(cls.is_bot.is_(False))
 
         result = await session.execute(user_query)
-        user = await result.one()
+        user = result.scalar_one()
 
         return user

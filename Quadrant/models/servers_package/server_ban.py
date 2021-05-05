@@ -40,7 +40,7 @@ class ServerBan(Base):
         query_result = await session.execute(
             cls.get_ban_query(server_id, banned_user_id)
         )
-        return await query_result.one()
+        return query_result.scalar_one()
 
     @classmethod
     async def is_user_banned(cls, server_id: UUID, banned_user_id: models.User.id, *, session) -> bool:

@@ -68,7 +68,7 @@ class UserSession(Base):
         try:
             query = cls.user_session_query(user_id=user_id).filter(UserSession.session_id == session_id)
             query_result = await session.execute(query)
-            return await query_result.one()
+            return query_result.scalar_one()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
@@ -79,6 +79,7 @@ class UserSession(Base):
         Gives one page of sessions or empty list.
 
         :param user_id: participant id of one participant, whose sessions we must get.
+        :param page: page of sessions.
         :param session: sqlalchemy session.
         :return: session instances tuple.
         """
@@ -91,7 +92,7 @@ class UserSession(Base):
                 .order_by(cls.is_alive.desc(), cls.session_id.desc())
 
             query_result = await session.execute(query)
-            return await query_result.all()
+            return query_result.all()
 
         except (IntegrityError, OverflowError):
             raise ValueError("No such session")
