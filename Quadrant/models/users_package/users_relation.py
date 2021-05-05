@@ -24,10 +24,10 @@ class UsersRelations(Base):
     @staticmethod
     def any_user_initialized_relationship(user_id: User.id, with_user_id: User.id):
         """
-        Query part that will give True when any of users pair had initialized relation with other participant
+        Query part that will give True when any of users pair had initialized relation with other user
 
-        :param user_id: participant id of someone who asks for this.
-        :param with_user_id: participant id of someone with whom we look for any relations.
+        :param user_id: user id of someone who asks for this.
+        :param with_user_id: user id of someone with whom we look for any relations.
         :return: sqlalchemy query.
         """
         return or_(
@@ -42,8 +42,8 @@ class UsersRelations(Base):
         """
         Gives relationship status between any of two users.
 
-        :param user_id: participant id of someone who asks for this.
-        :param with_user_id: participant id of someone with whom we look for any relations.
+        :param user_id: user id of someone who asks for this.
+        :param with_user_id: user id of someone with whom we look for any relations.
         :param session: sqlalchemy session.
         :return: one of UsersRelationType.
         """
@@ -64,11 +64,11 @@ class UsersRelations(Base):
         user: User, with_user_id: User.id, *, session: AsyncSession
     ) -> Tuple[UsersRelations, User]:
         """
-        Gives exact relationship depending of who is requester. Needed for cases when we want unblock other participant
+        Gives exact relationship depending of who is requester. Needed for cases when we want unblock other user
         or send him an friend request.
 
-        :param user: participant instance of someone who asks for this.
-        :param with_user_id: participant id of someone with whom we look for relation.
+        :param user: user instance of someone who asks for this.
+        :param with_user_id: user id of someone with whom we look for relation.
         :param session: sqlalchemy session.
         :return: UsersRelations instance and instance of User with whom requester have some relationship.
         """
@@ -88,7 +88,7 @@ class UsersRelations(Base):
         Gives exact relationship depending on requester id but without instance of User with whom we have it.
 
         :param user_id: requester id.
-        :param with_user_id: participant id of someone with whom we look for relation.
+        :param with_user_id: user id of someone with whom we look for relation.
         :param session: sqlalchemy session.
         :return: returns exact relationship instance of
         """
@@ -104,10 +104,10 @@ class UsersRelations(Base):
     @staticmethod
     async def get_exact_relationship_status(user_id: User.id, with_user_id: User.id, *, session) -> UsersRelationType:
         """
-        Gives exact relation status with participant depending on requester id.
+        Gives exact relation status with user depending on requester id.
 
         :param user_id: requester id.
-        :param with_user_id: participant id of someone with whom we look for relation.
+        :param with_user_id: user id of someone with whom we look for relation.
         :param session: sqlalchemy session.
         :return: one of UsersRelationType.
         """
@@ -130,7 +130,7 @@ class UsersRelations(Base):
         """
         Gives page of relationships ordered by username and users with who Users instances with whom has relations.
 
-        :param user: participant instance of someone who asks for this.
+        :param user: user instance of someone who asks for this.
         :param page: page number.
         :param relationship_type: filter by type of requester to other user relation.
         :param session: sqlalchemy session.
@@ -229,8 +229,8 @@ class UsersRelations(Base):
         """
         Responds on friend request by adding a new friend or rejecting request.
 
-        :param from_user: participant that received friend request.
-        :param to_user: participant id of someone who authored request.
+        :param from_user: user that received friend request.
+        :param to_user: user id of someone who authored request.
         :param accept_request: bool flag that shows that request was accepted or not.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
@@ -269,8 +269,8 @@ class UsersRelations(Base):
         """
         Removes friend from friend list if he's in or if user isn't in - raises error.
 
-        :param from_user: participant that received friend request.
-        :param to_user: participant id of someone who authored request.
+        :param from_user: user that received friend request.
+        :param to_user: user id of someone who authored request.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
@@ -297,12 +297,12 @@ class UsersRelations(Base):
     async def block_user(blocking_by: User, blocking_user: User, *, session) -> UsersRelations:
         """
         Destroys friends relationship, requester or receiver of friend request and sets relationship status, that
-        initiated by blocking_by participant, to UsersRelationType.blocked.
-        Must not remove all relationships to be able keep other's participant
+        initiated by blocking_by user, to UsersRelationType.blocked.
+        Must not remove all relationships to be able keep other's user
         possible block relationship still existing.
 
-        :param blocking_by: participant instance of someone who blocks other participant.
-        :param blocking_user: participant instance of someone who blocking_by participant wants to block.
+        :param blocking_by: user instance of someone who blocks other user.
+        :param blocking_user: user instance of someone who blocking_by user wants to block.
         :param session: sqlalchemy session.
         :return: updated or relationship, initialized by blocking_by.
         """
@@ -343,10 +343,10 @@ class UsersRelations(Base):
     @staticmethod
     async def unblock_user(user_unblock_initializer: User, unblocking_user: User, *, session) -> None:
         """
-        Unblocks participant.
+        Unblocks user.
 
-        :param user_unblock_initializer: participant who wants to unblock someone.
-        :param unblocking_user: participant whom he wants to unblock.
+        :param user_unblock_initializer: user who wants to unblock someone.
+        :param unblocking_user: user whom he wants to unblock.
         :param session: sqlalchemy session.
         :return: nothing (may raise exceptions).
         """
@@ -355,7 +355,7 @@ class UsersRelations(Base):
         )
 
         if relation != UsersRelationType.blocked:
-            raise UsersRelations.exc.RelationshipsException("Invalid relation ship to unblock participant")
+            raise UsersRelations.exc.RelationshipsException("Invalid relation ship to unblock user")
 
         await session.execute(
             delete(UsersRelations).where(
@@ -375,7 +375,7 @@ class UsersRelations(Base):
 
         class BlockedRelationshipException(RelationshipsException):
             """
-            One participant blocked another and so anything beside blocking each other can not be performed.
+            One user blocked another and so anything beside blocking each other can not be performed.
             """
             pass
 
