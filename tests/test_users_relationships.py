@@ -2,11 +2,11 @@ import unittest
 from typing import List, NamedTuple
 from uuid import UUID
 
+from Quadrant.migrations import db_utils
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Session
-from Quadrant.migrations import db_utils
 from Quadrant.models.users_package import UsersRelationType, UsersRelations
-from tests.datasets import async_drop_db, async_init_db, create_user
+from tests.datasets import async_init_db, async_drop_db, create_user
 from tests.utils import clean_tests_folders, make_async_call
 
 
@@ -23,7 +23,6 @@ class TestUsersFunctionality(unittest.TestCase):
     @make_async_call
     async def setUpClass(cls) -> None:
         cls.session = Session()
-        await async_drop_db()
         await async_init_db()
 
     async def create_users(self, *users_data: UserData) -> List[users_package.User]:
@@ -276,6 +275,8 @@ class TestUsersFunctionality(unittest.TestCase):
         self.assertEqual(page[0][0], UsersRelationType.friend_request_sender)
 
     @classmethod
-    def tearDownClass(cls) -> None:
+    @make_async_call
+    async def tearDownClass(cls) -> None:
         clean_tests_folders()
-        db_utils.drop_db()
+        await cls.session.close()
+        await async_drop_db()

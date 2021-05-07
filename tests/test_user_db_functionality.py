@@ -14,7 +14,6 @@ class TestUsersFunctionality(unittest.TestCase):
     @make_async_call
     async def setUpClass(cls) -> None:
         cls.session = Session()
-        await async_drop_db()
         await async_init_db()
         cls.test_user_auth = await create_user("Rud_func", "Rud_functions_tester", "H0w_h4rd_lma0", session=cls.session)
         cls.test_user = cls.test_user_auth.user
