@@ -4,3 +4,7 @@ sqlalchemy~=1.4.2
 ConfigFramework~=2.0.8
 asyncpg~=0.22.0
 psycopg2~=2.8.6
+apispec~=4.4.0
+apispec-webframeworks~=0.5.2
+python-rapidjson~=1.0.0
+marshmallow~=3.11.1

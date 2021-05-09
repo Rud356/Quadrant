@@ -5,9 +5,9 @@ from typing import List
 from uuid import UUID, uuid4
 
 from tornado.log import gen_log
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, ForeignKey, and_, select
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, ForeignKey, and_, select, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, noload
 
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
@@ -35,6 +35,7 @@ class User(Base):
     _owned_bots = relationship("User", cascade="all, delete-orphan", lazy='noload')
     _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
 
+    __table_args__ = (UniqueConstraint('color_id', 'username', name='_unique_user_nick_and_color_id'),)
     __tablename__ = "users"
 
     async def set_username(self, username: str, *, session) -> None:
@@ -138,6 +139,23 @@ class User(Base):
 
         return settings
 
+    def as_dict(self, public_view=True):
+        user_fields = {
+            "id": self.id,
+            "color_id": self.color_id,
+            "username": self.username,
+            "status": self.status.name,
+            "text_status": self.text_status,
+            "registered_at": self.registered_at,
+            "is_bot": self.is_bot,
+            "is_banned": self.is_banned
+        }
+
+        if not public_view:
+            user_fields["common_settings"] = self.users_common_settings.common_settings
+
+        return user_fields
+
     @classmethod
     async def get_user(
         cls, user_id: UUID, *, session, filter_banned: bool = True, filter_bots: bool = False
@@ -163,3 +181,20 @@ class User(Base):
         user = result.scalar_one()
 
         return user
+
+    @classmethod
+    async def get_user_by_username_and_color_id(cls, username: str, color_id: int, *, session) -> User:
+        user_query = select(cls).filter(
+            cls.username == username,
+            cls.color_id == color_id,
+            cls.is_bot.is_(False),
+            cls.is_banned.is_(False)
+        )
+        result = await session.execute(user_query)
+        user = result.scalar_one()
+
+        return user
+
+    class exc:
+        class UserIsBot(PermissionError):
+            ...

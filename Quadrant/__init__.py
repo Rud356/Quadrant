@@ -1,23 +1,41 @@
-from tornado.web import Application
+from apispec import APISpec
+from apispec.ext.marshmallow import MarshmallowPlugin
+from apispec_webframeworks.tornado import TornadoPlugin
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
 
 from Quadrant.config import quadrant_config
+from Quadrant.resourses import router
 
-handlers = []
-quadrant_chat = Application(
-    handlers,
-    cookie_secret=quadrant_config.Security.cookie_secret.value,
-    debug=quadrant_config.debug_mode.value,
-    xsrf_cookies=True,
+http_server = HTTPServer(router)
+spec = APISpec(
+    title="Quadrant chat server",
+    version="1.0.0",
+    openapi_version="3.0.2",
+    info=dict(description="Documentation for Quadrant chat API"),
+    plugins=[TornadoPlugin(), MarshmallowPlugin()],
+)
+spec.components.security_scheme(
+    "cookieAuth", {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "token"
+    }
+)
+spec.components.security_scheme(
+    "sessionID", {
+        "type": "integer",
+        "in": "cookie",
+        "name": "session_id"
+    }
 )
 
+with open(quadrant_config.static_folder_location.value / "swagger.yml") as f:
+    f.write(spec.to_yaml())
 
 if quadrant_config.host_static_files_internally.value:
     # Add static files handlers
     pass
-
-http_server = HTTPServer(quadrant_chat, max_header_size=quadrant_config.max_payload_size.value)
 
 if __name__ == "__main__":
     http_server.listen(port=quadrant_config.HttpChatServer.port.value)

@@ -175,6 +175,10 @@ class UsersRelations(Base):
             request_from.id, request_to.id, session=session
         )
 
+        # TODO: check if receiver user allowed to send friend requests
+        if request_to.is_bot:
+            raise request_to.exc.UserIsBot("Bot users can not receive friend requests")
+
         if request_to.id == request_from.id:
             raise ValueError("User can not become friend with himself")
 

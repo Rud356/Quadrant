@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from asyncio import get_running_loop
-from concurrent.futures import ProcessPoolExecutor
 from hmac import compare_digest
 from secrets import token_urlsafe
 
@@ -32,7 +30,7 @@ class UserInternalAuthorization(Base):
 
     @staticmethod
     async def register_user_internally(
-            username: str, login: str, password: str, *, session
+        username: str, login: str, password: str, *, session
     ) -> UserInternalAuthorization:
         login = hash_login(login)
         salt = token_urlsafe(30)
@@ -52,34 +50,35 @@ class UserInternalAuthorization(Base):
         return user_auth
 
     @staticmethod
-    async def authorize_with_token(token: str, *, session) -> UserInternalAuthorization:
+    async def authorize_with_token(token: str, is_bot: bool, *, session) -> UserInternalAuthorization:
         query = select(UserInternalAuthorization) \
             .join(User).filter(
                 UserInternalAuthorization.internal_token == token,
-                User.is_banned.is_(False)
+                User.is_banned.is_(False),
+                User.is_bot.is_(is_bot)
             )
         query_result = await session.execute(query)
         return query_result.scalar_one()
 
-    @staticmethod
-    async def authorize(login: str, password: str, *, session) -> UserInternalAuthorization:
+    @classmethod
+    async def authorize(cls, login: str, password: str, *, session) -> UserInternalAuthorization:
         login = hash_login(login)
-        query = select(UserInternalAuthorization).join(User).filter(
+        query = select(cls).join(User).filter(
             User.is_banned.is_(False),
             UserInternalAuthorization.login == login,
         )
         query_result = await session.execute(query)
-        auth_user: UserInternalAuthorization = await query_result.scalar_one()
-
-        with ProcessPoolExecutor(25) as pool_exec:
-            loop = get_running_loop()
-            password = await loop.run_in_executor(pool_exec, hash_password, password, auth_user.salt)
+        auth_user: UserInternalAuthorization = query_result.scalar_one()
+        password = hash_password(password, auth_user.salt)
 
         if compare_digest(password, auth_user.password):
             return auth_user
 
         else:
-            raise ValueError("Invalid password")
+            raise ValueError(f"Invalid password for user")
+
+    # TODO: add fetching Oauth authorization records
+    # TODO: add TOTP
 
     async def delete_account(self, *, session) -> bool:
         session.delete(self)
