@@ -139,11 +139,11 @@ class UsersRelations(Base):
         if page < 0:
             raise ValueError("Invalid page")
 
-        query = select(UsersRelations.relation_status, User).filter(
-            UsersRelations.initiator_id == user.id,
-            UsersRelations.relation_status == relationship_type
-        ).join(User, User.id != user.id) \
-            .limit(USERS_RELATIONS_PER_PAGE).offset(USERS_RELATIONS_PER_PAGE * page) \
+        query = select(UsersRelations.relation_status, User).join(User, User.id != user.id) \
+            .filter(
+                UsersRelations.initiator_id == user.id,
+                UsersRelations.relation_status == relationship_type
+        ).limit(USERS_RELATIONS_PER_PAGE).offset(USERS_RELATIONS_PER_PAGE * page) \
             .order_by(
                 User.status == UsersStatus.online,
                 User.status == UsersStatus.away,

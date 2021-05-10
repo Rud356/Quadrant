@@ -30,8 +30,6 @@ spec.components.security_scheme(
     }
 )
 
-with open(quadrant_config.static_folder_location.value / "swagger.yml") as f:
-    f.write(spec.to_yaml())
 
 if quadrant_config.host_static_files_internally.value:
     # Add static files handlers

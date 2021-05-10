@@ -108,6 +108,7 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
         self.set_secure_cookie("session_id", new_session.session_id, expires_days=2)
         raise Finish()
 
+    # TODO: move method to sessions management
     @authenticated
     async def delete(self):
         """

@@ -19,7 +19,8 @@ class InternalRegistrationHandler(QuadrantAPIHandler):
             "password": self.get_body_argument("password", default=None)
         }
         try:
-            UserRegistrationSchema.validate(registration_data)
+            registration_data_validator = UserRegistrationSchema()
+            registration_data_validator.validate(registration_data)
 
         except ValidationError as err:
             raise JsonHTTPError(status_code=400, reason=err.messages)
