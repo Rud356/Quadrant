@@ -73,7 +73,8 @@ class UsersRelations(Base):
         :return: UsersRelations instance and instance of User with whom requester have some relationship.
         """
         query = select(UsersRelations, User).filter(
-            UsersRelations.any_user_initialized_relationship(user.id, with_user_id)
+            UsersRelations.initiator_id == user.id,
+            UsersRelations.relation_with_id == with_user_id
         ).join(User, User.id == with_user_id)
         result = await session.execute(query)
         relation, relation_with = result.scalar_one()
@@ -86,6 +87,7 @@ class UsersRelations(Base):
     ) -> Optional[UsersRelations]:
         """
         Gives exact relationship depending on requester id but without instance of User with whom we have it.
+        In case found nothing - returns None.
 
         :param user_id: requester id.
         :param with_user_id: user id of someone with whom we look for relation.
@@ -162,33 +164,33 @@ class UsersRelations(Base):
         return relations
 
     @staticmethod
-    async def send_friend_request(request_from: User, request_to: User, *, session) -> None:
+    async def send_friend_request(request_sender: User, request_receiver: User, *, session) -> None:
         """
         Sending friend request to someone.
 
-        :param request_from: who authored request.
-        :param request_to: who will receive it.
+        :param request_sender: who authored request.
+        :param request_receiver: who will receive it.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
         relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
-            request_from.id, request_to.id, session=session
+            request_sender.id, request_receiver.id, session=session
         )
 
         # TODO: check if receiver user allowed to send friend requests
-        if request_to.is_bot:
-            raise request_to.exc.UserIsBot("Bot users can not receive friend requests")
+        if request_receiver.is_bot:
+            raise request_receiver.exc.UserIsBot("Bot users can not receive friend requests")
 
-        if request_to.id == request_from.id:
+        if request_receiver.id == request_sender.id:
             raise ValueError("User can not become friend with himself")
 
         if relationships_status == UsersRelationType.none:
             friend_request_outgoing = UsersRelations(
-                initiator_id=request_from.id, relation_with_id=request_to.id,
+                initiator_id=request_sender.id, relation_with_id=request_receiver.id,
                 relation_status=UsersRelationType.friend_request_sender
             )
             friend_request_incoming = UsersRelations(
-                initiator_id=request_to.id, relation_with_id=request_from.id,
+                initiator_id=request_receiver.id, relation_with_id=request_sender.id,
                 relation_status=UsersRelationType.friend_request_receiver
             )
 
@@ -203,8 +205,8 @@ class UsersRelations(Base):
         """
         Cancels sent friend request.
 
-        :param canceller: user that received friend request.
-        :param friend_request_to: user id of someone who authored request.
+        :param canceller: user that sent friend request.
+        :param friend_request_to: user who received request.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
@@ -229,22 +231,24 @@ class UsersRelations(Base):
         await session.commit()
 
     @staticmethod
-    async def respond_on_friend_request(from_user: User, to_user: User, accept_request: bool, *, session) -> None:
+    async def respond_on_friend_request(
+        request_receiver: User, request_sender: User, accept_request: bool, *, session
+    ) -> None:
         """
         Responds on friend request by adding a new friend or rejecting request.
 
-        :param from_user: user that received friend request.
-        :param to_user: user id of someone who authored request.
+        :param request_receiver: user that received friend request.
+        :param request_sender: user who authored request.
         :param accept_request: bool flag that shows that request was accepted or not.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
         relationships_status: UsersRelationType = await UsersRelations.get_exact_relationship_status(
-            to_user.id, from_user.id, session=session
+            request_sender.id, request_receiver.id, session=session
         )
 
         if relationships_status == UsersRelationType.friend_request_receiver:
-            users_relations_query = UsersRelations.any_user_initialized_relationship(from_user.id, to_user.id)
+            users_relations_query = UsersRelations.any_user_initialized_relationship(request_receiver.id, request_sender.id)
 
             if accept_request:
                 query = update(UsersRelations).where(users_relations_query).values(
@@ -269,21 +273,21 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
 
     @staticmethod
-    async def remove_user_from_friends(from_user: User, to_user: User, *, session) -> None:
+    async def remove_user_from_friends(removed_by: User, friend: User, *, session) -> None:
         """
         Removes friend from friend list if he's in or if user isn't in - raises error.
 
-        :param from_user: user that received friend request.
-        :param to_user: user id of someone who authored request.
+        :param removed_by: user that wants to remove someone from friends.
+        :param friend: user that will be removed from friends.
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
         relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
-            to_user.id, from_user.id, session=session
+            friend.id, removed_by.id, session=session
         )
 
         if relationships_status == UsersRelationType.friends:
-            users_relations_query = UsersRelations.any_user_initialized_relationship(from_user.id, to_user.id)
+            users_relations_query = UsersRelations.any_user_initialized_relationship(removed_by.id, friend.id)
             query = delete(UsersRelations).where(
                 and_(
                     users_relations_query,
@@ -305,8 +309,8 @@ class UsersRelations(Base):
         Must not remove all relationships to be able keep other's user
         possible block relationship still existing.
 
-        :param blocking_by: user instance of someone who blocks other user.
-        :param blocking_user: user instance of someone who blocking_by user wants to block.
+        :param blocking_by: user who blocks other user.
+        :param blocking_user: user who blocking_by wants to block.
         :param session: sqlalchemy session.
         :return: updated or relationship, initialized by blocking_by.
         """
@@ -384,4 +388,7 @@ class UsersRelations(Base):
             pass
 
         class AlreadyBlockedException(BlockedRelationshipException):
+            """
+            Special exception that represents that user is already blocked
+            """
             pass

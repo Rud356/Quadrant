@@ -63,9 +63,7 @@ class OutgoingFriendsRequestsPageHandler(QuadrantAPIHandler):
 
         self.write(JsonWrapper.dumps(
             {
-                {
-                    "relation_status": relation_type,
-                    "users": [user.as_dict() for _, user in relations_page]
-                }
+                "relation_status": relation_type,
+                "users": [user.as_dict() for _, user in relations_page]
             }
         ))

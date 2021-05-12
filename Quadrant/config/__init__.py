@@ -141,6 +141,10 @@ class QuadrantConfig(BaseConfig):
 
         media_location: Path = self.media_folder_location.value
         media_location.mkdir(exist_ok=True)
+        self.uploads = (media_location / "uploads")
+        self.profile_pictures = (media_location / "profile_pictures")
+        self.uploads.mkdir(exist_ok=True)
+        self.profile_pictures.mkdir(exist_ok=True)
 
 
 quadrant_config = QuadrantConfig()

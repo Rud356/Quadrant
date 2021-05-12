@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import datetime
-from typing import Optional, Tuple, Optional
+from typing import Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
-from sqlalchemy.orm import declared_attr
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, exc, select
+from sqlalchemy.orm import declared_attr, relationship
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Base
+from Quadrant.models.general import File
 
 MESSAGES_PER_REQUEST = 100
 # TODO: add messages reactions
@@ -26,8 +28,9 @@ class ABCMessage(Base):
     edited = Column(Boolean, default=False, nullable=False)
 
     text = Column(String(2000), nullable=True)
-    # TODO: add attached files table
-    # attached_file_id = Column(ForeignKey('files.id'), nullable=True)
+    attached_file_id = Column(ForeignKey('files.id'), nullable=True)
+
+    attached_file = relationship(File, lazy="joined", uselist=False)
 
     __abstract__ = True
 
@@ -57,7 +60,7 @@ class ABCMessage(Base):
 
     @classmethod
     async def send_message(
-        cls, channel, author: users_package.User, text: str, attached_file: Optional = None,
+        cls, channel, author: users_package.User, text: str, attached_file_id: Optional[UUID] = None,
         *, session
     ) -> ABCMessage:
         """
@@ -66,7 +69,7 @@ class ABCMessage(Base):
         :param channel: text channel instance.
         :param author: authors User model instance.
         :param text: message text that can be nothing (in case we have attached file) and not longer than 2000 symbols.
-        :param attached_file: attached file instance.
+        :param attached_file_id: attached file instance.
         :param session: sqlalchemy session.
         :return: new message instance if everything is correct.
         """
@@ -77,15 +80,30 @@ class ABCMessage(Base):
         # Raises exception if this participant can send a message
         await cls.user_can_send_message_check(channel, author, session=session)
 
-        if attached_file is None and len(text) == 0:
+        if attached_file_id is None and len(text) == 0:
             raise ValueError("No content been posted")
 
-        new_message = cls(
-            channel_id=channel.channel_id,
-            attached_file=attached_file,
-            author_id=author.id,
-            text=text,
-        )
+        attached_file = None
+        with suppress(exc.NoResultFound, ValueError):
+            if attached_file_id is None:
+                raise ValueError("File isn't attached")
+
+            attached_file = await File.get_file(uploader=author, file_id=attached_file_id, session=session)
+
+        if attached_file is None:
+            new_message = cls(
+                channel_id=channel.channel_id,
+                author_id=author.id,
+                text=text,
+            )
+
+        else:
+            new_message = cls(
+                channel_id=channel.channel_id,
+                author_id=author.id,
+                text=text,
+                attached_file=attached_file
+            )
 
         session.add(new_message)
         await session.commit()

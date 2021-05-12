@@ -8,11 +8,11 @@ from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
-class OutgoingFriendRequestHandler(QuadrantAPIHandler):
+class IncomingFriendRequestHandler(QuadrantAPIHandler):
     @authenticated
     async def post(self, request_sender_id):
         if self.user.is_bot:
-            raise JsonHTTPError(status_code=400, reason="Bot users can not send friend requests")
+            raise JsonHTTPError(status_code=400, reason="Bot users can not have friend requests")
 
         try:
             user_id: UUID = UUID(request_sender_id)
@@ -27,11 +27,8 @@ class OutgoingFriendRequestHandler(QuadrantAPIHandler):
         except users_package.UsersRelations.exc.RelationshipsException:
             raise JsonHTTPError(status_code=400, reason="You and this user already have relations")
 
-        except users_package.User.exc.UserIsBot:
-            raise JsonHTTPError(status_code=400, reason="Bots can not receive friend requests")
-
         # TODO: notify user about new friend request
-        self.write(JsonWrapper.dumps({"sent_friend_request_to": request_sender_id}))
+        self.write(JsonWrapper.dumps({"accepted_friend_request_from": request_sender_id}))
 
     @authenticated
     async def delete(self, request_sender_id):
