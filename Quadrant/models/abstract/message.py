@@ -28,9 +28,6 @@ class ABCMessage(Base):
     edited = Column(Boolean, default=False, nullable=False)
 
     text = Column(String(2000), nullable=True)
-    attached_file_id = Column(ForeignKey('files.id'), nullable=True)
-
-    attached_file = relationship(File, lazy="joined", uselist=False)
 
     __abstract__ = True
 
@@ -47,6 +44,14 @@ class ABCMessage(Base):
         Foreign key on member of channel or server.
         """
         pass
+
+    @declared_attr
+    def attached_file_id(self):
+        return Column(ForeignKey('files.file_id'), nullable=True)
+
+    @declared_attr
+    def attached_file(self):
+        return relationship(File, lazy="joined", uselist=False)
 
     async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
         """

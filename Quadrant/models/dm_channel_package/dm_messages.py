@@ -11,14 +11,6 @@ from .exceptions import BlockedByOtherParticipantException
 
 
 class DM_Message(ABCMessage):
-    message_id = Column(BigInteger, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    pinned = Column(Boolean, default=False, nullable=False)
-    edited = Column(Boolean, default=False, nullable=False)
-
-    text = Column(String(2000), nullable=True)
-
     __tablename__ = "dm_messages"
     __mapper_args__ = {'polymorphic_identity': 'dm_message', 'concrete': True}
 
