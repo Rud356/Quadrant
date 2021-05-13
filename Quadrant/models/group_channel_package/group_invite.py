@@ -3,10 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from math import ceil
 from secrets import token_urlsafe
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, not_, or_, select, ForeignKeyConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, not_, or_, select
 
 from Quadrant.models.db_init import Base
 from .group_participant import GroupParticipant
@@ -52,6 +52,7 @@ class GroupInvite(Base):
 
     @property
     def is_expired(self):
+        """Tells us if invite is expired."""
         return datetime.utcnow() > self.expires_at or self.users_used_invite > self.users_used_invite
 
     @staticmethod
@@ -107,14 +108,28 @@ class GroupInvite(Base):
         return (await query_result.scalar_one_or_none()) or 0
 
     @classmethod
-    async def get_alive_invites(cls, group_channel_id: UUID, *, session) -> GroupInvite:
+    async def get_alive_invites(cls, group_channel_id: UUID, *, session) -> List[GroupInvite]:
+        """
+        Returns list of alive invites for this group.
+
+        :param group_channel_id: group id where we look up invites.
+        :param session: sqlalchemy session.
+        :return: list of alive invites.
+        """
         query = cls.get_alive_invites_query_for_channel(group_channel_id)
         query_result = await session.execute(query)
 
-        return query_result.all()
+        return query_result.scalars().all()
 
     @classmethod
     async def get_invite_by_code(cls, invite_code: str, *, session) -> GroupInvite:
+        """
+        Returns invite by its code.
+
+        :param invite_code: invite code.
+        :param session: sqlalchemy session.
+        :return: one invite if it's alive or raises error.
+        """
         query = cls.get_alive_invites_query().filter(cls.invite_code == invite_code)
         query_result = await session.execute(query)
 
@@ -125,6 +140,16 @@ class GroupInvite(Base):
         cls, created_by_participant_id, group_channel_id: UUID,
         expires_at: Optional[datetime] = None, users_limit: Optional[int] = 10, *, session
     ) -> GroupInvite:
+        """
+        Creates new invite.
+
+        :param created_by_participant_id: participant id of someone, who created this invite.
+        :param group_channel_id: group id for which we create this invite.
+        :param expires_at: when invite expires.
+        :param users_limit: how many users can use this invite.
+        :param session: sqlalchemy session.
+        :return: new invite instance.
+        """
         if (await cls.get_alive_invites_count(group_channel_id, session=session)) > GROUP_INVITES_LIMIT:
             raise InvitesExceptions.TooManyInvites("Too many invites for dm group")
 

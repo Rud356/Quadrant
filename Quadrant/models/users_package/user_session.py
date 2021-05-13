@@ -117,5 +117,6 @@ class UserSession(Base):
         return True
 
     async def terminate_session(self, *, session) -> None:
+        """Kills all users sessions."""
         self.is_alive = False
         await session.commit()

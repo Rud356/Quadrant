@@ -28,10 +28,10 @@ class File(Base):
         Note: this function does not creates a new directory or file so you can change code however you would like.
         Set up any custom file storage and drop it to it.
 
-        :param uploader:
-        :param filename:
-        :param session:
-        :return:
+        :param uploader: user, who uploads file.
+        :param filename: filename.
+        :param session: sqlalchemy session.
+        :return: File instance.
         """
         # TODO: add customization to uploads and filtering
         filename = sanitize_filename(filename)
@@ -44,6 +44,15 @@ class File(Base):
 
     @classmethod
     async def get_file(cls, uploader: User, file_id: UUID, *, session) -> File:
+        """
+        Gets exact file from database
+        (will be needed in admin api probably and is needed to check if attached file exists).
+
+        :param uploader: user, who uploads file.
+        :param file_id: id of file which we want to find.
+        :param session: sqlalchemy session.
+        :return: File instance.
+        """
         query = select(cls).filter(
             and_(
                 cls.uploader_id == uploader.id,
@@ -56,4 +65,5 @@ class File(Base):
 
     @property
     def filepath(self) -> Path:
+        """Path to local file"""
         return quadrant_config.uploads / self.file_id / self.filename

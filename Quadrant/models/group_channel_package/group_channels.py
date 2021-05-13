@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
+from sqlalchemy import Column, DateTime, ForeignKey, String, func, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from Quadrant.models import Base, users_package
 from .group_ban import GroupBan
-from .group_invite import GroupInvite, InvitesExceptions
+from .group_invite import GroupInvite
 from .group_message import GroupMessage
 from .group_participant import GroupParticipant
 

@@ -28,10 +28,22 @@ class UserInternalAuthorization(Base):
 
     __tablename__ = "users_auth"
 
+    # TODO: add fetching Oauth authorization records
+    # TODO: add TOTP
+
     @staticmethod
     async def register_user_internally(
         username: str, login: str, password: str, *, session
     ) -> UserInternalAuthorization:
+        """
+        Creates internal user account.
+
+        :param username: username.
+        :param login: users login.
+        :param password: users password.
+        :param session: sqlalchemy session.
+        :return: UserInternalAuthorization instance.
+        """
         login = hash_login(login)
         salt = token_urlsafe(30)
         # Somehow without async loops it runs way faster than with
@@ -51,6 +63,14 @@ class UserInternalAuthorization(Base):
 
     @staticmethod
     async def authorize_with_token(token: str, is_bot: bool, *, session) -> UserInternalAuthorization:
+        """
+        Authorizes user using provided token.
+
+        :param token: user token.
+        :param is_bot: represents if we must look for bots or normal users.
+        :param session: sqlalchemy session.
+        :return: UserInternalAuthorization instance.
+        """
         query = select(UserInternalAuthorization) \
             .join(User).filter(
                 UserInternalAuthorization.internal_token == token,
@@ -62,6 +82,14 @@ class UserInternalAuthorization(Base):
 
     @classmethod
     async def authorize(cls, login: str, password: str, *, session) -> UserInternalAuthorization:
+        """
+        Authorizes user with login and password.
+
+        :param login: user login.
+        :param password: user password.
+        :param session: sqlalchemy session.
+        :return: UserInternalAuthorization instance.
+        """
         login = hash_login(login)
         query = select(cls).join(User).filter(
             User.is_banned.is_(False),
@@ -77,10 +105,8 @@ class UserInternalAuthorization(Base):
         else:
             raise ValueError(f"Invalid password for user")
 
-    # TODO: add fetching Oauth authorization records
-    # TODO: add TOTP
-
     async def delete_account(self, *, session) -> bool:
+        """Deletes user account."""
         session.delete(self)
         await session.commit()
 

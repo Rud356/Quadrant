@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, UniqueConstraint, select
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from Quadrant.models import users_package
@@ -44,16 +43,31 @@ class GroupBan(Base):
 
     @staticmethod
     async def is_user_banned(group_id: UUID, user_id: users_package.User.id, *, session) -> bool:
-        try:
-            # If participant is banned - we can obtain ban information (most likely from cache)
-            await GroupBan.get_ban(group_id, user_id, session=session)
-            return True
+        """
+        Checks if user is banned in this specific group.
 
-        except NoResultFound:
-            return False
+        :param group_id: group channel id where we check if user is banned.
+        :param user_id: user id whom we check if he's banned.
+        :param session: sqlalchemy session.
+        :return: bool value, representing if user is banned.
+        """
+        query = select(GroupBan.id).filter(
+            GroupBan.group_id == group_id,
+            GroupBan.banned_user_id == user_id
+        ).exists()
+        result = await session.execute(query)
+        return result.scalar() or True
 
     @staticmethod
-    async def get_bans_page(group_id: UUID, page: int = 0, *, session):
+    async def get_bans_page(group_id: UUID, page: int = 0, *, session) -> List[GroupBan]:
+        """
+        Gives a page of bans in this specific group.
+
+        :param group_id: group from which we obtain page.
+        :param page: what page we are looking for.
+        :param session: sqlalchemy session.
+        :return: list of bans.
+        """
         if page < 0:
             raise ValueError("Invalid page number")
 
@@ -63,4 +77,4 @@ class GroupBan(Base):
             ).limit(BANS_PER_PAGE).offset(page * BANS_PER_PAGE)
         )
 
-        return await query_result.all()
+        return query_result.scalars().all()

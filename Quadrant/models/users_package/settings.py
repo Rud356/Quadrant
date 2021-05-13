@@ -21,10 +21,17 @@ class UsersCommonSettings(Base):
     user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
 
     common_settings = Column(MutableDict.as_mutable(JSONB), default=DEFAULT_COMMON_SETTINGS_DICT)
-
+    # TODO: make this class use bool values instead of dictionary for easier migrations
     __tablename__ = "users_common_settings"
 
-    async def get_setting(self, key: str, *, session):
+    async def get_setting(self, key: str, *, session) -> Any:
+        """
+        Gets exact setting from common settings set.
+
+        :param key: setting key.
+        :param session: sqlalchemy session.
+        :return: value.
+        """
         try:
             return self.common_settings[key]
 
@@ -35,6 +42,13 @@ class UsersCommonSettings(Base):
             return default_value
 
     async def update_settings(self, *, settings: Dict[str, Any], session) -> Dict[str, Dict[str, Any]]:
+        """
+        Updates settings from common settings list.
+        :param settings: dictionary with setting_key: setting_value.
+        :param session: sqlalchemy session.
+        :return: dictionary containing one key "updated_settings" where has another dict
+        with setting_key and its new value.
+        """
         # Validate settings values
         updated_settings = {}
 

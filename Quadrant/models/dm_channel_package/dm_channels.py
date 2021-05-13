@@ -79,8 +79,15 @@ class DirectMessagesChannel(Base):
     async def get_channel_by_participants(
         cls, requester: users_package.User, with_user: users_package.User, *, session
     ):
+        """
+        Returns a channel object, selected by two members of channel.
+        :param requester: user, who requested channel.
+        :param with_user: user with whom we look channel for.
+        :param session: sqlalchemy session.
+        :return: dm channel object.
+        """
         query_result = await session.execute(cls._channel_by_participants(cls, requester, with_user))
-        return await query_result.one()
+        return await query_result.scalar_one()
 
     @classmethod
     async def get_or_create_channel_by_participants(
