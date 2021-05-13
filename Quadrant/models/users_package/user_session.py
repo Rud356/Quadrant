@@ -55,7 +55,7 @@ class UserSession(Base):
         return user_session
 
     @classmethod
-    async def get_user_session(cls, user_id: UUID, session_id: int, *, session):
+    async def get_alive_user_session(cls, user_id: UUID, session_id: int, *, session):
         """
         Gives exact session.
 

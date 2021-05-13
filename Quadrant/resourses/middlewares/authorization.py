@@ -46,7 +46,7 @@ async def authorization_middleware(
             session_id = request_context.get_secure_cookie("session_id")
             session_id = int(str(session_id))
 
-            user_session = UserSession.get_user_session(
+            user_session = UserSession.get_alive_user_session(
                 auth_user.user_id, session_id=session_id, session=session
             )
 
