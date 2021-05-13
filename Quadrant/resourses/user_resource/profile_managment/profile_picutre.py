@@ -7,7 +7,7 @@ from typing import Optional
 from PIL import Image
 from tornado.web import authenticated
 
-from Quadrant.config import quadrant_config, casters
+from Quadrant.config import casters, quadrant_config
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 

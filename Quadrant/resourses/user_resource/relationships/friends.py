@@ -8,7 +8,7 @@ from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
-class BlockedRelationsHandler(QuadrantAPIHandler):
+class FriendsRelationsHandler(QuadrantAPIHandler):
     @authenticated
     async def delete(self, friend_id):
         try:
@@ -27,7 +27,7 @@ class BlockedRelationsHandler(QuadrantAPIHandler):
         self.write(JsonWrapper.dumps({"unblocked_user_id": friend_id}))
 
 
-class BlockedRelationsPageHandler(QuadrantAPIHandler):
+class FriendsRelationsPageHandler(QuadrantAPIHandler):
     @authenticated
     async def get(self, page=0):
         try:

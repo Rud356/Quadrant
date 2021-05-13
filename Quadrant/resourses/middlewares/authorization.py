@@ -23,23 +23,34 @@ async def authorization_middleware(
 
     if token_type == "Bearer":
         is_bot = False
+
     elif token_type == "Bot":
         is_bot = True
+
     else:
         # Not supported token type
         return None, None
 
+    auth_user = None
+    user_session = None
+
     try:
         auth_user = await UserInternalAuthorization.authorize_with_token(token, is_bot, session=session)
-        session_id = request_context.get_secure_cookie("session_id")
-        session_id = int(str(session_id))
 
-        user_session = UserSession.get_user_session(
-            auth_user.user_id, session_id=session_id, session=session
-        )
+    except exc.NoResultFound:
+        return auth_user, user_session
 
-    except (exc.NoResultFound, ValueError):
-        auth_user = None
-        user_session = None
+    # We need to ensure that user owns this session, but bot shouldn't do that
+    if not is_bot:
+        try:
+            session_id = request_context.get_secure_cookie("session_id")
+            session_id = int(str(session_id))
+
+            user_session = UserSession.get_user_session(
+                auth_user.user_id, session_id=session_id, session=session
+            )
+
+        except (exc.NoResultFound, ValueError):
+            return None, None
 
     return auth_user, user_session

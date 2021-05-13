@@ -11,7 +11,7 @@ from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 class InternalAuthorizationHandler(QuadrantAPIHandler):
     """
-    API endpoint that handles users internal authorization
+    API endpoint that handles users internal authorization.
     """
 
     session: Any
