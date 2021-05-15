@@ -14,8 +14,6 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
     API endpoint that handles users internal authorization.
     """
 
-    session: Any
-
     async def post(self):
         """
         Handles user authorization

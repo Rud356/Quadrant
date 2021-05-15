@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from tornado.web import RequestHandler
@@ -12,11 +12,11 @@ from Quadrant.resourses.utils import JsonWrapper
 class QuadrantAPIHandler(RequestHandler):
     session: AsyncSession
     user: Optional[User]
-    auth_user: Optional[OauthUserAuthorization, UserInternalAuthorization]
+    auth_user: Optional[Union[OauthUserAuthorization, UserInternalAuthorization]]
     user_session: Optional[UserSession]
     json_data: Optional[Dict[str, Any]]
 
-    def get_current_user(self) -> Optional[UserInternalAuthorization, OauthUserAuthorization]:
+    def get_current_user(self) -> Optional[Union[UserInternalAuthorization, OauthUserAuthorization]]:
         return getattr(self, 'auth_user', None)
 
     async def prepare(self):

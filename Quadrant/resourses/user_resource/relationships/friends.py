@@ -1,15 +1,15 @@
 from uuid import UUID
 
 from sqlalchemy import exc
-from tornado.web import authenticated
 
 from Quadrant.models import users_package
+from Quadrant.resourses.middlewares import rest_authenticated
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
 class FriendsRelationsHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def delete(self, friend_id):
         try:
             user_id: UUID = UUID(friend_id)
@@ -28,7 +28,7 @@ class FriendsRelationsHandler(QuadrantAPIHandler):
 
 
 class FriendsRelationsPageHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def get(self, page=0):
         try:
             page = int(page)

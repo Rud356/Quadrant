@@ -1,15 +1,15 @@
 from uuid import UUID
 
-from tornado.web import Finish, authenticated
 from sqlalchemy import exc
 
 from Quadrant.models import users_package
+from Quadrant.resourses.middlewares import rest_authenticated
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
 class IncomingFriendRequestHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def post(self, request_sender_id):
         if self.user.is_bot:
             raise JsonHTTPError(status_code=400, reason="Bot users can not have friend requests")
@@ -30,7 +30,7 @@ class IncomingFriendRequestHandler(QuadrantAPIHandler):
         # TODO: notify user about new friend request
         self.write(JsonWrapper.dumps({"accepted_friend_request_from": request_sender_id}))
 
-    @authenticated
+    @rest_authenticated
     async def delete(self, request_sender_id):
         try:
             user_id: UUID = UUID(request_sender_id)
@@ -50,7 +50,7 @@ class IncomingFriendRequestHandler(QuadrantAPIHandler):
 
 
 class IncomingFriendsRequestsPageHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def get(self, page=0):
         try:
             page = int(page)

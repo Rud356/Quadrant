@@ -1,2 +1,3 @@
+from .authenticated import rest_authenticated
 from .authorization import authorization_middleware
 from .handle_integrity_error import handle_integrity_error

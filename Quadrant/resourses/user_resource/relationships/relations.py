@@ -1,14 +1,13 @@
 from uuid import UUID
 
-from tornado.web import authenticated
-
 from Quadrant.models import users_package
+from Quadrant.resourses.middlewares import rest_authenticated
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
 class RelationsCheckHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def get(self, with_user_id):
         try:
             with_user_id: UUID = UUID(with_user_id)

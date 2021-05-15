@@ -1,15 +1,15 @@
 from uuid import UUID
 
 from sqlalchemy import exc
-from tornado.web import authenticated
 
 from Quadrant.models import users_package
+from Quadrant.resourses.middlewares import rest_authenticated
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 
 class BlockedRelationsHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def post(self, blocking_user_id):
         try:
             user_id: UUID = UUID(blocking_user_id)
@@ -25,7 +25,7 @@ class BlockedRelationsHandler(QuadrantAPIHandler):
         # TODO: notify user about new friend request
         self.write(JsonWrapper.dumps({"friend_id": blocking_user_id}))
 
-    @authenticated
+    @rest_authenticated
     async def delete(self, blocked_user_id):
         try:
             user_id: UUID = UUID(blocked_user_id)
@@ -42,7 +42,7 @@ class BlockedRelationsHandler(QuadrantAPIHandler):
 
 
 class BlockedRelationsPageHandler(QuadrantAPIHandler):
-    @authenticated
+    @rest_authenticated
     async def get(self, page=0):
         try:
             page = int(page)
