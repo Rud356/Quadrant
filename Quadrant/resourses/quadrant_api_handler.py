@@ -20,6 +20,8 @@ class QuadrantAPIHandler(RequestHandler):
         return getattr(self, 'auth_user', None)
 
     async def prepare(self):
+        self.set_header("Content-Type", 'application/json')
+
         self.session = Session()
         self.auth_user, self.user_session = await authorization_middleware(self, self.session)
         self.user = getattr(self.auth_user, 'user', None)
