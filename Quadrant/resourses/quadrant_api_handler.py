@@ -1,5 +1,6 @@
-from typing import Optional, Dict, Any, Union
+from typing import Any, Dict, Optional, Union
 
+from rapidjson import JSONDecodeError
 from sqlalchemy.ext.asyncio import AsyncSession
 from tornado.web import RequestHandler
 
@@ -31,7 +32,7 @@ class QuadrantAPIHandler(RequestHandler):
             try:
                 self.json_data = JsonWrapper.loads(self.request.body)
 
-            except TypeError:
+            except JSONDecodeError:
                 pass
 
     async def on_finish(self) -> None:
