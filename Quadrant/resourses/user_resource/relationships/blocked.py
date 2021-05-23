@@ -23,7 +23,7 @@ class BlockedRelationsHandler(QuadrantAPIHandler):
             raise JsonHTTPError(status_code=400, reason="You already blocked this user")
 
         # TODO: notify user about new friend request
-        self.write(JsonWrapper.dumps({"friend_id": blocking_user_id}))
+        self.write(JsonWrapper.dumps({"blocked_id": blocking_user_id}))
 
     @rest_authenticated
     async def delete(self, blocked_user_id):

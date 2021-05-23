@@ -22,9 +22,9 @@ class FriendsRelationsHandler(QuadrantAPIHandler):
             raise JsonHTTPError(status_code=404, reason=f"User with provided id not found")
 
         except users_package.UsersRelations.exc.RelationshipsException:
-            raise JsonHTTPError(status_code=400, reason="User isn't blocked")
+            raise JsonHTTPError(status_code=400, reason="User isn't your friend")
 
-        self.write(JsonWrapper.dumps({"unblocked_user_id": friend_id}))
+        self.write(JsonWrapper.dumps({"unfriended_user_id": friend_id}))
 
 
 class FriendsRelationsPageHandler(QuadrantAPIHandler):
