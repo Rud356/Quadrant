@@ -19,18 +19,20 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
         description: Authorizes user in Quadrant with login and password
         security: []
         consumes:
-          - multipart/form-data
+            - multipart/form-data
         parameters:
         - in: formData
-          name: login
-          type: string
-          required: true
-          description: Users account login.
+            name: login
+            type: string
+            required: true
+            description: Users account login.
+
         - in: formData
-          name: password
-          type: string
-          required: true
-          description: Users account password.
+            name: password
+            type: string
+            required: true
+            description: Users account password.
+
         responses:
             200:
                 description: Authorization succeed
@@ -40,23 +42,23 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
                 headers:
                     Set-Cookie:
                         schema:
-                             - cookieAuth
-                             - sessionID
+                            - cookieAuth
+                            - sessionID
             401:
                 description: User did provided invalid authorization information
                 content:
                     application/json:
-                        schema: JsonHTTPError
+                        schema: APIErrorSchema
             400:
-                description: User didn't provided authorization information
+                description: User didn't provided authorization information.
                 content:
                     application/json:
-                        schema: JsonHTTPError
+                        schema: APIErrorSchema
             404:
                 description: User with this login doesn't exists
                 content:
                     application/json:
-                        schema: JsonHTTPError
+                        schema: APIErrorSchema
         """
         # TODO: add TOPT later
         login = self.get_body_argument("login", default=None)
@@ -95,7 +97,11 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
         )
         self.write(
             JsonWrapper.dumps(
-                {"authorized": True, "user_data": user_data, "current_session_id": new_session.session_id}
+                {
+                    "authorized": True,
+                    "user_data": user_data,
+                    "current_session_id": new_session.session_id
+                }
             )
         )
         token_type = "Bot" if authorized_user.user.is_bot else "Bearer"
