@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Tuple
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, select
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, and_, select
 from sqlalchemy.exc import IntegrityError
 
 from Quadrant.models.db_init import Base
@@ -74,6 +74,30 @@ class UserSession(Base):
             raise ValueError("No such session")
 
     @classmethod
+    async def get_user_session(cls, user_id: UUID, session_id: int, *, session):
+        """
+        Gives exact session.
+
+        :param user_id: participant id of one participant, whose sessions we must get.
+        :param session_id: id of exact session.
+        :param session: sqlalchemy session.
+        :return: session instance.
+        """
+
+        try:
+            query = select(UserSession).filter(
+                and_(
+                    UserSession.user_id == user_id,
+                    UserSession.session_id == session_id
+                )
+            )
+            query_result = await session.execute(query)
+            return query_result.scalar_one()
+
+        except (IntegrityError, OverflowError):
+            raise ValueError("No such session")
+
+    @classmethod
     async def get_user_sessions_page(cls, user_id: UUID, page: int, *, session) -> Tuple[UserSession]:
         """
         Gives one page of sessions or empty list.
@@ -92,10 +116,10 @@ class UserSession(Base):
                 .order_by(cls.is_alive.desc(), cls.session_id.desc())
 
             query_result = await session.execute(query)
-            return query_result.all()
+            return query_result.scalars().all()
 
-        except (IntegrityError, OverflowError):
-            raise ValueError("No such session")
+        except OverflowError:
+            raise ValueError("No such sessions page")
 
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
@@ -115,6 +139,14 @@ class UserSession(Base):
 
         await session.commit()
         return True
+
+    def as_dict(self):
+        return {
+            "session_id": self.session_id,
+            "ip_address": self.ip_address,
+            "started_at": self.started_at,
+            "is_alive": self.is_alive,
+        }
 
     async def terminate_session(self, *, session) -> None:
         """Kills all users sessions."""

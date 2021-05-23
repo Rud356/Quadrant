@@ -8,7 +8,8 @@ from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 from Quadrant.resourses.middlewares import rest_authenticated
 
-class UserResource(QuadrantAPIHandler):
+
+class UserResourceHandler(QuadrantAPIHandler):
     @rest_authenticated
     async def get(self, user_id: str):
         try:

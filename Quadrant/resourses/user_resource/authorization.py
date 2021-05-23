@@ -1,8 +1,6 @@
-from typing import Any
-
 from sqlalchemy import exc
 from tornado.log import app_log
-from tornado.web import authenticated, Finish
+from tornado.web import Finish
 
 from Quadrant.models import users_package
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
@@ -104,28 +102,4 @@ class InternalAuthorizationHandler(QuadrantAPIHandler):
         token = f"{token_type} {authorized_user.internal_token}"
         self.set_secure_cookie("token", token, expires_days=2)
         self.set_secure_cookie("session_id", new_session.session_id, expires_days=2)
-        raise Finish()
-
-    # TODO: move method to sessions management
-    @authenticated
-    async def delete(self):
-        """
-        Terminates current users session
-        ---
-        security:
-        requestBody:
-            required: false
-        responses:
-            200:
-                description: Authorization succeed
-                content:
-                    application/json:
-                        schema: UserLoginResponseSchema
-        """
-        await self.user_session.terminate_session(session=self.session)
-        self.clear_cookie("token")
-        self.clear_cookie("session_id")
-        self.write(JsonWrapper.dumps(
-            {"success": True, "message": "You've been successfully logged off"}
-        ))
         raise Finish()

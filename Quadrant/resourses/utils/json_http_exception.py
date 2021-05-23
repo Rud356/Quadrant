@@ -5,6 +5,7 @@ from .json_wrapper import JsonWrapper
 
 
 class JsonHTTPError(HTTPError):
+    # TODO: validate that this gives valid response
     def __str__(self):
         message = JsonWrapper.dumps({
             "status_code": self.status_code,

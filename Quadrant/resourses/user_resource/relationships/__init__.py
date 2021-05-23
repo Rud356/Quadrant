@@ -2,3 +2,4 @@ from .blocked import BlockedRelationsHandler, BlockedRelationsPageHandler
 from .friends import FriendsRelationsHandler, FriendsRelationsPageHandler
 from .incoming_friend_requests import IncomingFriendRequestHandler, IncomingFriendsRequestsPageHandler
 from .outgoing_friend_requests import OutgoingFriendRequestHandler, OutgoingFriendsRequestsPageHandler
+from .relations import RelationsCheckHandler
