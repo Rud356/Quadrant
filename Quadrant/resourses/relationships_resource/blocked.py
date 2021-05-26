@@ -43,7 +43,8 @@ class BlockedRelationsHandler(QuadrantAPIHandler):
 
 class BlockedRelationsPageHandler(QuadrantAPIHandler):
     @rest_authenticated
-    async def get(self, page=0):
+    async def get(self):
+        page = self.get_argument("page", default="0")
         try:
             page = int(page)
             relation_type = users_package.UsersRelationType.blocked

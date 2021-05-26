@@ -5,7 +5,7 @@ from tornado.web import Finish
 from Quadrant.models import users_package
 from Quadrant.resourses.quadrant_api_handler import QuadrantAPIHandler
 from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
-from .schemas import UserRegistrationSchema
+from Quadrant.resourses.registration_resource.schemas import UserRegistrationSchema
 
 
 class InternalRegistrationHandler(QuadrantAPIHandler):

@@ -10,9 +10,9 @@ from Quadrant.resourses.utils import JsonHTTPError, JsonWrapper
 
 class FriendsRelationsHandler(QuadrantAPIHandler):
     @rest_authenticated
-    async def delete(self, friend_id):
+    async def delete(self, friend_user_id):
         try:
-            user_id: UUID = UUID(friend_id)
+            user_id: UUID = UUID(friend_user_id)
             friend = await users_package.User.get_user(user_id, session=self.session)
             await users_package.UsersRelations.remove_user_from_friends(
                 self.user, friend, session=self.session
@@ -24,12 +24,13 @@ class FriendsRelationsHandler(QuadrantAPIHandler):
         except users_package.UsersRelations.exc.RelationshipsException:
             raise JsonHTTPError(status_code=400, reason="User isn't your friend")
 
-        self.write(JsonWrapper.dumps({"unfriended_user_id": friend_id}))
+        self.write(JsonWrapper.dumps({"unfriended_user_id": friend_user_id}))
 
 
 class FriendsRelationsPageHandler(QuadrantAPIHandler):
     @rest_authenticated
-    async def get(self, page=0):
+    async def get(self):
+        page = self.get_argument("page", default="0")
         try:
             page = int(page)
             relation_type = users_package.UsersRelationType.blocked

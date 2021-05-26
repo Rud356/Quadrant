@@ -77,7 +77,7 @@ class UsersCurrentSessionHandler(QuadrantAPIHandler):
         raise Finish()
 
 
-class UsersAliveSessionHandler(QuadrantAPIHandler):
+class UsersExactSessionHandler(QuadrantAPIHandler):
     @rest_authenticated
     async def get(self, session_id):
         """
@@ -173,7 +173,7 @@ class UsersAliveSessionHandler(QuadrantAPIHandler):
 
 class UsersSessionsHistoryHandler(QuadrantAPIHandler):
     @rest_authenticated
-    async def get(self, page):
+    async def get(self):
         """
         Sends user sessions page representation
         ---
@@ -199,6 +199,7 @@ class UsersSessionsHistoryHandler(QuadrantAPIHandler):
                 application/json:
                     schema: APIErrorSchema
         """
+        page = self.get_argument("page", default="0")
         try:
             page = int(page)
             sessions = await UserSession.get_user_sessions_page(self.user.id, page, session=self.session)

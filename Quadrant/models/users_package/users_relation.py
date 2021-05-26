@@ -130,7 +130,7 @@ class UsersRelations(Base):
         user: User, page: int, relationship_type: UsersRelationType, *, session
     ) -> Tuple[Tuple[UsersRelations.relation_status, User]]:
         """
-        Gives page of relationships ordered by username and users with who Users instances with whom has relations.
+        Gives page of relationships_resource ordered by username and users with who Users instances with whom has relations.
 
         :param user: user instance of someone who asks for this.
         :param page: page number.
@@ -270,7 +270,7 @@ class UsersRelations(Base):
             await session.commit()
 
         else:
-            raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
+            raise UsersRelations.exc.RelationshipsException("Invalid relationships_resource to become friends")
 
     @staticmethod
     async def remove_user_from_friends(removed_by: User, friend: User, *, session) -> None:
@@ -299,14 +299,14 @@ class UsersRelations(Base):
             await session.commit()
 
         else:
-            raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
+            raise UsersRelations.exc.RelationshipsException("Invalid relationships_resource to become friends")
 
     @staticmethod
     async def block_user(blocking_by: User, blocking_user: User, *, session) -> UsersRelations:
         """
         Destroys friends relationship, requester or receiver of friend request and sets relationship status, that
         initiated by blocking_by user, to UsersRelationType.blocked.
-        Must not remove all relationships to be able keep other's user
+        Must not remove all relationships_resource to be able keep other's user
         possible block relationship still existing.
 
         :param blocking_by: user who blocks other user.
@@ -377,7 +377,7 @@ class UsersRelations(Base):
     class exc:
         class RelationshipsException(Exception):
             """
-            Base exception for relationships class.
+            Base exception for relationships_resource class.
             """
             pass
 

@@ -15,7 +15,7 @@ MIN_IMAGE_SIZE = casters.file_size_caster("15k")
 MAX_IMAGE_SIZE = casters.file_size_caster("4M")
 
 
-class ProfilePictureUploadsHandler(QuadrantAPIHandler):
+class ProfilePictureHandler(QuadrantAPIHandler):
     profile_picture: Optional[bytes]
 
     @authenticated
