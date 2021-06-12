@@ -10,7 +10,7 @@ def require_authorization(f):
     @wraps(f)
     async def wrapper(*args, request: Request, **kwargs):
         request: RequestWithAuthorizedUser
-        if request.authorized_user is None:
+        if not hasattr(request, "authorized_user"):
             return ORJSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={"reason": "UNAUTHORIZED", "message": "You aren't authorized to access this resource"}

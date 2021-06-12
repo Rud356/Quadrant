@@ -12,6 +12,20 @@ from .router import router
 
 
 @router.get(
+    "/api/v1/users/me",
+    description="Gives information about authorized user",
+    responses={
+        200: {"model": user_schemas.UserSchema},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+    }
+)
+@require_authorization
+async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
+    return request.authorized_user.user.as_dict()
+
+
+@router.get(
     "/api/v1/users/{user_id}",
     description="Gives information about user",
     responses={
@@ -33,16 +47,3 @@ async def get_user_info_about(user_id: UUID, request: RequestWithAuthorizedUser)
 
     return user.as_dict()
 
-
-@router.get(
-    "/api/v1/users/me",
-    description="Gives information about authorized user",
-    responses={
-        200: {"model": user_schemas.UserSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
-    }
-)
-@require_authorization
-async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
-    return request.authorized_user.user.as_dict()
