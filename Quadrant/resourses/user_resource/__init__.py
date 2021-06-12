@@ -1,4 +1,4 @@
-from Quadrant.resourses.common import UUID4_REGEX
+from Quadrant.resourses.common_variables import UUID4_REGEX
 from Quadrant.resourses.quadrant_app import QuadrantAPIApp
 from .profile_managment import (
     AboutMeHandler, ProfilePictureHandler, UserStatusHandler,

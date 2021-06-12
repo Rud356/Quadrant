@@ -27,5 +27,5 @@ def file_size_caster(value: str) -> int:
         size_multiplier = ""
         numbers = value
 
-    multiplier = multipliers_table.get(size_multiplier, "")
+    multiplier = multipliers_table.get(size_multiplier, 1)
     return int(numbers)*multiplier

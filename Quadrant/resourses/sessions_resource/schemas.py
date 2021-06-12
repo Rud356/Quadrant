@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields
 
-from Quadrant.resourses.common_schemas import SuccessResponseSchema
+from Quadrant.resourses.common_variables.common_schemas import SuccessResponseSchema
 
 
 class UserSessionSchema(Schema):

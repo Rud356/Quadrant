@@ -5,10 +5,14 @@ from shutil import rmtree
 from Quadrant.config import quadrant_config
 from functools import wraps
 
-loop = asyncio.get_event_loop()
-
 
 def make_async_call(f):
+    try:
+        loop = asyncio.get_running_loop()
+
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+
     @wraps(f)
     def async_run(*args, **kwargs):
         return loop.run_until_complete(f(*args, **kwargs))

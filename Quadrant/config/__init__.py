@@ -19,7 +19,7 @@ parser.add_argument(
 )
 parser.add_argument("--make-config", "--new-config", action="store_true", dest="create_config", default=False)
 
-launch_args = parser.parse_args()
+launch_args, unknown = parser.parse_known_args()
 if not launch_args.config_path.is_file() and not launch_args.create_config:
     raise ValueError("[--config] launch argument accepts path to config file only")
 
@@ -34,7 +34,7 @@ if launch_args.create_config:
 
 yaml_loader = loaders.YAMLLoader.load(yaml_path)
 env_loader = loaders.EnvLoader.load()
-composite_loader = loaders.CompositeLoader.load(yaml_loader, env_loader)
+composite_loader = loaders.CompositeLoader.load(env_loader, yaml_loader)
 
 
 class QuadrantConfig(BaseConfig):

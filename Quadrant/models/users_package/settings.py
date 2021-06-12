@@ -26,7 +26,7 @@ class UsersCommonSettings(Base):
 
     async def get_setting(self, key: str, *, session) -> Any:
         """
-        Gets exact setting from common settings set.
+        Gets exact setting from common_variables settings set.
 
         :param key: setting key.
         :param session: sqlalchemy session.
@@ -43,7 +43,7 @@ class UsersCommonSettings(Base):
 
     async def update_settings(self, *, settings: Dict[str, Any], session) -> Dict[str, Dict[str, Any]]:
         """
-        Updates settings from common settings list.
+        Updates settings from common_variables settings list.
         :param settings: dictionary with setting_key: setting_value.
         :param session: sqlalchemy session.
         :return: dictionary containing one key "updated_settings" where has another dict
