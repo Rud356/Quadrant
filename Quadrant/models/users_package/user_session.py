@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Tuple
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, and_, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from Quadrant.models.db_init import Base
 
@@ -70,7 +70,7 @@ class UserSession(Base):
             query_result = await session.execute(query)
             return query_result.scalar_one()
 
-        except (IntegrityError, OverflowError):
+        except (IntegrityError, NoResultFound, OverflowError):
             raise ValueError("No such session")
 
     @classmethod

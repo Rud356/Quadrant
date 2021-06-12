@@ -5,6 +5,7 @@ static/
 media/
 quadrant_logs/
 */config.yaml
+__old_routes/*
 
 
 # Byte-compiled / optimized / DLL files

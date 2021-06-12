@@ -83,18 +83,20 @@ class QuadrantConfig(BaseConfig):
         date_format = ConfigVar(
             "Quadrant/quadrant_logging/date_format", yaml_loader, validator=datetime.now().strftime, constant=True
         )
-        log_format = ConfigVar("Quadrant/quadrant_logging/format", yaml_loader, caster=logging.Formatter, constant=True)
-        tornado_app_log_level = ConfigVar(
+        log_format = ConfigVar(
+            "Quadrant/quadrant_logging/format", yaml_loader, validator=logging.Formatter, constant=True
+        )
+        app_log_level = ConfigVar(
             "Quadrant/quadrant_logging/TornadoAppLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )
-        tornado_access_log_level = ConfigVar(
+        access_log_level = ConfigVar(
             "Quadrant/quadrant_logging/TornadoAccessLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )
-        tornado_general_log_level = ConfigVar(
+        general_log_level = ConfigVar(
             "Quadrant/quadrant_logging/TornadoGeneralLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True

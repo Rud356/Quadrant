@@ -1,18 +1,14 @@
-from tornado.httpserver import HTTPServer
-from tornado.ioloop import IOLoop
-from tornado.netutil import Resolver
-
+import Quadrant.middlewares
+import Quadrant.quadrant_logging
 from Quadrant.config import quadrant_config
-from Quadrant.resourses import router
 
-http_server = HTTPServer(router)
-
+from Quadrant.resources import user_resources
 
 if quadrant_config.host_static_files_internally.value:
     # Add static files handlers
     pass
 
+
 if __name__ == "__main__":
-    Resolver.configure("tornado.platform.caresresolver.CaresResolver")
-    http_server.listen(port=quadrant_config.HttpChatServer.port.value)
-    IOLoop.current().start()
+    from Quadrant.quadrant_app import app
+    app.include_router(user_resources.router)

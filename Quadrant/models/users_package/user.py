@@ -4,14 +4,14 @@ from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
 
-from tornado.log import gen_log
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String, ForeignKey, and_, select, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, and_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.orm import relationship, noload
+from sqlalchemy.orm import relationship
 
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
 from Quadrant.models.utils import generate_random_color
+from Quadrant.quadrant_logging import gen_log
 from .users_status import UsersStatus
 
 MAX_OWNED_BOTS = 20
@@ -139,7 +139,7 @@ class User(Base):
 
         return settings
 
-    def as_dict(self, public_view=True):
+    def as_dict(self):
         user_fields = {
             "id": self.id,
             "color_id": self.color_id,
@@ -150,9 +150,6 @@ class User(Base):
             "is_bot": self.is_bot,
             "is_banned": self.is_banned
         }
-
-        if not public_view:
-            user_fields["common_settings"] = self.users_common_settings.common_settings
 
         return user_fields
 

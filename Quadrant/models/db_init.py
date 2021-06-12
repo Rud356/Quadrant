@@ -1,10 +1,11 @@
 from functools import wraps
 
-from Quadrant.config import quadrant_config
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
-from tornado.log import app_log
+
+from Quadrant.config import quadrant_config
+from Quadrant.quadrant_logging import app_log
 
 Base = declarative_base()
 Session = sessionmaker(

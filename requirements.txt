@@ -1,13 +1,10 @@
-tornado~=6.1
 Alembic==1.6.2
 sqlalchemy~=1.4.2
 ConfigFramework~=2.0.8
 asyncpg~=0.22.0
 psycopg2~=2.8.6
-apispec~=4.4.0
-apispec-webframeworks~=0.5.2
 python-rapidjson~=1.0.0
 marshmallow~=3.11.1
 pathvalidate~=2.4.1
-pycares~=3.2.3
 Pillow~=8.2.0
+fastapi[all]~=0.65.2

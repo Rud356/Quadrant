@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class UsersStatus(Enum):
+class UsersStatus(str, Enum):
     offline = 0
     online = 1
     away = 2
