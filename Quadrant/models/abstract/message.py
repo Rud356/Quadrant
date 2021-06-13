@@ -10,7 +10,7 @@ from sqlalchemy.orm import declared_attr, relationship
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Base
-from Quadrant.models.general import File
+from Quadrant.models.general import UploadedFile
 
 MESSAGES_PER_REQUEST = 100
 # TODO: add messages reactions
@@ -51,7 +51,7 @@ class ABCMessage(Base):
 
     @declared_attr
     def attached_file(self):
-        return relationship(File, lazy="joined", uselist=False)
+        return relationship(UploadedFile, lazy="joined", uselist=False)
 
     async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
         """
@@ -73,8 +73,8 @@ class ABCMessage(Base):
 
         :param channel: text channel instance.
         :param author: authors User model instance.
-        :param text: message text that can be nothing (in case we have attached file) and not longer than 2000 symbols.
-        :param attached_file_id: attached file instance.
+        :param text: message text that can be nothing (in case we have attached upload) and not longer than 2000 symbols.
+        :param attached_file_id: attached upload instance.
         :param session: sqlalchemy session.
         :return: new message instance if everything is correct.
         """
@@ -91,9 +91,9 @@ class ABCMessage(Base):
         attached_file = None
         with suppress(exc.NoResultFound, ValueError):
             if attached_file_id is None:
-                raise ValueError("File isn't attached")
+                raise ValueError("UploadedFile isn't attached")
 
-            attached_file = await File.get_file(uploader=author, file_id=attached_file_id, session=session)
+            attached_file = await UploadedFile.get_file(uploader=author, file_id=attached_file_id, session=session)
 
         if attached_file is None:
             new_message = cls(

@@ -21,7 +21,7 @@ parser.add_argument("--make-config", "--new-config", action="store_true", dest="
 
 launch_args, unknown = parser.parse_known_args()
 if not launch_args.config_path.is_file() and not launch_args.create_config:
-    raise ValueError("[--config] launch argument accepts path to config file only")
+    raise ValueError("[--config] launch argument accepts path to config upload only")
 
 yaml_path = launch_args.config_path
 
@@ -40,10 +40,6 @@ composite_loader = loaders.CompositeLoader.load(env_loader, yaml_loader)
 class QuadrantConfig(BaseConfig):
     # Represents max size of payloads
     debug_mode = BoolVar("Quadrant/debug_mode", composite_loader, default=False)
-    max_payload_size = ConfigVar(
-        "Quadrant/max_payload_size", composite_loader, validator=lambda v: v >= 0, default='8M',
-        caster=casters.file_size_caster, constant=True
-    )
     static_folder_location = ConfigVar(
         "Quadrant/static_folder_location", composite_loader, caster=Path,
         default=Path(__file__).parent.parent / "static"

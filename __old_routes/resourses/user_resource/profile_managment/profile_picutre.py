@@ -25,14 +25,14 @@ class ProfilePictureHandler(QuadrantAPIHandler):
             content = file['body']
 
         except KeyError:
-            raise JsonHTTPError(status_code=400, reason="No file was uploaded")
+            raise JsonHTTPError(status_code=400, reason="No upload was uploaded")
 
         if len(content) not in range(MIN_IMAGE_SIZE, MAX_IMAGE_SIZE):
-            raise JsonHTTPError(status_code=400, reason="Empty file uploaded")
+            raise JsonHTTPError(status_code=400, reason="Empty upload uploaded")
 
         filetype = imghdr.what(None, h=content)
         if filetype not in {"jpeg", "png", "webp"}:
-            raise JsonHTTPError(status_code=400, reason="Invalid file format")
+            raise JsonHTTPError(status_code=400, reason="Invalid upload format")
 
         self.profile_picture = content
         self.write(JsonWrapper.dumps({"success": True}))

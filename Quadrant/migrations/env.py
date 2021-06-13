@@ -7,10 +7,10 @@ from alembic import context
 from Quadrant.models import db_init
 
 # this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# access to the values within the .ini upload in use.
 config = context.config
 
-# Interpret the config file for Python quadrant_logging.
+# Interpret the config upload for Python quadrant_logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)
 

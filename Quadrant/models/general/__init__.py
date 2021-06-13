@@ -1,1 +1,1 @@
-from .files import File
+from .files import UploadedFile

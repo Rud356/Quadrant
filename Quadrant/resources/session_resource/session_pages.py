@@ -1,7 +1,6 @@
-from fastapi import status
+from fastapi import Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
-from Quadrant.middlewares.custom_objects import RequestWithAuthorizedUser
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, session_schema
@@ -15,11 +14,17 @@ from .router import router
         200: {"model": session_schema.SessionPagesCountSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["Users session management"]
 )
-@require_authorization
-async def get_pages_count(request: RequestWithAuthorizedUser):
-    pages = UserSession.get_sessions_pages_count(user_id=request.user.id, session=request.sql_session)
+async def get_pages_count(request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
+    pages = UserSession.get_sessions_pages_count(
+        user_id=db_user.id, session=sql_session
+    )
 
     return {"pages": pages}
 
@@ -30,12 +35,17 @@ async def get_pages_count(request: RequestWithAuthorizedUser):
         200: {"model": session_schema.SessionsPageSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["Users session management"]
 )
-async def get_session_page(page: int, request: RequestWithAuthorizedUser):
+async def get_session_page(page: int, request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
     try:
         sessions_page = await UserSession.get_user_sessions_page(
-            request.user.id, page, session=request.sql_session
+            db_user.id, page, session=sql_session
         )
 
     except ValueError:

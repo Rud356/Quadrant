@@ -30,5 +30,5 @@ gen_log.setLevel(log_config.general_log_level.value)
 access_log.setLevel(log_config.access_log_level.value)
 
 app_log.addHandler(rotating_file_handler_creator(filename=log_config.app_log_path / "app.log"))
-gen_log.addHandler(rotating_file_handler_creator(filename=log_config.app_log_path / "general.log"))
-access_log.addHandler(rotating_file_handler_creator(filename=log_config.app_log_path / "access.log"))
+gen_log.addHandler(rotating_file_handler_creator(filename=log_config.general_log_path / "general.log"))
+access_log.addHandler(rotating_file_handler_creator(filename=log_config.access_log_path / "access.log"))

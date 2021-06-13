@@ -1,10 +1,9 @@
 from uuid import UUID
 
-from fastapi import status, Depends
+from fastapi import Depends, Request, status
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.exc import NoResultFound
 
-from Quadrant.middlewares.custom_objects import RequestWithAuthorizedUser
 from Quadrant.models.users_package import User
 from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, user_schemas
@@ -22,8 +21,8 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["User information"]
 )
-async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
-    return request.authorized_user.user.as_dict()
+async def get_user_info_about_authorized(request: Request):
+    return request.state["authorized_user"].user.as_dict()
 
 
 @router.get(
@@ -37,9 +36,9 @@ async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["User information"]
 )
-async def get_user_info_about(user_id: UUID, request: RequestWithAuthorizedUser):
+async def get_user_info_about(user_id: UUID, request: Request):
     try:
-        user = await User.get_user(user_id, session=request.sql_session)
+        user = await User.get_user(user_id, session=request.state["sql_session"])
 
     except NoResultFound:
         return ORJSONResponse(

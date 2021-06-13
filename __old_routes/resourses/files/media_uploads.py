@@ -10,18 +10,18 @@ class MediaUploadsHandler(QuadrantAPIHandler):
     @authenticated
     async def post(self):
         try:
-            file = self.request.files['file']
+            file = self.request.files['upload']
             filename = file['filename']
             content = file['body']
 
         except KeyError:
-            raise JsonHTTPError(status_code=400, reason="No file was uploaded")
+            raise JsonHTTPError(status_code=400, reason="No upload was uploaded")
 
         if len(content) < 1:
-            raise JsonHTTPError(status_code=400, reason="Empty file uploaded")
+            raise JsonHTTPError(status_code=400, reason="Empty upload uploaded")
 
         try:
-            new_file = await general.File.create_file(self.user, filename, session=self.session)
+            new_file = await general.UploadedFile.create_file(self.user, filename, session=self.session)
 
         except ValueError:
             raise JsonHTTPError(status_code=400, reason="Invalid filename")

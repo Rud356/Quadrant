@@ -1,7 +1,6 @@
-from fastapi import status
+from fastapi import Depends, Request, status
 from fastapi.responses import ORJSONResponse
 
-from Quadrant.middlewares.custom_objects import RequestWithAuthorizedUser
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, session_schema
@@ -15,13 +14,17 @@ from .router import router
         200: {"model": session_schema.SessionSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_404_NOT_FOUND: {"model": HTTPError},
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["Users session management"]
 )
-@require_authorization
-async def get_current_session_info(session_id: int, request: RequestWithAuthorizedUser):
+async def get_current_session_info(session_id: int, request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
     try:
         session: UserSession = await UserSession.get_alive_user_session(
-            request.user.id, session_id, session=request.session
+            db_user.id, session_id, session=sql_session
         )
         session_data = session.as_dict()
 
@@ -44,13 +47,18 @@ async def get_current_session_info(session_id: int, request: RequestWithAuthoriz
         200: {"model": session_schema.TerminatedSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_404_NOT_FOUND: {"model": HTTPError},
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["Users session management"]
 )
 @require_authorization
-async def get_current_session_info(session_id: int, request: RequestWithAuthorizedUser):
+async def get_current_session_info(session_id: int, request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
     try:
         session: UserSession = await UserSession.get_alive_user_session(
-            request.user.id, session_id, session=request.session
+            db_user.id, session_id, session=sql_session
         )
 
     except ValueError:
@@ -59,7 +67,7 @@ async def get_current_session_info(session_id: int, request: RequestWithAuthoriz
             content={"reason": "INVALID_SESSION_ID", "message": "No session with that id found"}
         )
 
-    await session.terminate_session(session=request.sql_session)
+    await session.terminate_session(session=sql_session)
 
     return ORJSONResponse(
         content={"session_id": session_id, "successfully_terminated": True},
