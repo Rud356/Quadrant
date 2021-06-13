@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import ceil
 from datetime import datetime
 from typing import TYPE_CHECKING, Tuple
 from uuid import UUID
@@ -120,6 +121,13 @@ class UserSession(Base):
 
         except OverflowError:
             raise ValueError("No such sessions page")
+
+    @staticmethod
+    async def get_sessions_pages_count(user_id: UUID, *, session) -> int:
+        query = select(UserSession.session_id).filter(user_id=user_id, session=session).count()
+        query_result = await session.execute(query)
+
+        return ceil(query_result.scalar() / SESSIONS_PER_PAGE)
 
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:

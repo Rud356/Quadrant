@@ -32,6 +32,7 @@ defaults = {
 
             "security": {
                 "cookie_secret": "EXAMPLE_COOKIE_SECRET",
+                "csrf_secret": "EXAMPLE_CSRF_SECRET",
                 "default_host": r"(localhost|127\.0\.0\.1)"
             },
 

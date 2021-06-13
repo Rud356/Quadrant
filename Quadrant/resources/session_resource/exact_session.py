@@ -1,9 +1,8 @@
 from fastapi import status
 from fastapi.responses import ORJSONResponse
 
-from sqlalchemy.exc import NoResultFound
-from Quadrant.models.users_package import UserSession
 from Quadrant.middlewares.custom_objects import RequestWithAuthorizedUser
+from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, session_schema
 from .router import router
@@ -40,7 +39,7 @@ async def get_current_session_info(session_id: int, request: RequestWithAuthoriz
 
 @router.delete(
     "/api/v1/sessions/{session_id}",
-    description="Terminates current session",
+    description="Terminates one exact session",
     responses={
         200: {"model": session_schema.TerminatedSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},

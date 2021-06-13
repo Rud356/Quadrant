@@ -13,9 +13,8 @@ from .user import User, UsersCommonSettings
 
 
 class UserInternalAuthorization(Base):
-    record_id = Column(BigInteger, primary_key=True)
     user_id = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
-    internal_token = Column(String(128), index=True, nullable=False)
+    internal_token = Column(String(128), primary_key=True)
 
     login = Column(String(64), nullable=True, unique=True, index=True)
     password = Column(String(64), nullable=True)

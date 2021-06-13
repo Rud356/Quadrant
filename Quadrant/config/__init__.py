@@ -132,6 +132,9 @@ class QuadrantConfig(BaseConfig):
         cookie_secret = ConfigVar(
             "Quadrant/security/cookie_secret", composite_loader, validator=lambda v: v != "EXAMPLE_COOKIE_SECRET"
         )
+        csrf_secret = ConfigVar(
+            "Quadrant/security/csrf_secret", composite_loader, validator=lambda v: v != "EXAMPLE_CSRF_SECRET"
+        )
         default_host = ConfigVar("Quadrant/security/default_host", composite_loader)
 
     class HttpChatServer:
