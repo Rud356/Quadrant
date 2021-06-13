@@ -1,11 +1,12 @@
 from fastapi import Request
 
-from Quadrant.quadrant_app import app
 from Quadrant.models.db_init import Session
 
 
-@app.middleware("http")
 async def get_sqlalchemy_session(request: Request, call_next):
+    if hasattr(request, "sql_session"):
+        return await call_next(request)
+
     async with Session() as session:
         request.sql_session = session
         response = await call_next(request)

@@ -2,10 +2,7 @@ import time
 
 from fastapi import Request
 
-from Quadrant.quadrant_app import app
 
-
-@app.middleware("http")
 async def processing_time(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)

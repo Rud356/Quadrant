@@ -6,13 +6,16 @@ from pydantic import BaseModel, Field
 from Quadrant.models.users_package import UsersStatus
 
 
-class UserRegistration(BaseModel):
-    username: str = Field(min_length=1, max_length=50)
+class UserAuthorization(BaseModel):
     login: str = Field(min_length=8, regex=r"^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")
     password: str = Field(
         min_length=8, max_length=128,
         regex=r"^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,128}$"
     )
+
+
+class UserRegistration(UserAuthorization):
+    username: str = Field(min_length=1, max_length=50)
 
 
 class UserSchema(BaseModel):

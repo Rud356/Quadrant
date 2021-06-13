@@ -1,7 +1,8 @@
-import jwt
 from datetime import datetime, timedelta
-from fastapi import status, Form, Response, HTTPException
-from fastapi.responses import ORJSONResponse
+
+import jwt
+from fastapi import HTTPException, Response, status
+
 from sqlalchemy.exc import NoResultFound
 
 from Quadrant.config import quadrant_config
@@ -13,22 +14,19 @@ from .router import router
 
 @router.post(
     "/api/v1/authorization/internal",
-    description="Authorizes user, registered through Quadrant",
+    description="Authorizes internally created user",
     responses={
         200: {"model": user_schemas.UserSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError},
-    },
-    tags=["Authorization"]
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError}
+    }
 )
 async def internal_authorization(
     request: RequestWithAuthorizedUser,
     response: Response,
-    login: str = Form(...),
-    password: str = Form(...)
+    authorization_request: user_schemas.UserAuthorization
 ):
     # TODO: work with csrf form protection?
-    if request.user is not None:
+    if getattr(request, "authorized_user", None) is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"reason": "ALREADY_AUTHORIZED", "message": "You are already authorized"}
@@ -36,7 +34,7 @@ async def internal_authorization(
 
     try:
         authorized_user = await UserInternalAuthorization.authorize(
-            login, password, session=request.sql_session
+            authorization_request.login, authorization_request.password, session=request.sql_session
         )
 
     except (ValueError, NoResultFound):

@@ -5,6 +5,6 @@ from Quadrant.models.users_package import User, UserInternalAuthorization, UserS
 
 
 class RequestWithAuthorizedUser(custom_objects.RequestWithSession):
-    user: User
+    db_user: Optional[User]
     authorized_user: Optional[UserInternalAuthorization]
     user_session: Optional[UserSession]

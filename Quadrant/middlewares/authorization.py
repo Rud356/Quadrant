@@ -20,6 +20,7 @@ async def user_authorization(request: RequestWithSession, call_next):
     session_token = request.cookies.get("session_token") or request.headers.get("session_token")
 
     if session_token is None:
+        request.db_user = None
         request.authorized_user = None
         request.user_session = None
 
@@ -67,7 +68,7 @@ async def user_authorization(request: RequestWithSession, call_next):
                     content={"reason": "INVALID_SESSION", "message": "Your session is invalid"}
                 )
 
-            request.scope['user'] = authorized_user.user
+            request.db_user = authorized_user.user
             request.authorized_user = authorized_user
             request.user_session = user_session
 
