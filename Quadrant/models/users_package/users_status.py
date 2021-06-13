@@ -1,9 +1,9 @@
 from enum import Enum
 
 
-class UsersStatus(str, Enum):
-    offline = 0
-    online = 1
-    away = 2
-    do_not_disturb = 3
-    asleep = 4
+class UsersStatus(Enum):
+    offline = "offline"
+    online = "online"
+    away = "away"
+    do_not_disturb = "do_not_disturb"
+    asleep = "asleep"

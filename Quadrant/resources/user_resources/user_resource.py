@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import status
+from fastapi import status, Depends
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.exc import NoResultFound
 
@@ -18,9 +18,10 @@ from .router import router
         200: {"model": user_schemas.UserSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_404_NOT_FOUND: {"model": HTTPError}
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["User information"]
 )
-@require_authorization
 async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
     return request.authorized_user.user.as_dict()
 
@@ -32,9 +33,10 @@ async def get_user_info_about_authorized(request: RequestWithAuthorizedUser):
         200: {"model": user_schemas.UserSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_404_NOT_FOUND: {"model": HTTPError}
-    }
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["User information"]
 )
-@require_authorization
 async def get_user_info_about(user_id: UUID, request: RequestWithAuthorizedUser):
     try:
         user = await User.get_user(user_id, session=request.sql_session)
@@ -46,4 +48,3 @@ async def get_user_info_about(user_id: UUID, request: RequestWithAuthorizedUser)
         )
 
     return user.as_dict()
-

@@ -1,6 +1,6 @@
 import jwt
 from datetime import datetime, timedelta
-from fastapi import status, Form, Response
+from fastapi import status, Form, Response, HTTPException
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.exc import NoResultFound
 
@@ -18,7 +18,8 @@ from .router import router
         200: {"model": user_schemas.UserSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
         status.HTTP_404_NOT_FOUND: {"model": HTTPError},
-    }
+    },
+    tags=["Authorization"]
 )
 async def internal_authorization(
     request: RequestWithAuthorizedUser,
@@ -28,9 +29,9 @@ async def internal_authorization(
 ):
     # TODO: work with csrf form protection?
     if request.user is not None:
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"reason": "ALREADY_AUTHORIZED", "message": "You are already authorized"}
+            detail={"reason": "ALREADY_AUTHORIZED", "message": "You are already authorized"}
         )
 
     try:
@@ -39,9 +40,9 @@ async def internal_authorization(
         )
 
     except (ValueError, NoResultFound):
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"reason": "INVALID_CREDENTIALS", "message": "You provided invalid login or password"}
+            detail={"reason": "INVALID_CREDENTIALS", "message": "You provided invalid login or password"}
         )
 
     user_data = authorized_user.user.as_dict()
