@@ -1,5 +1,4 @@
-from fastapi import Depends, Request, status
-from fastapi.responses import ORJSONResponse
+from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
@@ -49,9 +48,9 @@ async def get_session_page(page: int, request: Request):
         )
 
     except ValueError:
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"reason": "INVALID_PAGE", "message": "You've tried to access invalid sessions page"}
+            detail={"reason": "INVALID_PAGE", "message": "You've tried to access invalid sessions page"}
         )
 
     return {"sessions": [session.as_dict() for session in sessions_page]}

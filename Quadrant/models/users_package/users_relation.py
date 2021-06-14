@@ -118,7 +118,7 @@ class UsersRelations(Base):
             UsersRelations.relation_with_id == with_user_id
         )
         query_result = await session.execute(query)
-        relation = query_result.scalar_one_or_none()
+        relation = query_result.scalar()
 
         if relation is None:
             return UsersRelationType.none

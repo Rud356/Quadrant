@@ -1,8 +1,7 @@
 from fastapi import Depends, Request, status
-from fastapi.responses import ORJSONResponse
 
-from Quadrant.resources.utils import require_authorization
 from Quadrant.models.users_package import UserSession
+from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, session_schema
 from .router import router
 
@@ -22,10 +21,7 @@ async def get_current_session_info(request: Request):
     user_session: UserSession = request.scope["user_session"]
     session_data = user_session.as_dict()
 
-    return ORJSONResponse(
-        content=session_data,
-        status_code=status.HTTP_200_OK
-    )
+    return session_data
 
 
 @router.delete(
@@ -46,7 +42,4 @@ async def get_current_session_info(request: Request):
 
     await user_session.terminate_session(session=sql_session)
 
-    return ORJSONResponse(
-        content={"session_id": session_id, "successfully_terminated": True},
-        status_code=status.HTTP_200_OK
-    )
+    return {"session_id": session_id, "successfully_terminated": True}

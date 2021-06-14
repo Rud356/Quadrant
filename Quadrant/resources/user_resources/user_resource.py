@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from fastapi import Depends, Request, status
-from fastapi.responses import ORJSONResponse
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.exc import NoResultFound
 
 from Quadrant.models.users_package import User
@@ -37,13 +36,14 @@ async def get_user_info_about_authorized(request: Request):
     tags=["User information"]
 )
 async def get_user_info_about(user_id: UUID, request: Request):
+    sql_session = request.state["sql_session"]
     try:
-        user = await User.get_user(user_id, session=request.state["sql_session"])
+        user = await User.get_user(user_id, session=sql_session)
 
     except NoResultFound:
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"reason": "NOT_FOUND", "message": "User with given id not found"}
+            detail={"reason": "NOT_FOUND", "message": "User with given id not found"}
         )
 
     return user.as_dict()

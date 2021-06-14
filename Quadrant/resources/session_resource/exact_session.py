@@ -1,5 +1,4 @@
-from fastapi import Depends, Request, status
-from fastapi.responses import ORJSONResponse
+from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
@@ -29,15 +28,12 @@ async def get_current_session_info(session_id: int, request: Request):
         session_data = session.as_dict()
 
     except ValueError:
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"reason": "INVALID_SESSION_ID", "message": "No session with that id found"}
+            detail={"reason": "INVALID_SESSION_ID", "message": "No session with that id found"}
         )
 
-    return ORJSONResponse(
-        content=session_data,
-        status_code=status.HTTP_200_OK
-    )
+    return session_data
 
 
 @router.delete(
@@ -62,14 +58,11 @@ async def get_current_session_info(session_id: int, request: Request):
         )
 
     except ValueError:
-        return ORJSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"reason": "INVALID_SESSION_ID", "message": "No session with that id found"}
+            detail={"reason": "INVALID_SESSION_ID", "message": "No session with that id found"}
         )
 
     await session.terminate_session(session=sql_session)
 
-    return ORJSONResponse(
-        content={"session_id": session_id, "successfully_terminated": True},
-        status_code=status.HTTP_200_OK
-    )
+    return {"session_id": session_id, "successfully_terminated": True}

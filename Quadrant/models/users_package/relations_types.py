@@ -2,8 +2,8 @@ from enum import Enum
 
 
 class UsersRelationType(Enum):
-    none = 0
-    blocked = 1
-    friend_request_sender = 2
-    friend_request_receiver = 3
-    friends = 4
+    none = "none"
+    blocked = "blocked"
+    friend_request_sender = "friend_request_sender"
+    friend_request_receiver = "friend_request_receiver"
+    friends = "friends"
