@@ -34,12 +34,13 @@ if launch_args.create_config:
 
 yaml_loader = loaders.YAMLLoader.load(yaml_path)
 env_loader = loaders.EnvLoader.load()
-composite_loader = loaders.CompositeLoader.load(env_loader, yaml_loader)
+composite_loader = loaders.CompositeLoader.load(env_loader, yaml_loader, defaults=defaults)
 
 
 class QuadrantConfig(BaseConfig):
     # Represents max size of payloads
     debug_mode = BoolVar("Quadrant/debug_mode", composite_loader, default=False)
+    disable_registration = BoolVar("Quadrant/disable_registration", composite_loader, default=False)
     static_folder_location = ConfigVar(
         "Quadrant/static_folder_location", composite_loader, caster=Path,
         default=Path(__file__).parent.parent / "static"
@@ -132,9 +133,6 @@ class QuadrantConfig(BaseConfig):
             "Quadrant/security/csrf_secret", composite_loader, validator=lambda v: v != "EXAMPLE_CSRF_SECRET"
         )
         default_host = ConfigVar("Quadrant/security/default_host", composite_loader)
-
-    class HttpChatServer:
-        port = IntVar("Quadrant/http_chat_server/port", composite_loader, validator=lambda v: v in range(1, 65535+1))
 
     def __post_init__(self, *args, **kwargs):
         static_location: Path = self.static_folder_location.value
