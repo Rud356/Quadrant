@@ -1,13 +1,13 @@
+from typing import Optional
 from uuid import UUID
 
-from typing import Optional
-from fastapi import Depends, Request, status, HTTPException
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import exc
 
-from .router import router
-from Quadrant.resources.utils import require_authorization
 from Quadrant.models import users_package
+from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, relations_schema
+from .router import router
 
 
 @router.get(

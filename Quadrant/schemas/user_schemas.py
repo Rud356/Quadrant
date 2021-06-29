@@ -7,15 +7,45 @@ from Quadrant.models.users_package import UsersStatus
 
 
 class UserAuthorization(BaseModel):
-    login: str = Field(min_length=8, regex=r"^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")
+    # taken regex from: https://stackoverflow.com/questions/19605150
+    login: str = Field(
+        min_length=8, max_length=128,
+        regex=r"^(?=.*[A-Za-z_\.])(?=.*\d)[A-Za-z_\.\d]{8,128}$",
+        description=(
+            "User login "
+            "(requires at least one number and no special symbols; only english characters)"
+        )
+    )
     password: str = Field(
         min_length=8, max_length=128,
-        regex=r"^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,128}$"
+        regex=r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&]{8,128}$",
+        description=(
+            "User password "
+            "(Minimum eight characters, maximum 128 characters, at least one uppercase letter, "
+            "one lowercase letter, one number and one special character)"
+        )
     )
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "login": "justSampleL0gin",
+                "password": "XxRebel1243$xX",
+            }
+        }
 
 
 class UserRegistration(UserAuthorization):
     username: str = Field(min_length=1, max_length=50)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "username": "Mememizing stuff",
+                "login": "justSampleL0gin",
+                "password": "XxRebel1243$xX",
+            }
+        }
 
 
 class UserSchema(BaseModel):
@@ -27,3 +57,8 @@ class UserSchema(BaseModel):
     registered_at: datetime = Field(description="when user was registered in ISO8601")
     is_bot: bool
     is_banned: bool
+
+
+class SearchUserBody(BaseModel):
+    username: str = Field(min_length=1, max_length=50)
+    color_id: int = Field(description="Color id that can be used to determine if user is the same")

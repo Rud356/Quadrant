@@ -11,7 +11,7 @@ from .router import router
 
 @router.get(
     "/api/v1/users/me",
-    description="Gives information about authorized user",
+    description="Gives information about authorized user.",
     responses={
         200: {"model": user_schemas.UserSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
@@ -25,8 +25,40 @@ async def get_user_info_about_authorized(request: Request):
 
 
 @router.get(
+    "/api/v1/users/find",
+    description="Gives information about user by his color id and username.",
+    responses={
+        200: {"model": user_schemas.UserSchema},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+    },
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    tags=["User information"]
+)
+async def find_user_by_username_and_color_id(search_parameters: user_schemas.SearchUserBody, request: Request):
+    sql_session = request.state["sql_session"]
+
+    try:
+        user = await User.get_user_by_username_and_color_id(
+            search_parameters.username, search_parameters.color_id, session=sql_session
+        )
+
+    except (NoResultFound, OverflowError):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "reason": "NOT_FOUND",
+                "message": "User with given parameters not found",
+                "parameters": {"username": search_parameters.username, "color_id": search_parameters.color_id}
+            }
+        )
+
+    return user.as_dict()
+
+
+@router.get(
     "/api/v1/users/{user_id}",
-    description="Gives information about user",
+    description="Gives information about user.",
     responses={
         200: {"model": user_schemas.UserSchema},
         status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},

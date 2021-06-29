@@ -182,10 +182,17 @@ class User(Base):
 
     @classmethod
     async def get_user_by_username_and_color_id(cls, username: str, color_id: int, *, session) -> User:
+        """
+        Looks for a user by his username and color id.
+
+        :param username: user name of someone we looking for.
+        :param color_id: users color id.
+        :param session: sqlalchemy session.
+        :return: user instance.
+        """
         user_query = select(cls).filter(
             cls.username == username,
             cls.color_id == color_id,
-            cls.is_bot.is_(False),
             cls.is_banned.is_(False)
         )
         result = await session.execute(user_query)
