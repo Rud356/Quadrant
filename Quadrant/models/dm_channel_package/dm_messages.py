@@ -23,7 +23,7 @@ class DM_Message(ABCMessage):
         return Column(ForeignKey('users.id'), nullable=False)
 
     async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
-        if users_package.UsersRelations.get_any_relationships_status_with(
+        if users_package.UsersRelations.get_any_relationships_status(
             author.id, await self.other_participant(author), session=session
         ) == users_package.UsersRelationType.blocked:
             raise BlockedByOtherParticipantException("User has been blocked by other participant")

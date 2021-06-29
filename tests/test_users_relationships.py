@@ -41,7 +41,7 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud again", login="Hey, lookin good", password="idk if its a valid but check later"),
             UserData(name="Rud tests stuff", login="Just an example", password="i Suppose Talking here is ok")
         )
-        relations_status = await UsersRelations.get_any_relationships_status_with(
+        relations_status = await UsersRelations.get_any_relationships_status(
             user_1.id, user_2.id, session=self.session
         )
         self.assertEqual(relations_status, UsersRelationType.none)
@@ -51,7 +51,7 @@ class TestUsersFunctionality(unittest.TestCase):
         user_1, *_ = await self.create_users(
             UserData(name="Rud again", login="Trying this", password="Magic happening"),
         )
-        relations_status = await UsersRelations.get_any_relationships_status_with(
+        relations_status = await UsersRelations.get_any_relationships_status(
             user_1.id, UUID('683a2e17-934a-42e0-852d-e642ddcf2863'), session=self.session
         )
         self.assertEqual(relations_status, UsersRelationType.none)

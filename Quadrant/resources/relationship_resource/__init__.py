@@ -1,2 +1,6 @@
 import Quadrant.resources.relationship_resource.relationships_with_user
+import Quadrant.resources.relationship_resource.friends
+import Quadrant.resources.relationship_resource.blocked
+import Quadrant.resources.relationship_resource.outgoing_friend_requests
+import Quadrant.resources.relationship_resource.incoming_friend_request
 from .router import router

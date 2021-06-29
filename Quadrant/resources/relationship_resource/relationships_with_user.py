@@ -10,6 +10,7 @@ from Quadrant.schemas import HTTPError, relations_schema
 
 @router.get(
     "/api/v1/relations/exact/{with_user_id}",
+    description="Checks in what relations you are with user by his id.",
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.RelationWithUser},

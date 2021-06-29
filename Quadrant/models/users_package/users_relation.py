@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy import BigInteger, Column, Enum, ForeignKey, and_, or_, select, update, delete
+from sqlalchemy import BigInteger, Column, Enum, ForeignKey, and_, delete, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package.relations_types import UsersRelationType
-from Quadrant.models.users_package.users_status import UsersStatus
 from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
@@ -36,7 +35,7 @@ class UsersRelations(Base):
         )
 
     @staticmethod
-    async def get_any_relationships_status_with(
+    async def get_any_relationships_status(
         user_id: User.id, with_user_id: User.id, *, session
     ) -> UsersRelationType:
         """
@@ -128,7 +127,7 @@ class UsersRelations(Base):
     @staticmethod
     async def get_relationships_page(
         user: User, page: int, relationship_type: UsersRelationType, *, session
-    ) -> Tuple[Tuple[UsersRelations.relation_status, User]]:
+    ) -> List[Dict[UsersRelations.relation_status, User.id]]:
         """
         Gives page of relationships ordered by username and users with who Users instances with whom has relations.
 
@@ -141,25 +140,21 @@ class UsersRelations(Base):
         if page < 0:
             raise ValueError("Invalid page")
 
-        query = select(UsersRelations.relation_status, User).join(User, User.id != user.id) \
-            .filter(
-                UsersRelations.initiator_id == user.id,
-                UsersRelations.relation_status == relationship_type
-        ).limit(USERS_RELATIONS_PER_PAGE).offset(USERS_RELATIONS_PER_PAGE * page) \
-            .order_by(
-                User.status == UsersStatus.online,
-                User.status == UsersStatus.away,
-                User.status == UsersStatus.asleep,
-                User.status == UsersStatus.offline,
-                User.username
-            )
+        query = select(UsersRelations.relation_status, User.id).join(User, User.id != user.id)
+        # Since we have relations records created for both users - we can easily just look only for initiator id
+        query = query.filter(
+            UsersRelations.initiator_id == user.id,
+            UsersRelations.relation_status == relationship_type
+        )
+        query = query.limit(USERS_RELATIONS_PER_PAGE).offset(USERS_RELATIONS_PER_PAGE * page) \
+            .order_by(User.username)
 
         result = await session.execute(query)
         relations = result.all()
 
         packed_relations = []
-        for relation, user in relations:
-            packed_relations.append((relation, user))
+        for relation, user_id in relations:
+            packed_relations.append({"status": relation, "with_user_id": user_id})
 
         return relations
 
@@ -173,7 +168,7 @@ class UsersRelations(Base):
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
-        relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
+        relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status(
             request_sender.id, request_receiver.id, session=session
         )
 
@@ -248,7 +243,9 @@ class UsersRelations(Base):
         )
 
         if relationships_status == UsersRelationType.friend_request_receiver:
-            users_relations_query = UsersRelations.any_user_initialized_relationship(request_receiver.id, request_sender.id)
+            users_relations_query = UsersRelations.any_user_initialized_relationship(
+                request_receiver.id, request_sender.id
+            )
 
             if accept_request:
                 query = update(UsersRelations).where(users_relations_query).values(
@@ -282,7 +279,7 @@ class UsersRelations(Base):
         :param session: sqlalchemy session.
         :return: nothing (raises exception if something's wrong).
         """
-        relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status_with(
+        relationships_status: UsersRelationType = await UsersRelations.get_any_relationships_status(
             friend.id, removed_by.id, session=session
         )
 
