@@ -70,9 +70,9 @@ class TestUsersFunctionality(unittest.TestCase):
     @make_async_call
     async def test_users_default_settings_matching_defaults(self):
         test_user_auth = await create_user("Rud_defaults_test", "Rud_default", "SomepwdHere", session=self.session)
-        self.assertDictEqual(
-            test_user_auth.user.users_common_settings.common_settings,
-            DEFAULT_COMMON_SETTINGS_DICT
+        self.assertEqual(
+            test_user_auth.user.users_common_settings.enable_sites_preview,
+            False
         )
 
     @make_async_call
@@ -85,7 +85,7 @@ class TestUsersFunctionality(unittest.TestCase):
             tuple(fields_was_updated['updated_settings'].keys()),
             ("enable_sites_preview",)
         )
-        self.assertTrue(self.test_user.users_common_settings.common_settings["enable_sites_preview"])
+        self.assertTrue(self.test_user.users_common_settings.enable_sites_preview)
 
     @classmethod
     @make_async_call

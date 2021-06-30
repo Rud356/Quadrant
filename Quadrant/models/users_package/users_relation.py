@@ -23,7 +23,7 @@ class UsersRelations(Base):
     @staticmethod
     def any_user_initialized_relationship(user_id: User.id, with_user_id: User.id):
         """
-        Query part that will give True when any of users pair had initialized relation with other user
+        Query part that will give True when any of users pair had initialized relation with other user.
 
         :param user_id: user id of someone who asks for this.
         :param with_user_id: user id of someone with whom we look for any relations.
@@ -103,7 +103,9 @@ class UsersRelations(Base):
         return relation
 
     @staticmethod
-    async def get_exact_relationship_status(user_id: User.id, with_user_id: User.id, *, session) -> UsersRelationType:
+    async def get_exact_relationship_status(
+        user_id: User.id, with_user_id: User.id, *, session
+    ) -> UsersRelationType:
         """
         Gives exact relation status with user depending on requester id.
 

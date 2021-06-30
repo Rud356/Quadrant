@@ -1,47 +1,43 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING, Dict, Any
-from contextlib import suppress
+from typing import Any, Callable, Dict, TYPE_CHECKING
 
-from sqlalchemy import BigInteger, ForeignKey, Column, and_, or_, String, select
+from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
 from Quadrant.models.db_init import Base
-from Quadrant.models.utils.common_settings_validators import (
-    COMMON_SETTINGS, DEFAULT_COMMON_SETTINGS_DICT, CommonSettingsValidator
-)
 
 if TYPE_CHECKING:
     from .user import User
 
 
 class UsersCommonSettings(Base):
-    settings_id = Column(BigInteger, primary_key=True)
-    user_id = Column(ForeignKey('users.id'), index=True, nullable=False)
+    user_id = Column(ForeignKey('users.id'), primary_key=True)
 
-    common_settings = Column(MutableDict.as_mutable(JSONB), default=DEFAULT_COMMON_SETTINGS_DICT)
-    # TODO: make this class use bool values instead of dictionary for easier migrations
+    enable_sites_preview = Column(Boolean, default=False)
+
+    settings_keys = {"enable_sites_preview", }
+    KEYS_TO_VALIDATORS = {
+        "enable_sites_preview": lambda v: isinstance(v, bool),
+    }
     __tablename__ = "users_common_settings"
 
-    async def get_setting(self, key: str, *, session) -> Any:
+    async def get_setting(self, key: str) -> Any:
         """
         Gets exact setting from common_variables settings set.
 
         :param key: setting key.
-        :param session: sqlalchemy session.
         :return: value.
         """
-        try:
-            return self.common_settings[key]
+        if key not in self.settings_keys:
+            raise ValueError("Invalid key")
 
-        except KeyError:
-            default_value = DEFAULT_COMMON_SETTINGS_DICT[key]
-            self.common_settings[key] = default_value
-            await session.commit()
-            return default_value
+        return getattr(self, key)
 
-    async def update_settings(self, *, settings: Dict[str, Any], session) -> Dict[str, Dict[str, Any]]:
+    async def update_settings(
+        self, *, settings: Dict[str, Any], session
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Updates settings from common_variables settings list.
         :param settings: dictionary with setting_key: setting_value.
@@ -52,13 +48,13 @@ class UsersCommonSettings(Base):
         # Validate settings values
         updated_settings = {}
 
-        for key in set(settings.keys()) & set(COMMON_SETTINGS.keys()):
-            with suppress(ValueError, KeyError):
-                validator: CommonSettingsValidator = COMMON_SETTINGS[key]
-                value = settings[key]
-                validator.validate(value)
+        for key in set(settings.keys()) & self.settings_keys:
+            validator: Callable = self.KEYS_TO_VALIDATORS[key]
+            value = settings[key]
+
+            if validator(value):
                 updated_settings[key] = value
-                self.common_settings[key] = value
+                setattr(self, key, value)
 
         if not updated_settings:
             raise ValueError("No settings was updated")
