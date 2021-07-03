@@ -6,6 +6,7 @@ from sqlalchemy import exc
 from Quadrant.models import users_package
 from Quadrant.resources.utils import require_authorization
 from Quadrant.schemas import HTTPError, relations_schema
+from Quadrant.schemas.user_schemas import SearchUserBody
 from .router import router
 
 
@@ -41,6 +42,50 @@ async def get_outgoing_friend_requests_page(page: int, request: Request):
 
 
 @router.patch(
+    "/api/v1/relations/outgoing_friend_requests/with_user_tag",
+    description="Sends friend request using users tag.",
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    responses={
+        200: {"model": relations_schema.FriendRequestSent},
+        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+    },
+    tags=["Users relationships", "Outgoing friend request relation"]
+)
+async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Request):
+    # TODO: add check if user wants to accept any friend requests
+    # TODO: send notification about new friend request to receiver and to all sender devices
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
+    try:
+        user = await users_package.User.get_user_by_username_and_color_id(
+            user_tag.username, user_tag.color_id, session=sql_session
+        )
+        await users_package.UsersRelations.send_friend_request(
+            db_user, user, session=sql_session
+        )
+
+    except exc.NoResultFound:
+        raise HTTPException(
+            status_code=404,
+            detail={"reason": "NO_USER_FOUND", "message": "No user found"}
+        )
+
+    except users_package.UsersRelations.exc.RelationshipsException:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "reason": "INVALID_RELATION",
+                "message": "You already have some relations with this user"
+            }
+        )
+
+    return {"friend_request_receiver_id": user.id}
+
+
+@router.patch(
     "/api/v1/relations/outgoing_friend_requests/{to_user_id}",
     description="Sends friend request.",
     dependencies=[Depends(require_authorization, use_cache=False)],
@@ -53,6 +98,7 @@ async def get_outgoing_friend_requests_page(page: int, request: Request):
     tags=["Users relationships", "Outgoing friend request relation"]
 )
 async def send_friend_request(to_user_id: UUID, request: Request):
+    # TODO: add customization of who can send requests to whom
     # TODO: send notification about new friend request to receiver and to all sender devices
     db_user = request.scope["db_user"]
     sql_session = request.scope["sql_session"]
