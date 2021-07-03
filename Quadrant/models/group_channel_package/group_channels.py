@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from Quadrant.models import Base, users_package
 from .group_ban import GroupBan
@@ -19,15 +19,19 @@ MAX_GROUP_MEMBERS_COUNT = 10
 
 
 class GroupMessagesChannel(Base):
-    channel_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
-    channel_name = Column(String(50), default="Untitled text channel")
-    owner_id = Column(ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
+    channel_name: Mapped[str] = Column(String(50), default="Untitled text channel")
+    owner_id: Mapped[UUID] = Column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)
 
-    members = relationship(GroupParticipant, lazy='joined', cascade="all, delete-orphan")
-    _bans = relationship(GroupBan, lazy='noload', cascade="all, delete-orphan")
-    _messages = relationship(GroupMessage, lazy="noload", cascade="all, delete-orphan")
-    _invites = relationship(GroupInvite, lazy='noload', cascade="all, delete-orphan")
+    members: Mapped[List[GroupParticipant]] = relationship(
+        GroupParticipant, lazy='joined', cascade="all, delete-orphan"
+    )
+
+    # They will never likely be loaded
+    _bans: Optional[GroupBan] = relationship(GroupBan, lazy='noload', cascade="all, delete-orphan")
+    _messages: Optional[GroupMessage] = relationship(GroupMessage, lazy="noload", cascade="all, delete-orphan")
+    _invites: Optional[GroupInvite] = relationship(GroupInvite, lazy='noload', cascade="all, delete-orphan")
 
     __tablename__ = "group_channels"
 

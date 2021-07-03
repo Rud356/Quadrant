@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from typing import Any, Callable, Dict, TYPE_CHECKING
+from uuid import UUID
 
-from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, String, select
+from sqlalchemy import (
+    BigInteger, Boolean, Column,
+    ForeignKey, String, select
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import Mapped
 
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.quadrant_logging import gen_log
 
 if TYPE_CHECKING:
@@ -14,14 +19,14 @@ if TYPE_CHECKING:
 
 
 class UsersCommonSettings(Base):
-    user_id = Column(ForeignKey('users.id'), primary_key=True)
+    user_id: Mapped[UUID] = Column(ForeignKey('users.id'), primary_key=True)
 
-    enable_sites_preview = Column(Boolean, default=False)
+    enable_sites_preview: Mapped[bool] = Column(Boolean, default=False)
 
-    KEYS_TO_VALIDATORS = {
+    KEYS_TO_VALIDATORS: Dict[str, Callable] = {
         "enable_sites_preview": lambda v: isinstance(v, bool),
     }
-    settings_keys = frozenset(KEYS_TO_VALIDATORS.keys())
+    settings_keys: frozenset = frozenset(KEYS_TO_VALIDATORS.keys())
     __tablename__ = "users_common_settings"
 
     async def get_setting(self, key: str) -> Any:
@@ -37,7 +42,7 @@ class UsersCommonSettings(Base):
         return getattr(self, key)
 
     async def update_settings(
-        self, *, settings: Dict[str, Any], session
+        self, *, settings: Dict[str, Any], session: AsyncSession
     ) -> Dict[str, bool]:
         """
         Updates settings from common_variables settings list.
@@ -81,7 +86,7 @@ class UsersAppSpecificSettings(Base):
     __tablename__ = "users_app_specific_settings"
 
     @classmethod
-    async def get_app_specific_settings(cls, user: User, app_id: str, *, session):
+    async def get_app_specific_settings(cls, user: User, app_id: str, *, session: AsyncSession):
         """
         Gives app settings for specific participant.
 

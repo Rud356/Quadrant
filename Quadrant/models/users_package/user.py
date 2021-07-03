@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, and_, select
+from sqlalchemy import (
+    Boolean, Column, DateTime, Enum,
+    ForeignKey, Integer, String, UniqueConstraint,
+    and_, select
+)
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
 from Quadrant.models.utils import generate_random_color
 from Quadrant.quadrant_logging import gen_log
@@ -18,27 +22,30 @@ MAX_OWNED_BOTS = 20
 
 
 class User(Base):
-    id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
-    color_id = Column(Integer, default=generate_random_color, nullable=False)
-    username = Column(String(length=50), nullable=False)
-    status = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
-    text_status = Column(String(length=256), nullable=False, default="")
-    registered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
+    color_id: Mapped[int] = Column(Integer, default=generate_random_color, nullable=False)
+    username: Mapped[str] = Column(String(length=50), nullable=False)
+    status: Mapped[UsersStatus] = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
+    text_status: Mapped[str] = Column(String(length=256), nullable=False, default="")
+    registered_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    is_bot = Column(Boolean, nullable=False, default=False)
-    is_banned = Column(Boolean, nullable=False, default=False)
+    is_bot: Mapped[bool] = Column(Boolean, nullable=False, default=False)
+    is_banned: Mapped[bool] = Column(Boolean, nullable=False, default=False)
 
-    bot_owner_id = Column(ForeignKey("users.id"), nullable=True)
-    users_common_settings: UsersCommonSettings = relationship(
+    bot_owner_id: Optional[Mapped[Optional[UUID]]] = Column(ForeignKey("users.id"), nullable=True)
+    users_common_settings: Mapped[UsersCommonSettings] = relationship(
         UsersCommonSettings, lazy='joined', uselist=False, cascade="all, delete-orphan"
     )
-    _owned_bots = relationship("User", cascade="all, delete-orphan", lazy='noload')
-    _users_app_specific_settings = relationship(UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan")
+
+    _owned_bots: Optional[Mapped["User"]] = relationship("User", cascade="all, delete-orphan", lazy='noload')
+    _users_app_specific_settings: Optional[Mapped[UsersAppSpecificSettings]] = relationship(
+        UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint('color_id', 'username', name='_unique_user_nick_and_color_id'),)
     __tablename__ = "users"
 
-    async def set_username(self, username: str, *, session) -> None:
+    async def set_username(self, username: str, *, session: AsyncSession) -> None:
         """
         Sets participant a new username.
 
@@ -51,11 +58,11 @@ class User(Base):
 
         gen_log.debug(f"User with id {self.id} has updated nickname to {username}")
 
-    async def set_status(self, status: str, *, session) -> None:
+    async def set_status(self, status: str, *, session: AsyncSession) -> None:
         """
         Sets participant a new status.
 
-        :param status: one of string names from Quadrant.models.users_package.users_status.UsersStatus enum.
+        :param status: one of string names from users_status.UsersStatus enum.
         :param session: sqlalchemy session.
         :return: nothing.
         """
@@ -66,7 +73,7 @@ class User(Base):
 
         gen_log.debug(f"{self.id} has updated status to {status}")
 
-    async def set_text_status(self, text_status: str, *, session) -> None:
+    async def set_text_status(self, text_status: str, *, session: AsyncSession) -> None:
         """
         Sets participant a new text status.
 
@@ -80,7 +87,7 @@ class User(Base):
 
         gen_log.debug(f"User with id {self.id} has updated text status to {text_status}")
 
-    async def get_owned_bot(self, bot_id: UUID, *, session) -> User:
+    async def get_owned_bot(self, bot_id: UUID, *, session: AsyncSession) -> User:
         """
         Gives specific bot that belongs to participant by bots id.
 
@@ -100,7 +107,7 @@ class User(Base):
 
         return bot
 
-    async def get_owned_bots(self, *, session) -> List[User]:
+    async def get_owned_bots(self, *, session: AsyncSession) -> List[User]:
         """
         Gives a list of bot users that belong to participant.
 
@@ -123,7 +130,9 @@ class User(Base):
         gen_log.debug(f"User with id {self.id} got {len(bots)} bots")
         return bots
 
-    async def get_app_specific_settings(self, app_id: str, *, session) -> Optional[UsersAppSpecificSettings]:
+    async def get_app_specific_settings(
+        self, app_id: str, *, session: AsyncSession
+    ) -> Optional[UsersAppSpecificSettings]:
         """
         Gives an instance of settings on specific application that users uses.
         This is basically an key-value storage for participant to have any sort of configs for his apps.
@@ -139,7 +148,7 @@ class User(Base):
 
         return settings
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         user_fields = {
             "id": self.id,
             "color_id": self.color_id,
@@ -155,7 +164,8 @@ class User(Base):
 
     @classmethod
     async def get_user(
-        cls, user_id: UUID, *, session, filter_banned: bool = True, filter_bots: bool = False
+        cls, user_id: UUID, *, session: AsyncSession,
+        filter_banned: bool = True, filter_bots: bool = False
     ) -> User:
         """
         Gives an participant by specific id.
@@ -181,7 +191,9 @@ class User(Base):
         return user
 
     @classmethod
-    async def get_user_by_username_and_color_id(cls, username: str, color_id: int, *, session) -> User:
+    async def get_user_by_username_and_color_id(
+        cls, username: str, color_id: int, *, session: AsyncSession
+    ) -> User:
         """
         Looks for a user by his username and color id.
 

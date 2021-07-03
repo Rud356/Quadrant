@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
+from uuid import UUID
 
-from sqlalchemy import BigInteger, Column, Enum, ForeignKey, and_, delete, or_, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import (
+    BigInteger, Column, Enum, ForeignKey,
+    and_, delete, or_, select, update
+)
+from sqlalchemy.orm import Mapped
 
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.relations_types import UsersRelationType
 from .user import User
 
@@ -13,10 +17,12 @@ USERS_RELATIONS_PER_PAGE = 50
 
 
 class UsersRelations(Base):
-    relation_id = Column(BigInteger, primary_key=True)
-    initiator_id = Column(ForeignKey('users.id'), nullable=False, index=True)
-    relation_with_id = Column(ForeignKey('users.id'), nullable=False, index=True)
-    relation_status = Column(Enum(UsersRelationType), default=UsersRelationType.none, nullable=False)
+    relation_id: Mapped[int] = Column(BigInteger, primary_key=True)
+    initiator_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False, index=True)
+    relation_with_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False, index=True)
+    relation_status: Mapped[UsersRelationType] = Column(
+        Enum(UsersRelationType), default=UsersRelationType.none, nullable=False
+    )
 
     __tablename__ = "users_relations"
 
@@ -36,7 +42,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def get_any_relationships_status(
-        user_id: User.id, with_user_id: User.id, *, session
+        user_id: User.id, with_user_id: User.id, *, session: AsyncSession
     ) -> UsersRelationType:
         """
         Gives relationship status between any of two users.
@@ -82,7 +88,7 @@ class UsersRelations(Base):
 
     @classmethod
     async def get_exact_relationship(
-        cls, user_id: User.id, with_user_id: User.id, *, session
+        cls, user_id: User.id, with_user_id: User.id, *, session: AsyncSession
     ) -> Optional[UsersRelations]:
         """
         Gives exact relationship depending on requester id but without instance of User with whom we have it.
@@ -104,7 +110,7 @@ class UsersRelations(Base):
 
     @staticmethod
     async def get_exact_relationship_status(
-        user_id: User.id, with_user_id: User.id, *, session
+        user_id: User.id, with_user_id: User.id, *, session: AsyncSession
     ) -> UsersRelationType:
         """
         Gives exact relation status with user depending on requester id.
@@ -128,7 +134,8 @@ class UsersRelations(Base):
 
     @staticmethod
     async def get_relationships_page(
-        user: User, page: int, relationship_type: UsersRelationType, *, session
+        user: User, page: int, relationship_type: UsersRelationType,
+        *, session: AsyncSession
     ) -> List[Dict[UsersRelations.relation_status, User.id]]:
         """
         Gives page of relationships ordered by username and users with who Users instances with whom has relations.
@@ -161,7 +168,9 @@ class UsersRelations(Base):
         return relations
 
     @staticmethod
-    async def send_friend_request(request_sender: User, request_receiver: User, *, session) -> None:
+    async def send_friend_request(
+        request_sender: User, request_receiver: User, *, session: AsyncSession
+    ) -> None:
         """
         Sending friend request to someone.
 
@@ -198,7 +207,9 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationship type")
 
     @staticmethod
-    async def cancel_friend_request(canceller: User, friend_request_to: User, *, session) -> None:
+    async def cancel_friend_request(
+        canceller: User, friend_request_to: User, *, session: AsyncSession
+    ) -> None:
         """
         Cancels sent friend request.
 
@@ -229,7 +240,8 @@ class UsersRelations(Base):
 
     @staticmethod
     async def respond_on_friend_request(
-        request_receiver: User, request_sender: User, accept_request: bool, *, session
+        request_receiver: User, request_sender: User, accept_request: bool,
+        *, session: AsyncSession
     ) -> None:
         """
         Responds on friend request by adding a new friend or rejecting request.
@@ -272,7 +284,9 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
 
     @staticmethod
-    async def remove_user_from_friends(removed_by: User, friend: User, *, session) -> None:
+    async def remove_user_from_friends(
+        removed_by: User, friend: User, *, session: AsyncSession
+    ) -> None:
         """
         Removes friend from friend list if he's in or if user isn't in - raises error.
 
@@ -301,7 +315,9 @@ class UsersRelations(Base):
             raise UsersRelations.exc.RelationshipsException("Invalid relationships to become friends")
 
     @staticmethod
-    async def block_user(blocking_by: User, blocking_user: User, *, session) -> UsersRelations:
+    async def block_user(
+        blocking_by: User, blocking_user: User, *, session: AsyncSession
+    ) -> UsersRelations:
         """
         Destroys friends relationship, requester or receiver of friend request and sets relationship status, that
         initiated by blocking_by user, to UsersRelationType.blocked.
@@ -348,7 +364,9 @@ class UsersRelations(Base):
         return initialized_by_blocker
 
     @staticmethod
-    async def unblock_user(user_unblock_initializer: User, unblocking_user: User, *, session) -> None:
+    async def unblock_user(
+        user_unblock_initializer: User, unblocking_user: User, *, session: AsyncSession
+    ) -> None:
         """
         Unblocks user.
 

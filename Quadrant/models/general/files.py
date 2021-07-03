@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict
 from uuid import UUID, uuid4
 
 from pathvalidate import sanitize_filename
 from sqlalchemy import Column, DateTime, ForeignKey, String, and_, select
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
+from sqlalchemy.exc import NoResultFound
 
 from Quadrant.config import quadrant_config
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package import User
 from Quadrant.quadrant_logging import gen_log
 
@@ -24,7 +25,9 @@ class UploadedFile(Base):
     __tablename__ = "files"
 
     @classmethod
-    async def create_file(cls, uploader: User, filename: str, *, session):
+    async def create_file(
+        cls, uploader: User, filename: str, *, session: AsyncSession
+    ) -> UploadedFile:
         """
         Creates record about upload on server.
         Note: this function does not creates a new directory or upload so you can change code however you would like.
@@ -47,7 +50,9 @@ class UploadedFile(Base):
         return new_file
 
     @classmethod
-    async def get_file(cls, uploader_id: UUID, file_id: UUID, *, session) -> UploadedFile:
+    async def get_file(
+        cls, uploader_id: UUID, file_id: UUID, *, session: AsyncSession
+    ) -> UploadedFile:
         """
         Gets exact upload from database
         (will be needed in admin api probably and is needed to check if attached upload exists).
@@ -80,7 +85,7 @@ class UploadedFile(Base):
         """Path to local upload"""
         return quadrant_config.uploads / self.file_id / self.filename
 
-    def as_dict(self):
+    def as_dict(self) -> Dict[str, Any]:
         return {
             "file_id": self.file_id,
             "filename": self.filename,

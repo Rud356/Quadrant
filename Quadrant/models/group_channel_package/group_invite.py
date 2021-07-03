@@ -7,6 +7,7 @@ from typing import Optional, List
 from uuid import UUID
 
 from sqlalchemy import Column, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, not_, or_, select
+from sqlalchemy.orm import Mapped
 
 from Quadrant.models.db_init import Base
 from .group_participant import GroupParticipant
@@ -31,21 +32,21 @@ class InvitesExceptions:
 
 
 class GroupInvite(Base):
-    invite_code = Column(
+    invite_code: Mapped[str] = Column(
         String(length=invite_code_len),
         default=lambda: token_urlsafe(INVITE_CODE_BIT_LENGTH), primary_key=True
     )
-    group_channel_id = Column(ForeignKey('group_channels.channel_id'), index=True, nullable=False)
-    created_by_participant_id = Column(ForeignKey("users.id"))
+    group_channel_id: Mapped[UUID] = Column(ForeignKey('group_channels.channel_id'), index=True, nullable=False)
+    created_by_participant_id: Mapped[UUID] = Column(ForeignKey("users.id"))
 
-    expires_at = Column(DateTime(), default=lambda: datetime.utcnow() + timedelta(days=1))
-    users_limit = Column(Integer(), default=10)
-    users_used_invite = Column(Integer(), default=0)
+    expires_at: Mapped[datetime] = Column(DateTime(), default=lambda: datetime.utcnow() + timedelta(days=1))
+    users_limit: Mapped[int] = Column(Integer(), default=10)
+    users_used_invite: Mapped[int] = Column(Integer(), default=0)
 
     __tablename__ = "group_invites"
     __table_args__ = (
         ForeignKeyConstraint(
-            (group_channel_id, created_by_participant_id),
+            (group_channel_id, created_by_participant_id),  # noqa: tuple is iterable
             (GroupParticipant.channel_id, GroupParticipant.user_id), name="fk_participants"
         ),
     )

@@ -5,8 +5,11 @@ from datetime import datetime
 from typing import Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String, exc, select
-from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy import (
+    BigInteger, Boolean, Column, DateTime,
+    ForeignKey, String, exc, select
+)
+from sqlalchemy.orm import Mapped, declared_attr, relationship
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Base
@@ -20,37 +23,30 @@ class ABCMessage(Base):
     """
     Represents abstract message class that we inherit to create messages tables for other types of chats.
     """
-    channel_id: Column
-    message_id = Column(BigInteger, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    author_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False)
+    message_id: Mapped[int] = Column(BigInteger, primary_key=True)
+    created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    pinned = Column(Boolean, default=False, nullable=False)
-    edited = Column(Boolean, default=False, nullable=False)
+    pinned: Mapped[bool] = Column(Boolean, default=False, nullable=False)
+    edited: Mapped[bool] = Column(Boolean, default=False, nullable=False)
 
-    text = Column(String(2000), nullable=True)
+    text: Optional[Mapped[str]] = Column(String(2000), nullable=True)
 
     __abstract__ = True
 
     @declared_attr
-    def channel_id(self):
+    def channel_id(self) -> Mapped[UUID]:
         """
         Foreign key on table with channel id.
         """
         pass
 
     @declared_attr
-    def author_id(self):
-        """
-        Foreign key on member of channel or server.
-        """
-        pass
-
-    @declared_attr
-    def attached_file_id(self):
+    def attached_file_id(self) -> Mapped[UUID]:
         return Column(ForeignKey('files.file_id'), nullable=True)
 
     @declared_attr
-    def attached_file(self):
+    def attached_file(self) -> Mapped[UploadedFile]:
         return relationship(UploadedFile, lazy="joined", uselist=False)
 
     async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
@@ -93,7 +89,9 @@ class ABCMessage(Base):
             if attached_file_id is None:
                 raise ValueError("UploadedFile isn't attached")
 
-            attached_file = await UploadedFile.get_file(uploader=author, file_id=attached_file_id, session=session)
+            attached_file = await UploadedFile.get_file(
+                uploader_id=author.id, file_id=attached_file_id, session=session
+            )
 
         if attached_file is None:
             new_message = cls(
@@ -159,7 +157,8 @@ class ABCMessage(Base):
         cls, message_id: int, channel_id: UUID, select_pinned_only: bool = False, *, session
     ) -> Tuple[ABCMessage]:
         """
-        Gives messages that came before specified messages on timeline. This doesn't includes a message we look from.
+        Gives messages that came before specified messages on timeline.
+        This doesn't includes a message we look from.
 
         :param message_id: message id we want to start looking from.
         :param channel_id: channel id from which we request messages.
@@ -182,7 +181,8 @@ class ABCMessage(Base):
         cls, message_id: int, channel_id: UUID, select_pinned_only: bool = False, *, session
     ) -> Tuple[ABCMessage]:
         """
-        Gives messages that came after specified messages on timeline. This doesn't includes a message we look from.
+        Gives messages that came after specified messages on timeline.
+        This doesn't includes a message we look from.
 
         :param message_id: message id we want to start looking from.
         :param channel_id: channel id from which we request messages.

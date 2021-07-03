@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
-
-from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
-from sqlalchemy.orm import declared_attr
+from uuid import UUID
+from sqlalchemy import Column, ForeignKey
+from sqlalchemy.orm import declared_attr, Mapped
 
 from Quadrant.models import users_package
 from Quadrant.models.abstract.message import ABCMessage
@@ -15,12 +14,8 @@ class DM_Message(ABCMessage):
     __mapper_args__ = {'polymorphic_identity': 'dm_message', 'concrete': True}
 
     @declared_attr
-    def channel_id(self):
+    def channel_id(self) -> Mapped[UUID]:
         return Column(ForeignKey("dm_channels.channel_id"), index=True, nullable=False)
-
-    @declared_attr
-    def author_id(self):
-        return Column(ForeignKey('users.id'), nullable=False)
 
     async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
         if users_package.UsersRelations.get_any_relationships_status(

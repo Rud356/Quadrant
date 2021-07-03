@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from uuid import UUID
+from typing import Optional
 from hmac import compare_digest
 from secrets import token_urlsafe
 
 from sqlalchemy import BigInteger, Column, ForeignKey, String, select
-from sqlalchemy.orm import backref, relationship
+from sqlalchemy.orm import backref, relationship, Mapped
 
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import Base, AsyncSession
 from Quadrant.models.utils import generate_internal_token
 from Quadrant.models.utils.hashing import hash_login, hash_password
 from Quadrant.quadrant_logging import gen_log
@@ -14,12 +16,12 @@ from .user import User, UsersCommonSettings
 
 
 class UserInternalAuthorization(Base):
-    user_id = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
-    internal_token = Column(String(128), primary_key=True)
+    user_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
+    internal_token: Mapped[str] = Column(String(128), primary_key=True)
 
-    login = Column(String(64), nullable=True, unique=True, index=True)
-    password = Column(String(64), nullable=True)
-    salt = Column(String(40), nullable=True)
+    login: Mapped[Optional[str]] = Column(String(64), nullable=True, unique=True, index=True)
+    password: Mapped[Optional[str]] = Column(String(64), nullable=True)
+    salt: Mapped[Optional[str]] = Column(String(40), nullable=True)
 
     user: User = relationship(
         User, uselist=False, backref=backref('internal_auth', cascade="all, delete-orphan"),
@@ -33,7 +35,7 @@ class UserInternalAuthorization(Base):
 
     @staticmethod
     async def register_user_internally(
-        username: str, login: str, password: str, *, session
+        username: str, login: str, password: str, *, session: AsyncSession
     ) -> UserInternalAuthorization:
         """
         Creates internal user account.
@@ -64,7 +66,9 @@ class UserInternalAuthorization(Base):
         return user_auth
 
     @classmethod
-    async def authorize_with_token(cls, token: str, is_bot: bool, *, session) -> UserInternalAuthorization:
+    async def authorize_with_token(
+        cls, token: str, is_bot: bool, *, session: AsyncSession
+    ) -> UserInternalAuthorization:
         """
         Authorizes user using provided token.
 
@@ -85,7 +89,7 @@ class UserInternalAuthorization(Base):
         return auth_user
 
     @classmethod
-    async def authorize(cls, login: str, password: str, *, session) -> UserInternalAuthorization:
+    async def authorize(cls, login: str, password: str, *, session: AsyncSession) -> UserInternalAuthorization:
         """
         Authorizes user with login and password.
 
@@ -101,7 +105,7 @@ class UserInternalAuthorization(Base):
         )
         query_result = await session.execute(query)
         auth_user: UserInternalAuthorization = query_result.scalar_one()
-        password = hash_password(password, auth_user.salt)
+        password = hash_password(password, auth_user.salt)  # noqa: this will be a string
 
         if compare_digest(password, auth_user.password):
             return auth_user

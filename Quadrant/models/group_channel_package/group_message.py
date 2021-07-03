@@ -22,10 +22,6 @@ class GroupMessage(ABCMessage):
     def channel_id(self):
         return Column(ForeignKey("group_channels.channel_id"), index=True, nullable=False)
 
-    @declared_attr
-    def author_id(self):
-        return Column(ForeignKey('users.id'), nullable=False)
-
     async def user_can_send_message_check(self, author: users_package.User, *, session):
         if await GroupBan.is_user_banned(self.id, author.id, session=session):
             raise AuthorIsBannedException("Author of message was banned from group")
@@ -48,4 +44,4 @@ class GroupMessage(ABCMessage):
             return deleted_message_id
 
         else:
-            raise PermissionError("User isn't a text_channel owner so can not delete message")
+            raise PermissionError("User isn't a text channel owner so can not delete message")

@@ -1,27 +1,30 @@
 from __future__ import annotations
 
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy.orm import Mapped, declared_attr, relationship
 
 from Quadrant.models import users_package
-from Quadrant.models.db_init import Base
+from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.quadrant_logging import gen_log
 from .channel_members import DMParticipant
 from .dm_messages import DM_Message
 
 
 class DirectMessagesChannel(Base):
-    channel_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
 
-    participants = relationship(DMParticipant, lazy='joined', cascade="all, delete-orphan")
+    participants: Mapped[List[DMParticipant]] = relationship(
+        DMParticipant, lazy='joined', cascade="all, delete-orphan"
+    )
     __tablename__ = "dm_channels"
 
     @declared_attr
-    def _messages(cls):
+    def _messages(cls) -> Optional[Mapped[DM_Message]]:
         _messages = relationship(
             DM_Message, lazy="noload", cascade="all, delete-orphan",
             primaryjoin=lambda: DM_Message.channel_id == DirectMessagesChannel.channel_id
@@ -34,11 +37,15 @@ class DirectMessagesChannel(Base):
         :param requester_user: participant that asks for instance of other participant.
         :return: DMParticipant instance.
         """
+        # TODO: check if it'll be faster to iterate through list of participants
         participant = await self.participants.filter(DMParticipant.user_id != requester_user.id).one()
         return participant
 
     @classmethod
-    async def create_channel(cls, initiator: users_package.User, with_user: users_package.User, *, session):
+    async def create_channel(
+        cls, initiator: users_package.User, with_user: users_package.User,
+        *, session: AsyncSession
+    ):
         """
         Initializes new dm channel.
 
@@ -60,7 +67,10 @@ class DirectMessagesChannel(Base):
         return new_channel
 
     @classmethod
-    async def get_channel_by_id(cls, channel_id: UUID, requester: users_package.User, *, session):
+    async def get_channel_by_id(
+        cls, channel_id: UUID, requester: users_package.User,
+        *, session: AsyncSession
+    ):
         """
         Gives exact dm channel
         :param channel_id: channel id.
@@ -79,7 +89,8 @@ class DirectMessagesChannel(Base):
 
     @classmethod
     async def get_channel_by_participants(
-        cls, requester: users_package.User, with_user: users_package.User, *, session
+        cls, requester: users_package.User, with_user: users_package.User,
+        *, session: AsyncSession
     ):
         """
         Returns a channel object, selected by two members of channel.
@@ -101,7 +112,8 @@ class DirectMessagesChannel(Base):
 
     @classmethod
     async def get_or_create_channel_by_participants(
-        cls, requester: users_package.User, with_user: users_package.User, *, session
+        cls, requester: users_package.User, with_user: users_package.User,
+        *, session: AsyncSession
     ):
         """
         Gets channel by participants and in case it wasn't found - creates new one.
@@ -120,7 +132,8 @@ class DirectMessagesChannel(Base):
 
     @staticmethod
     async def participants_have_channel(
-        cls: DirectMessagesChannel, requester: users_package.User, with_user: users_package.User, *, session
+        cls: DirectMessagesChannel, requester: users_package.User,
+        with_user: users_package.User, *, session: AsyncSession
     ) -> bool:
         """
         Checks if participants have channel.
@@ -131,11 +144,12 @@ class DirectMessagesChannel(Base):
         :param session: sqlalchemy session.
         :return: dm channel.
         """
-        query_result = await session.execute(
-            cls._channel_by_participants_query(cls, requester, with_user).exists()
-        ).scalar() or False
+        query = cls._channel_by_participants_query(
+            cls, requester, with_user
+        ).exists()
+        query_result = await session.execute(query) # noqa: exists() is valid method for expressions
 
-        return query_result.scalar()
+        return query_result.scalar() or False
 
     @staticmethod
     def _channel_by_participants_query(cls, requester: users_package.User, with_user: users_package.User):
