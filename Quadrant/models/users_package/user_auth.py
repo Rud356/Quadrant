@@ -9,6 +9,7 @@ from sqlalchemy.orm import backref, relationship
 from Quadrant.models.db_init import Base
 from Quadrant.models.utils import generate_internal_token
 from Quadrant.models.utils.hashing import hash_login, hash_password
+from Quadrant.quadrant_logging import gen_log
 from .user import User, UsersCommonSettings
 
 
@@ -45,6 +46,7 @@ class UserInternalAuthorization(Base):
         """
         login = hash_login(login)
         salt = token_urlsafe(30)
+        # TODO: fix slow hashing if executor is used
         # Somehow without async loops it runs way faster than with
         # When was ran locally through ProcessPoolExecutor 3 users were created in 4 seconds
         # while in sync mode just 300ms
@@ -58,10 +60,11 @@ class UserInternalAuthorization(Base):
 
         session.add(user_auth)
         await session.commit()
+        gen_log.debug(f"New user created with id -> {user_auth.user_id}")
         return user_auth
 
-    @staticmethod
-    async def authorize_with_token(token: str, is_bot: bool, *, session) -> UserInternalAuthorization:
+    @classmethod
+    async def authorize_with_token(cls, token: str, is_bot: bool, *, session) -> UserInternalAuthorization:
         """
         Authorizes user using provided token.
 
@@ -77,7 +80,9 @@ class UserInternalAuthorization(Base):
                 User.is_bot.is_(is_bot)
             )
         query_result = await session.execute(query)
-        return query_result.scalar_one()
+        auth_user: UserInternalAuthorization = query_result.scalar_one()
+        gen_log.debug(f"User with id {auth_user.user_id} is authorized by token")
+        return auth_user
 
     @classmethod
     async def authorize(cls, login: str, password: str, *, session) -> UserInternalAuthorization:

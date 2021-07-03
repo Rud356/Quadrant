@@ -2,7 +2,10 @@ import asyncio
 
 from Quadrant.config import quadrant_config
 from Quadrant import models
-from Quadrant.models import users_package, dm_channel_package, group_channel_package, servers_package
+from Quadrant.models import (
+    users_package, dm_channel_package, group_channel_package,
+    servers_package
+)
 
 Base = models.Base
 

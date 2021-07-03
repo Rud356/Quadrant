@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.mutable import MutableDict
 
 from Quadrant.models.db_init import Base
+from Quadrant.quadrant_logging import gen_log
 
 if TYPE_CHECKING:
     from .user import User
@@ -17,10 +18,10 @@ class UsersCommonSettings(Base):
 
     enable_sites_preview = Column(Boolean, default=False)
 
-    settings_keys = {"enable_sites_preview", }
     KEYS_TO_VALIDATORS = {
         "enable_sites_preview": lambda v: isinstance(v, bool),
     }
+    settings_keys = frozenset(KEYS_TO_VALIDATORS.keys())
     __tablename__ = "users_common_settings"
 
     async def get_setting(self, key: str) -> Any:
@@ -37,7 +38,7 @@ class UsersCommonSettings(Base):
 
     async def update_settings(
         self, *, settings: Dict[str, Any], session
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> Dict[str, bool]:
         """
         Updates settings from common_variables settings list.
         :param settings: dictionary with setting_key: setting_value.
@@ -52,15 +53,20 @@ class UsersCommonSettings(Base):
             validator: Callable = self.KEYS_TO_VALIDATORS[key]
             value = settings[key]
 
-            if validator(value):
-                updated_settings[key] = value
+            if validator(value) and getattr(self, key) != value:
+                # If key value is invalid or is same - we don't want to update them
+                updated_settings[key] = True
                 setattr(self, key, value)
+
+            else:
+                updated_settings[key] = False
 
         if not updated_settings:
             raise ValueError("No settings was updated")
 
         await session.commit()
-        return {"updated_settings": updated_settings}
+        gen_log.debug(f"Updated settings -> {updated_settings}")
+        return updated_settings
 
 
 class UsersAppSpecificSettings(Base):
@@ -86,6 +92,6 @@ class UsersAppSpecificSettings(Base):
         """
         query = select(cls).filter(cls.user_id == user.id, cls.app_id == app_id)
         query_result = await session.execute(query)
-        settings = await query_result.scalar_one()
+        settings = await query_result.scalar_one_or_none()
 
         return settings

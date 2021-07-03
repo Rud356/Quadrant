@@ -84,17 +84,17 @@ class QuadrantConfig(BaseConfig):
             "Quadrant/quadrant_logging/format", yaml_loader, validator=logging.Formatter, constant=True
         )
         app_log_level = ConfigVar(
-            "Quadrant/quadrant_logging/TornadoAppLogLevel", yaml_loader,
+            "Quadrant/quadrant_logging/ppLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )
         access_log_level = ConfigVar(
-            "Quadrant/quadrant_logging/TornadoAccessLogLevel", yaml_loader,
+            "Quadrant/quadrant_logging/AccessLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )
         general_log_level = ConfigVar(
-            "Quadrant/quadrant_logging/TornadoGeneralLogLevel", yaml_loader,
+            "Quadrant/quadrant_logging/GeneralLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )

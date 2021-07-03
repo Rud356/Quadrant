@@ -53,7 +53,7 @@ class UserSchema(BaseModel):
     color_id: int = Field(description="Color id that can be used to determine if user is the same")
     username: str = Field(min_length=1, max_length=50)
     status: UsersStatus = Field(description="users online/offline/etc. status")
-    text_status: str = Field(description="custom users text status")
+    text_status: str = Field(max_length=256, description="custom users text status")
     registered_at: datetime = Field(description="when user was registered in ISO8601")
     is_bot: bool
     is_banned: bool
@@ -62,3 +62,8 @@ class UserSchema(BaseModel):
 class SearchUserBody(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     color_id: int = Field(description="Color id that can be used to determine if user is the same")
+
+
+class UserProfilePart(BaseModel):
+    part_name: str = Field(description="Name of profile part")
+    value: str = Field(description="Profile part value")

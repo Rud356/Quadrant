@@ -77,12 +77,11 @@ class TestUsersFunctionality(unittest.TestCase):
 
     @make_async_call
     async def test_updating_settings(self):
-
         fields_was_updated = await self.test_user.users_common_settings.update_settings(
             settings={"enable_sites_preview": True}, session=self.session
         )
         self.assertEqual(
-            tuple(fields_was_updated['updated_settings'].keys()),
+            tuple(fields_was_updated.keys()),
             ("enable_sites_preview",)
         )
         self.assertTrue(self.test_user.users_common_settings.enable_sites_preview)

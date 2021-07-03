@@ -5,10 +5,11 @@ from uuid import UUID, uuid4
 from sqlalchemy import Column, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import relationship, declared_attr
+from sqlalchemy.orm import declared_attr, relationship
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Base
+from Quadrant.quadrant_logging import gen_log
 from .channel_members import DMParticipant
 from .dm_messages import DM_Message
 
@@ -73,6 +74,7 @@ class DirectMessagesChannel(Base):
             ).get(cls, channel_id)
 
         except (NoResultFound, OverflowError):
+            gen_log.debug(f"Private channel with id {channel_id} not found for user with id {requester.id}")
             raise ValueError("No such dm channel with specified id")
 
     @classmethod
@@ -86,8 +88,16 @@ class DirectMessagesChannel(Base):
         :param session: sqlalchemy session.
         :return: dm channel object.
         """
-        query_result = await session.execute(cls._channel_by_participants(cls, requester, with_user))
-        return await query_result.scalar_one()
+        query_result = await session.execute(cls._channel_by_participants_query(cls, requester, with_user))
+
+        try:
+            channel = await query_result.scalar_one()
+
+        except NoResultFound:
+            gen_log.debug(f"Channel with participants {requester.id} and {with_user.id} not found")
+            raise
+
+        return channel
 
     @classmethod
     async def get_or_create_channel_by_participants(
@@ -122,13 +132,13 @@ class DirectMessagesChannel(Base):
         :return: dm channel.
         """
         query_result = await session.execute(
-            cls._channel_by_participants(cls, requester, with_user).exists()
+            cls._channel_by_participants_query(cls, requester, with_user).exists()
         ).scalar() or False
 
         return query_result.scalar()
 
     @staticmethod
-    def _channel_by_participants(cls, requester: users_package.User, with_user: users_package.User):
+    def _channel_by_participants_query(cls, requester: users_package.User, with_user: users_package.User):
         """
         Gives query that helps finding channels where both participants are in.
 

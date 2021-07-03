@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, and_, select
@@ -123,7 +123,7 @@ class User(Base):
         gen_log.debug(f"User with id {self.id} got {len(bots)} bots")
         return bots
 
-    async def get_app_specific_settings(self, app_id: str, *, session) -> UsersAppSpecificSettings:
+    async def get_app_specific_settings(self, app_id: str, *, session) -> Optional[UsersAppSpecificSettings]:
         """
         Gives an instance of settings on specific application that users uses.
         This is basically an key-value storage for participant to have any sort of configs for his apps.
@@ -135,7 +135,7 @@ class User(Base):
         settings = await UsersAppSpecificSettings.get_app_specific_settings(self, app_id, session=session)
 
         if settings is None:
-            gen_log.debug(f"App with id {app_id} not found for that participant")
+            gen_log.error(f"App with id {app_id} not found for that user")
 
         return settings
 

@@ -6,11 +6,13 @@ from uuid import UUID, uuid4
 
 from pathvalidate import sanitize_filename
 from sqlalchemy import Column, DateTime, ForeignKey, String, and_, select
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 
 from Quadrant.config import quadrant_config
 from Quadrant.models.db_init import Base
 from Quadrant.models.users_package import User
+from Quadrant.quadrant_logging import gen_log
 
 
 class UploadedFile(Base):
@@ -40,10 +42,12 @@ class UploadedFile(Base):
 
         new_file = cls(filename=filename, uploader_id=uploader.id)
         await session.commit()
+
+        gen_log.info(f"Created new file by {uploader.id} with name {filename}")
         return new_file
 
     @classmethod
-    async def get_file(cls, uploader_id, file_id: UUID, *, session) -> UploadedFile:
+    async def get_file(cls, uploader_id: UUID, file_id: UUID, *, session) -> UploadedFile:
         """
         Gets exact upload from database
         (will be needed in admin api probably and is needed to check if attached upload exists).
@@ -53,6 +57,7 @@ class UploadedFile(Base):
         :param session: sqlalchemy session.
         :return: UploadedFile instance.
         """
+        gen_log.info(f"Searching for file with id {file_id} from uploader with id {uploader_id}")
         query = select(cls).filter(
             and_(
                 cls.uploader_id == uploader_id,
@@ -61,7 +66,14 @@ class UploadedFile(Base):
         )
         result = await session.execute(query)
 
-        return result.scalar_one()
+        try:
+            file = result.scalar_one()
+
+        except NoResultFound:
+            gen_log.debug(f"File with id {file_id} from user id {uploader_id} not found")
+            raise
+
+        return file
 
     @property
     def filepath(self) -> Path:

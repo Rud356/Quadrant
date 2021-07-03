@@ -18,9 +18,9 @@ defaults = {
                 "logs_dir": "./quadrant_logs",
                 "format": "'%(asctime)s - %(name)s - %(levelname)s: %(message)s'",  # noqa: quadrant_logging format
                 "date_format": "%y%m%d %H:%M:%S",
-                "TornadoAppLogLevel": "ERROR",
-                "TornadoAccessLogLevel": "ERROR",
-                "TornadoGeneralLogLevel": "ERROR",
+                "AppLogLevel": "ERROR",
+                "AccessLogLevel": "ERROR",
+                "GeneralLogLevel": "ERROR",
 
                 "rotation": {
                     'when': 'h',

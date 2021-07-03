@@ -9,11 +9,14 @@ from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, String
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from Quadrant.models.db_init import Base
+from Quadrant.quadrant_logging import gen_log
 
 if TYPE_CHECKING:
     from .user import User
 
 SESSIONS_PER_PAGE = 10
+
+# TODO: add ips logging (if user been switching ips)
 
 
 class UserSession(Base):
@@ -72,6 +75,7 @@ class UserSession(Base):
             return query_result.scalar_one()
 
         except (IntegrityError, NoResultFound, OverflowError):
+            gen_log.debug(f"Invalid session id or session with that id wasn't found / is not alive -> {session_id}")
             raise ValueError("No such session")
 
     @classmethod
@@ -96,6 +100,7 @@ class UserSession(Base):
             return query_result.scalar_one()
 
         except (IntegrityError, OverflowError):
+            gen_log.debug(f"Invalid session id or session with that id wasn't found -> {session_id}")
             raise ValueError("No such session")
 
     @classmethod
@@ -109,10 +114,11 @@ class UserSession(Base):
         :return: session instances tuple.
         """
         if page < 0:
+            gen_log.error(f"Invalid page number for session -> {page}")
             raise ValueError("Invalid page")
 
         try:
-            query = select(cls).filter(user_id=user_id, session=session) \
+            query = select(cls).filter(user_id=user_id) \
                 .limit(SESSIONS_PER_PAGE).offset(SESSIONS_PER_PAGE * page) \
                 .order_by(cls.is_alive.desc(), cls.session_id.desc())
 
@@ -120,14 +126,17 @@ class UserSession(Base):
             return query_result.scalars().all()
 
         except OverflowError:
+            gen_log.error(f"Invalid page number for session -> {page}")
             raise ValueError("No such sessions page")
 
     @staticmethod
     async def get_sessions_pages_count(user_id: UUID, *, session) -> int:
         query = select(UserSession.session_id).filter(user_id=user_id, session=session).count()
         query_result = await session.execute(query)
+        pages_count = ceil(query_result.scalar() / SESSIONS_PER_PAGE)
+        gen_log.debug(f"Pages of session for user {user_id} -> {pages_count}")
 
-        return ceil(query_result.scalar() / SESSIONS_PER_PAGE)
+        return pages_count
 
     @staticmethod
     async def terminate_all_sessions(user_id: UUID, *, session) -> bool:
@@ -147,6 +156,7 @@ class UserSession(Base):
             user_session: UserSession
             user_session.is_alive = False
 
+        gen_log.info(f"Users {user_id} sessions were terminated")
         await session.commit()
         return True
 
@@ -161,4 +171,5 @@ class UserSession(Base):
     async def terminate_session(self, *, session) -> None:
         """Kills all users sessions."""
         self.is_alive = False
+        gen_log.info(f"Users {self.user_id} session {self.session_id} was terminated")
         await session.commit()
