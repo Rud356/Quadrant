@@ -84,7 +84,7 @@ class QuadrantConfig(BaseConfig):
             "Quadrant/quadrant_logging/format", yaml_loader, validator=logging.Formatter, constant=True
         )
         app_log_level = ConfigVar(
-            "Quadrant/quadrant_logging/ppLogLevel", yaml_loader,
+            "Quadrant/quadrant_logging/AppLogLevel", yaml_loader,
             caster=lambda level: getattr(logging, level),
             constant=True
         )
