@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import relationship
+from sequential_uuids.generators import uuid_time_nextval
 
 import Quadrant.models.servers_package.server_invite
 from Quadrant import models
@@ -23,7 +24,7 @@ class Server(Base):
     name = Column(String(50), nullable=False)
     owner_id = Column(ForeignKey('users_package.id'), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    server_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    server_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid_time_nextval)
 
     _bans = relationship(ServerBan, lazy="noload", cascade="all, delete-orphan")
     _members = relationship(ServerMember, lazy="noload", cascade="all, delete-orphan")

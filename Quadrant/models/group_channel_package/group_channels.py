@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, relationship
+from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models import Base, users_package
 from .group_ban import GroupBan
@@ -19,7 +20,7 @@ MAX_GROUP_MEMBERS_COUNT = 10
 
 
 class GroupMessagesChannel(Base):
-    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
+    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid_time_nextval, unique=True)
     channel_name: Mapped[str] = Column(String(50), default="Untitled text channel")
     owner_id: Mapped[UUID] = Column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow)

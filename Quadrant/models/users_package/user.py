@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Enum,
@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.orm import Mapped, relationship
+from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
@@ -22,7 +23,7 @@ MAX_OWNED_BOTS = 20
 
 
 class User(Base):
-    id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4, unique=True)
+    id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid_time_nextval, unique=True)
     color_id: Mapped[int] = Column(Integer, default=generate_random_color, nullable=False)
     username: Mapped[str] = Column(String(length=50), nullable=False)
     status: Mapped[UsersStatus] = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)

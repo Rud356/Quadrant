@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from typing import List, Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import Column, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Mapped, declared_attr, relationship
+from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import AsyncSession, Base
@@ -16,7 +17,7 @@ from .dm_messages import DM_Message
 
 
 class DirectMessagesChannel(Base):
-    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    channel_id: Mapped[UUID] = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid_time_nextval)
 
     participants: Mapped[List[DMParticipant]] = relationship(
         DMParticipant, lazy='joined', cascade="all, delete-orphan"

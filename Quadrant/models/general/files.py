@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from pathvalidate import sanitize_filename
 from sqlalchemy import Column, DateTime, ForeignKey, String, and_, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.exc import NoResultFound
+from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.config import quadrant_config
 from Quadrant.models.db_init import AsyncSession, Base
@@ -17,7 +18,7 @@ from Quadrant.quadrant_logging import gen_log
 
 
 class UploadedFile(Base):
-    file_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    file_id = Column(db_UUID(as_uuid=True), primary_key=True, default=uuid_time_nextval)
     filename = Column(String(256), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     uploader_id = Column(ForeignKey("users.id"), nullable=False)
