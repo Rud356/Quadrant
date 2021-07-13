@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import List, Optional
 from uuid import UUID
 
+from sequential_uuids.generators import uuid_time_nextval
 from sqlalchemy import Column, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Mapped, declared_attr, relationship
-from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import AsyncSession, Base

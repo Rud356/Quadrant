@@ -5,7 +5,7 @@ from sqlalchemy import exc
 
 from Quadrant.models import users_package
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, relations_schema
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, relations_schema
 from Quadrant.schemas.user_schemas import SearchUserBody
 from .router import router
 
@@ -16,8 +16,8 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.RelationsPage},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {"model": http_error_example("INVALID_PAGE", "No content to show")},
     },
     tags=["Users relationships", "Outgoing friend request relation"]
 )
@@ -47,9 +47,17 @@ async def get_outgoing_friend_requests_page(page: int, request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.FriendRequestSent},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "IN_RELATIONS_WITH_USER", "You already have some relations with this user"
+            )
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": http_error_example(
+                "USER_NOT_FOUND", "User with given id not found"
+            )
+        }
     },
     tags=["Users relationships", "Outgoing friend request relation"]
 )
@@ -70,14 +78,14 @@ async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Req
     except exc.NoResultFound:
         raise HTTPException(
             status_code=404,
-            detail={"reason": "NO_USER_FOUND", "message": "No user found"}
+            detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
     except users_package.UsersRelations.exc.RelationshipsException:
         raise HTTPException(
             status_code=400,
             detail={
-                "reason": "INVALID_RELATION",
+                "reason": "IN_RELATIONS_WITH_USER",
                 "message": "You already have some relations with this user"
             }
         )
@@ -91,9 +99,17 @@ async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Req
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.FriendRequestSent},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "IN_RELATIONS_WITH_USER", "You already have some relations with this user"
+            )
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": http_error_example(
+                "USER_NOT_FOUND", "User with given id not found"
+            )
+        }
     },
     tags=["Users relationships", "Outgoing friend request relation"]
 )
@@ -112,14 +128,14 @@ async def send_friend_request(to_user_id: UUID, request: Request):
     except exc.NoResultFound:
         raise HTTPException(
             status_code=404,
-            detail={"reason": "NO_USER_FOUND", "message": "No user found"}
+            detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
     except users_package.UsersRelations.exc.RelationshipsException:
         raise HTTPException(
             status_code=400,
             detail={
-                "reason": "INVALID_RELATION",
+                "reason": "IN_RELATIONS_WITH_USER",
                 "message": "You already have some relations with this user"
             }
         )
@@ -133,9 +149,17 @@ async def send_friend_request(to_user_id: UUID, request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.CancelledFriendRequest},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "NO_OUTGOING_REQUEST", "You already have some relations with this user"
+            )
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": http_error_example(
+                "USER_NOT_FOUND", "User with given id not found"
+            )
+        },
     },
     tags=["Users relationships", "Outgoing friend request relation"]
 )
@@ -153,13 +177,16 @@ async def cancel_friend_request(to_user_id: UUID, request: Request):
     except exc.NoResultFound:
         raise HTTPException(
             status_code=404,
-            detail={"reason": "NO_USER_FOUND", "message": "No user found"}
+            detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
     except users_package.UsersRelations.exc.RelationshipsException:
         raise HTTPException(
             status_code=400,
-            detail={"reason": "INVALID_RELATION", "message": "You didn't sent friend request"}
+            detail={
+                "reason": "NO_OUTGOING_REQUEST",
+                "message": "You did not sent friend request to this user"
+            }
         )
 
     return {"friend_request_receiver_id": to_user_id, "friend_request_sender_id": db_user.id}

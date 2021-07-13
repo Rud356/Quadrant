@@ -1,10 +1,8 @@
-from .router import router
-
 from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models import users_package
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, user_schemas
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, user_schemas
 from .router import router
 
 
@@ -14,7 +12,7 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": user_schemas.UserProfilePart},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
 )
 async def get_requester_status(request: Request):
@@ -28,8 +26,12 @@ async def get_requester_status(request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": user_schemas.UserProfilePart},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "INVALID_STATUS", "You've sent invalid user status."
+            )
+        },
     },
 )
 async def set_requester_status(new_status: str, request: Request):

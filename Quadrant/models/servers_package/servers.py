@@ -1,21 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, func, not_, select
-from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import relationship
 from sequential_uuids.generators import uuid_time_nextval
+from sqlalchemy import Column, DateTime, ForeignKey, String
+from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
+from sqlalchemy.orm import relationship
 
-import Quadrant.models.servers_package.server_invite
 from Quadrant import models
 from Quadrant.models.db_init import Base
-from .server_member import ServerMember
 from .server_ban import ServerBan
 from .server_invite import ServerInvite
+from .server_member import ServerMember
 
 INVITES_COUNT_LIMIT_PER_USER = 1000
 

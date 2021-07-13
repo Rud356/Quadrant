@@ -7,7 +7,7 @@ from fastapi import Depends, File, HTTPException, Request, UploadFile, status
 from Quadrant.config import quadrant_config
 from Quadrant.models import general
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, file_upload
+from Quadrant.schemas import HTTPError, file_upload, UNAUTHORIZED_HTTPError, http_error_example
 from .router import router
 
 
@@ -18,8 +18,8 @@ from .router import router
     tags=["Files and storage"],
     responses={
         200: {"model": file_upload.FileUploadResponseSchema},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_400_BAD_REQUEST: {"model": http_error_example("TOO_LONG_FILENAME", "Filename is too long")},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
 )
 async def upload_files(request: Request, upload: UploadFile = File(...)):

@@ -4,7 +4,7 @@ from fastapi import Depends, Request, status
 
 from Quadrant.models import users_package
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, relations_schema
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, relations_schema
 from .router import router
 
 
@@ -14,8 +14,7 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": relations_schema.RelationWithUser},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
     tags=["Users relationships"]
 )

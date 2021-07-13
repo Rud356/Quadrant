@@ -4,11 +4,11 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
+from sequential_uuids.generators import uuid_time_nextval
 from sqlalchemy import Column, DateTime, ForeignKey, String, func, select
 from sqlalchemy.dialects.postgresql import UUID as db_UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, relationship
-from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models import Base, users_package
 from .group_ban import GroupBan

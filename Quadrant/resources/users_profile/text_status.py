@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models import users_package
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, user_schemas
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, user_schemas
 from .router import router
 
 
@@ -12,10 +12,10 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": user_schemas.UserProfilePart},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
 )
-async def get_requester_status(request: Request):
+async def get_requester_text_status(request: Request):
     db_user: users_package.User = request.scope["db_user"]
     return {"part_name": "text_status", "value": db_user.text_status}
 
@@ -26,11 +26,16 @@ async def get_requester_status(request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
         200: {"model": user_schemas.UserProfilePart},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "INVALID_TEXT_STATUS",
+                "You've sent invalid text status that didn't matched requirements."
+            )
+        },
     },
 )
-async def set_requester_text_status(new_status: str, request: Request):
+async def set_requester_text_status(new_status: user_schemas.UserSchema.text_status, request: Request):
     # TODO: send notification about it being updated
     db_user: users_package.User = request.scope["db_user"]
     sql_session = request.scope["sql_session"]

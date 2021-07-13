@@ -3,7 +3,7 @@ from sqlalchemy.exc import NoResultFound
 
 from Quadrant.models.users_package import UserInternalAuthorization
 from Quadrant.resources.utils import prepare_users_client_authorization
-from Quadrant.schemas import HTTPError, user_schemas
+from Quadrant.schemas import http_error_example, user_schemas
 from .router import router
 
 
@@ -12,8 +12,16 @@ from .router import router
     description="Authorizes internally created user",
     responses={
         200: {"model": user_schemas.UserSchema},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError}
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "ALREADY_AUTHORIZED", "You are already authorized"
+            )
+        },
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": http_error_example(
+                "INVALID_CREDENTIALS", "You provided invalid login or password"
+            )
+        }
     },
     tags=["Authorization and registration"]
 )

@@ -2,7 +2,7 @@ from fastapi import Depends, Request, status
 
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, session_schema
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, session_schema
 from .router import router
 
 
@@ -11,7 +11,7 @@ from .router import router
     description="Gives information about current session",
     responses={
         200: {"model": session_schema.SessionSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
@@ -29,7 +29,7 @@ async def get_current_session_info(request: Request):
     description="Terminates current session",
     responses={
         200: {"model": session_schema.TerminatedSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]

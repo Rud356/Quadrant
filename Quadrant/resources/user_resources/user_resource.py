@@ -5,7 +5,7 @@ from sqlalchemy.exc import NoResultFound
 
 from Quadrant.models.users_package import User
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, user_schemas
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, user_schemas
 from .router import router
 
 
@@ -14,8 +14,7 @@ from .router import router
     description="Gives information about authorized user.",
     responses={
         200: {"model": user_schemas.UserSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError}
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["User information"]
@@ -29,8 +28,8 @@ async def get_user_info_about_authorized(request: Request):
     description="Gives information about user.",
     responses={
         200: {"model": user_schemas.UserSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError}
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_404_NOT_FOUND: {"model": http_error_example("USER_NOT_FOUND", "User with given id not found")}
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["User information"]
@@ -43,7 +42,7 @@ async def get_user_info_about(user_id: UUID, request: Request):
     except NoResultFound:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={"reason": "NOT_FOUND", "message": "User with given id not found"}
+            detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
     return user.as_dict()

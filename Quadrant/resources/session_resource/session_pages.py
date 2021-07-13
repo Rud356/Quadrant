@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, session_schema
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, session_schema
 from .router import router
 
 
@@ -11,8 +11,7 @@ from .router import router
     description="Gives number of pages with sessions history",
     responses={
         200: {"model": session_schema.SessionPagesCountSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError}
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
@@ -32,8 +31,12 @@ async def get_pages_count(request: Request):
     "/api/v1/sessions/pages/{page}",
     responses={
         200: {"model": session_schema.SessionsPageSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "INVALID_PAGE", "You've tried to access invalid sessions page"
+            )
+        },
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]

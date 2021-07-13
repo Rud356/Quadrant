@@ -3,7 +3,7 @@ from fastapi import HTTPException, Request, Response, status
 from Quadrant.config import quadrant_config
 from Quadrant.models.users_package import UserInternalAuthorization
 from Quadrant.resources.utils import prepare_users_client_authorization
-from Quadrant.schemas import HTTPError, user_schemas
+from Quadrant.schemas import http_error_example, user_schemas
 from .router import router
 
 
@@ -12,8 +12,16 @@ from .router import router
     description="Authorizes internally created user",
     responses={
         200: {"model": user_schemas.UserSchema},
-        status.HTTP_400_BAD_REQUEST: {"model": HTTPError},
-        status.HTTP_403_FORBIDDEN: {"model": HTTPError}
+        status.HTTP_400_BAD_REQUEST: {
+            "model": http_error_example(
+                "ALREADY_AUTHORIZED", "You are authorized"
+            )
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": http_error_example(
+                "REGISTRATION_DISABLED", "Registration was disabled"
+            )
+        }
     },
     tags=["Authorization and registration"]
 )
@@ -26,13 +34,19 @@ async def internal_registration(
     if quadrant_config.disable_registration.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={"reason": "REGISTRATION_DISABLED", "message": "Registration was disabled"}
+            detail={
+                "reason": "REGISTRATION_DISABLED",
+                "message": "Registration was disabled"
+            }
         )
 
     if "authorized_user" in request.scope:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"reason": "ALREADY_AUTHORIZED", "message": "You are already authorized"}
+            detail={
+                "reason": "ALREADY_AUTHORIZED",
+                "message": "You are authorized"
+            }
         )
 
     user_schemas.UserRegistration.validate(UserInternalAuthorization)

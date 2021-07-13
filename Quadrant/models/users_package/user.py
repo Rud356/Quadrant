@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from sequential_uuids.generators import uuid_time_nextval
 from sqlalchemy import (
     Boolean, Column, DateTime, Enum,
     ForeignKey, Integer, String, UniqueConstraint,
@@ -11,7 +12,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.orm import Mapped, relationship
-from sequential_uuids.generators import uuid_time_nextval
 
 from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings

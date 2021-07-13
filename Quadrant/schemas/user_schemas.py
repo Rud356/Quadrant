@@ -55,8 +55,8 @@ class UserSchema(BaseModel):
     status: UsersStatus = Field(description="users online/offline/etc. status")
     text_status: str = Field(max_length=256, description="custom users text status")
     registered_at: datetime = Field(description="when user was registered in ISO8601")
-    is_bot: bool
-    is_banned: bool
+    is_bot: bool = Field(default=False)
+    is_banned: bool = Field(default=False)
 
 
 class SearchUserBody(BaseModel):

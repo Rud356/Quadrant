@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, Request, status
 
 from Quadrant.models.users_package import UserSession
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, session_schema
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, http_error_example, session_schema
 from .router import router
 
 
@@ -11,8 +11,12 @@ from .router import router
     description="Gives information about current session",
     responses={
         200: {"model": session_schema.SessionSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_404_NOT_FOUND: {
+            "model": http_error_example(
+                "INVALID_SESSION_ID", "No session with that id found"
+            )
+        },
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
@@ -41,8 +45,12 @@ async def get_current_session_info(session_id: int, request: Request):
     description="Terminates one exact session",
     responses={
         200: {"model": session_schema.TerminatedSchema},
-        status.HTTP_401_UNAUTHORIZED: {"model": HTTPError},
-        status.HTTP_404_NOT_FOUND: {"model": HTTPError},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
+        status.HTTP_404_NOT_FOUND: {
+            "model": http_error_example(
+                "INVALID_SESSION_ID", "No session with that id found"
+            )
+        },
     },
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
