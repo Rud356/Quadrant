@@ -55,7 +55,6 @@ async def get_current_session_info(session_id: int, request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
 )
-@require_authorization
 async def get_current_session_info(session_id: int, request: Request):
     db_user = request.scope["db_user"]
     sql_session = request.scope["sql_session"]

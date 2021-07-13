@@ -16,7 +16,6 @@ from .router import router
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
 )
-@require_authorization
 async def get_current_session_info(request: Request):
     user_session: UserSession = request.scope["user_session"]
     session_data = user_session.as_dict()
@@ -34,7 +33,6 @@ async def get_current_session_info(request: Request):
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Users session management"]
 )
-@require_authorization
 async def get_current_session_info(request: Request):
     sql_session = request.scope["sql_session"]
     user_session: UserSession = request.scope["user_session"]

@@ -1,2 +1,2 @@
-import Quadrant.resources.authorization_resource.internal_authorization
+from . import internal_authorization
 from .router import router

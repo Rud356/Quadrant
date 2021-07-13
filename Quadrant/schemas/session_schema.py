@@ -23,4 +23,4 @@ class SessionPagesCountSchema(BaseModel):
 
 
 class SessionsPageSchema(BaseModel):
-    sessions: List[SessionSchema] = Field(max_length=SESSIONS_PER_PAGE)
+    sessions: List[SessionSchema] = Field(max_items=SESSIONS_PER_PAGE)

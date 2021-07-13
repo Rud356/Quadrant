@@ -14,6 +14,7 @@ from .router import router
         200: {"model": user_schemas.UserProfilePart},
         status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError},
     },
+    tags=["User profile management"]
 )
 async def get_requester_text_status(request: Request):
     db_user: users_package.User = request.scope["db_user"]
@@ -34,8 +35,9 @@ async def get_requester_text_status(request: Request):
             )
         },
     },
+    tags=["User profile management"]
 )
-async def set_requester_text_status(new_status: user_schemas.UserSchema.text_status, request: Request):
+async def set_requester_text_status(new_status: str, request: Request):
     # TODO: send notification about it being updated
     db_user: users_package.User = request.scope["db_user"]
     sql_session = request.scope["sql_session"]

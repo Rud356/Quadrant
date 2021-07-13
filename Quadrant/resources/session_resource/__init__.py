@@ -1,4 +1,2 @@
-import Quadrant.resources.session_resource.current_session
-import Quadrant.resources.session_resource.session_pages
-import Quadrant.resources.session_resource.exact_session
+from . import current_session, session_pages, exact_session
 from .router import router
