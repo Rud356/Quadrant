@@ -35,7 +35,7 @@ async def get_requester_username(request: Request):
         },
     },
 )
-async def set_requester_text_status(new_username: user_schemas.UserSchema.username, request: Request):
+async def set_requester_username(new_username: user_schemas.UserSchema.username, request: Request):
     # TODO: send notification about it being updated
     db_user: users_package.User = request.scope["db_user"]
     sql_session = request.scope["sql_session"]
