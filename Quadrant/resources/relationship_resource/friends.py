@@ -51,7 +51,9 @@ async def get_friends_page(page: int, request: Request):
             "model": http_error_example("INVALID_FRIEND_USER", "User isn't your friend")
         },
         status.HTTP_404_NOT_FOUND: {
-            "model": http_error_example("USER_NOT_FOUND", "User with given id not found")
+            "model": http_error_example(
+                "USER_NOT_FOUND", "User with given id not found"
+            )
         }
     },
     tags=["Users relationships", "Friends relation"]
