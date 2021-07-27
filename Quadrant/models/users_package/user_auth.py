@@ -62,6 +62,7 @@ class UserInternalAuthorization(Base):
 
         session.add(user_auth)
         await session.commit()
+        user.profile_picture_path.mkdir()
         gen_log.debug(f"New user created with id -> {user_auth.user_id}")
         return user_auth
 

@@ -4,7 +4,6 @@ defaults = {
             "debug_mode": False,
             "disable_registration": False,
             "max_payload_size": "8M",
-            "host_static_files_internally": True,
             "static_folder_location": './static',
             "media_folder_location": "./media",
 

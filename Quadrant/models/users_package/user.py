@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as db_UUID  # noqa
 from sqlalchemy.orm import Mapped, relationship
 
+from Quadrant.config import quadrant_config
 from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.settings import UsersAppSpecificSettings, UsersCommonSettings
 from Quadrant.models.utils import generate_random_color
@@ -162,6 +164,10 @@ class User(Base):
         }
 
         return user_fields
+
+    @property
+    def profile_picture_path(self) -> Path:
+        return quadrant_config.profile_pictures_dir / str(self.id)
 
     @classmethod
     async def get_user(

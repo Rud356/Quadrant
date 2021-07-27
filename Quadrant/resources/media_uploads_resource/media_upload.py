@@ -5,15 +5,20 @@ import pathvalidate
 from fastapi import Depends, File, HTTPException, Request, UploadFile, status
 
 from Quadrant.config import quadrant_config
-from Quadrant.models import general
+from Quadrant.models import general, users_package
+from Quadrant.models.db_init import AsyncSession
 from Quadrant.resources.utils import require_authorization
-from Quadrant.schemas import HTTPError, file_upload, UNAUTHORIZED_HTTPError, http_error_example
+from Quadrant.schemas import UNAUTHORIZED_HTTPError, file_upload, http_error_example
 from .router import router
 
 
 @router.post(
     "/api/v1/uploads",
-    description="Uploads users upload to API",
+    description="""
+    Uploads users upload to API.
+    To fetch uploaded file you have to use route
+    /media/uploads/{file_id}/{filename}
+    """,
     dependencies=[Depends(require_authorization, use_cache=False)],
     tags=["Files and storage"],
     responses={
@@ -23,12 +28,14 @@ from .router import router
     },
 )
 async def upload_files(request: Request, upload: UploadFile = File(...)):
-    user = request.scope["db_user"]
-    sql_session = request.scope["sql_session"]
+    user: users_package.User = request.scope["db_user"]
+    sql_session: AsyncSession = request.scope["sql_session"]
     filename: str = pathvalidate.sanitize_filename(upload.filename)
 
     try:
-        new_file = await general.UploadedFile.create_file(user, filename, session=sql_session)
+        new_file = await general.UploadedFile.create_file(
+            user, filename, session=sql_session
+        )
 
     except ValueError:
         raise HTTPException(
