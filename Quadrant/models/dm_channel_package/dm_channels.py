@@ -31,16 +31,18 @@ class DirectMessagesChannel(Base):
             primaryjoin=lambda: DM_Message.channel_id == DirectMessagesChannel.channel_id
         )
 
-    async def other_participant(self, requester_user: users_package.User) -> DMParticipant:
+    def other_participant(self, requester_user: users_package.User) -> DMParticipant:
         """
         Gives other participant instance.
 
         :param requester_user: participant that asks for instance of other participant.
         :return: DMParticipant instance.
         """
-        # TODO: check if it'll be faster to iterate through list of participants
-        participant = await self.participants.filter(DMParticipant.user_id != requester_user.id).one()
-        return participant
+        if self.participants[0].id == requester_user.id:
+            return self.participants[0]
+
+        else:
+            return self.participants[1]
 
     @classmethod
     async def create_channel(

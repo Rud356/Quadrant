@@ -42,7 +42,7 @@ async def get_incoming_friend_requests_page(page: int, request: Request):
 
 
 @router.patch(
-    "/api/v1/relations/incoming_friend_requests/{to_user_id}",
+    "/api/v1/relations/incoming_friend_requests/{to_user}",
     description="Accepts friend request from this user or denies it.",
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={

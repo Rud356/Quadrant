@@ -22,7 +22,7 @@ class GroupMessage(ABCMessage):
     def channel_id(self):
         return Column(ForeignKey("group_channels.channel_id"), index=True, nullable=False)
 
-    async def user_can_send_message_check(self, author: users_package.User, *, session):
+    async def can_user_send_message_check(self, author: users_package.User, *, session):
         if await GroupBan.is_user_banned(self.id, author.id, session=session):
             raise AuthorIsBannedException("Author of message was banned from group")
 
