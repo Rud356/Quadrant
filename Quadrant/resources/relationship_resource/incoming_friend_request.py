@@ -11,6 +11,31 @@ from .router import router
 
 
 @router.get(
+    "/api/v1/relations/incoming_friend_requests/pages",
+    description="Gives a number of pages with users that sent you friend requests (pages starting from 1).",
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    responses={
+        200: {"model": relations_schema.RelationsPagesCount},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError}
+    },
+    tags=["Users relationships", "Incoming friend request relation"]
+)
+async def get_incoming_friend_requests_pages_count(request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
+    pages = await users_package.UserRelation.get_relations_pages_count(
+        db_user, users_package.UsersRelationType.friend_request_receiver,
+        session=sql_session
+    )
+
+    return relations_schema.RelationsPagesCount.construct(
+        relation_type=users_package.UsersRelationType.friend_request_receiver,
+        pages=pages
+    )
+
+
+@router.get(
     "/api/v1/relations/incoming_friend_requests/pages/{page}",
     description="Gives a page of incoming friend requests (pages starting from 1).",
     dependencies=[Depends(require_authorization, use_cache=False)],
@@ -28,8 +53,9 @@ async def get_incoming_friend_requests_page(page: int, request: Request):
     # We want to have pages from 1, but offset should start from 0
     page -= 1
     try:
-        relations_page = await users_package.UsersRelations.get_relationships_page(
-            db_user.id, page, users_package.UsersRelationType.friend_request_receiver, session=sql_session
+        relations_page = await users_package.UserRelation.get_relations_page(
+            db_user.id, users_package.UsersRelationType.friend_request_receiver,
+            page, session=sql_session
         )
 
     except ValueError:
@@ -67,10 +93,14 @@ async def respond_on_incoming_friend_request(from_user_id: UUID, request: Reques
     sql_session = request.scope["sql_session"]
 
     try:
-        user = await users_package.User.get_user(from_user_id, session=sql_session)
-        await users_package.UsersRelations.respond_on_friend_request(
-            db_user, user, accept_request=accept, session=sql_session
+        users_relations = await users_package.UserRelation.get_relationship(
+            db_user, from_user_id, session=sql_session
         )
+        if accept:
+            await users_relations.accept_friend_request(session=sql_session)
+
+        else:
+            await users_relations.deny_friend_request(session=sql_session)
 
     except exc.NoResultFound:
         raise HTTPException(
@@ -78,7 +108,7 @@ async def respond_on_incoming_friend_request(from_user_id: UUID, request: Reques
             detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
-    except users_package.UsersRelations.exc.RelationshipsException:
+    except users_package.UserRelation.exc.InvalidRelationshipStatusException:
         raise HTTPException(
             status_code=400,
             detail={
@@ -116,10 +146,10 @@ async def deny_incoming_friend_request(from_user_id: UUID, request: Request):
     sql_session = request.scope["sql_session"]
 
     try:
-        user = await users_package.User.get_user(from_user_id, session=sql_session)
-        await users_package.UsersRelations.respond_on_friend_request(
-            db_user, user, accept_request=False, session=sql_session
+        users_relations = await users_package.UserRelation.get_relationship(
+            db_user, from_user_id, session=sql_session
         )
+        await users_relations.deny_friend_request(session=sql_session)
 
     except exc.NoResultFound:
         raise HTTPException(
@@ -127,7 +157,7 @@ async def deny_incoming_friend_request(from_user_id: UUID, request: Request):
             detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
-    except users_package.UsersRelations.exc.RelationshipsException:
+    except users_package.UserRelation.exc.InvalidRelationshipStatusException:
         raise HTTPException(
             status_code=400,
             detail={

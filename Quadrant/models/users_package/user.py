@@ -40,7 +40,7 @@ class User(Base):
         UsersCommonSettings, lazy='joined', uselist=False, cascade="all, delete-orphan"
     )
 
-    _owned_bots: Optional[Mapped["User"]] = relationship("User", cascade="all, delete-orphan", lazy='noload')
+    _owned_bots: Optional[Mapped[User]] = relationship("User", cascade="all, delete-orphan", lazy='noload')
     _users_app_specific_settings: Optional[Mapped[UsersAppSpecificSettings]] = relationship(
         UsersAppSpecificSettings, lazy="noload", cascade="all, delete-orphan"
     )

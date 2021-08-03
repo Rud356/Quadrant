@@ -15,6 +15,11 @@ class RelationsPage(BaseModel):
     relations_with_users_ids: List[UUID]
 
 
+class RelationsPagesCount(BaseModel):
+    relation_type: UsersRelationType
+    pages: int = Field("Shows how many pages of relation of this exact type can be fetched")
+
+
 class UnfriendedUserNotification(BaseModel):
     unfriended_user_id: UUID = Field(description="User id who's not your friend anymore")
 

@@ -22,7 +22,7 @@ async def check_relationship_status(with_user_id: UUID, request: Request):
     db_user = request.scope["db_user"]
     sql_session = request.scope["sql_session"]
 
-    relation = await users_package.UsersRelations.get_exact_relationship_status(
+    relation_status = await users_package.UserRelation.get_relationship_status(
         db_user.id, with_user_id, session=sql_session
     )
-    return {"with_user_id": with_user_id, "status": relation}
+    return {"with_user_id": with_user_id, "status": relation_status}

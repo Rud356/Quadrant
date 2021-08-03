@@ -4,9 +4,9 @@ from uuid import UUID
 
 from Quadrant.models import users_package
 from Quadrant.models.db_init import Session
-from Quadrant.models.users_package import UsersRelationType, UsersRelations
+from Quadrant.models.users_package import UserRelation, UsersRelationType
 from tests.datasets import async_drop_db, async_init_db, create_user
-from tests.utils import clean_tests_folders, make_async_call, create_test_folders
+from tests.utils import clean_tests_folders, create_test_folders, make_async_call
 
 
 class UserData(NamedTuple):
@@ -42,7 +42,7 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud again", login="Hey, lookin good", password="idk if its a valid but check later"),
             UserData(name="Rud tests stuff", login="Just an example", password="i Suppose Talking here is ok")
         )
-        relations_status = await UsersRelations.get_any_relationships_status(
+        relations_status = await UserRelation.get_relationship_status(
             user_1.id, user_2.id, session=self.session
         )
         self.assertEqual(relations_status, UsersRelationType.none)
@@ -52,7 +52,7 @@ class TestUsersFunctionality(unittest.TestCase):
         user_1, *_ = await self.create_users(
             UserData(name="Rud again", login="Trying this", password="Magic happening"),
         )
-        relations_status = await UsersRelations.get_any_relationships_status(
+        relations_status = await UserRelation.get_relationship_status(
             user_1.id, UUID('683a2e17-934a-42e0-852d-e642ddcf2863'), session=self.session
         )
         self.assertEqual(relations_status, UsersRelationType.none)
@@ -63,7 +63,7 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud plays around again", login="stuff is hard too", password="but work pls"),
         )
         with self.assertRaises(ValueError):
-            await UsersRelations.send_friend_request(user_1, user_1, session=self.session)
+            await UserRelation.send_friend_request(user_1, user_1, session=self.session)
 
     @make_async_call
     async def test_sending_and_getting_friend_request(self):
@@ -71,9 +71,13 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud again here", login="really hope it works", password="i guess it's fine"),
             UserData(name="Rud talking", login="Just an example again", password="no password checks")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        user_1_relation = await UserRelation.get_relationship_status(
+            user_1.id, user_2.id, session=self.session
+        )
+        user_2_relation = await UserRelation.get_relationship_status(
+            user_2.id, user_1.id, session=self.session
+        )
 
         self.assertEqual(user_1_relation, UsersRelationType.friend_request_sender)
         self.assertEqual(user_2_relation, UsersRelationType.friend_request_receiver)
@@ -84,10 +88,16 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud doing tests 2", login="bombs, ropes?", password="we got em"),
             UserData(name="Rud: insanity", login="frozen but its google", password="translate")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.respond_on_friend_request(user_1, user_2, accept_request=True, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        incoming_friend_request = await UserRelation.get_relationship(
+            user_2, user_1.id, session=self.session
+        )
+
+        self.assertEqual(incoming_friend_request.status, UsersRelationType.friend_request_receiver)
+
+        await incoming_friend_request.accept_friend_request(session=self.session)
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.friends)
         self.assertEqual(user_2_relation, UsersRelationType.friends)
@@ -98,10 +108,14 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Bad apple", login="but something", password="is a database"),
             UserData(name="Wassup gamers", login="break it down", password="fireworks are all around")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.respond_on_friend_request(user_1, user_2, accept_request=False, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        incoming_friend_request = await UserRelation.get_relationship(
+            user_2, user_1.id, session=self.session
+        )
+        await incoming_friend_request.deny_friend_request(session=self.session)
+
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.none)
         self.assertEqual(user_2_relation, UsersRelationType.none)
@@ -112,10 +126,10 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Here we go", login="we gotta go", password="deeper"),
             UserData(name="Tick-tack", login="your time is running", password="out of universe")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
 
-        with self.assertRaises(UsersRelations.exc.RelationshipsException):
-            await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
+        with self.assertRaises(UserRelation.exc.AlreadyHasRelationshipException):
+            await UserRelation.send_friend_request(user_1, user_2, session=self.session)
 
     @make_async_call
     async def test_sending_friend_request_to_someone_who_sent_it(self):
@@ -123,10 +137,10 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Its fun to do", login="there's no meaning", password="idk why i write this here"),
             UserData(name="Tick-tack boom", login="gotta go", password="out of bounds")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
 
-        with self.assertRaises(UsersRelations.exc.RelationshipsException):
-            await UsersRelations.send_friend_request(user_2, user_1, session=self.session)
+        with self.assertRaises(UserRelation.exc.AlreadyHasRelationshipException):
+            await UserRelation.send_friend_request(user_2, user_1, session=self.session)
 
     @make_async_call
     async def test_cancelling_friend_request_twice(self):
@@ -134,22 +148,14 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Dante", login="do you have some demons?", password="pizza"),
             UserData(name="Sand which", login="i ran out of creativity", password="too hard already")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.cancel_friend_request(user_1, user_2, session=self.session)
+        inited_relation = await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        await inited_relation.cancel_friend_request(session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.none)
         self.assertEqual(user_2_relation, UsersRelationType.none)
-
-    @make_async_call
-    async def test_cancelling_not_existing_request(self):
-        user_1, *_ = await self.create_users(
-            UserData(name="Rud plays around", login="stuff is hard", password="but working"),
-        )
-        with self.assertRaises(UsersRelations.exc.RelationshipsException):
-            await UsersRelations.cancel_friend_request(user_1, user_1, session=self.session)
 
     @make_async_call
     async def test_removing_friend(self):
@@ -157,25 +163,20 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Rud doing tests 3", login="too lazy to make jokes", password="i'm tried"),
             UserData(name="Send help", login="There's a lot of code", password="at least it looks ok")
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.respond_on_friend_request(user_1, user_2, accept_request=True, session=self.session)
-        await UsersRelations.remove_user_from_friends(user_1, user_2, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        incoming_friend_request = await UserRelation.get_relationship(
+            user_2, user_1.id, session=self.session
+        )
+        await incoming_friend_request.accept_friend_request(session=self.session)
+
+        await incoming_friend_request.remove_friend(session=self.session)
+
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.none)
         self.assertEqual(user_2_relation, UsersRelationType.none)
-
-    @make_async_call
-    async def test_removing_not_friend(self):
-        user_1, *_ = await self.create_users(
-            UserData(name="Rud doing tests 4", login="idk wts", password="idk what i am"),
-        )
-        with self.assertRaises(UsersRelations.exc.RelationshipsException):
-            await UsersRelations.remove_user_from_friends(
-                user_1, user_1, session=self.session
-            )
 
     @make_async_call
     async def test_blocking_users(self):
@@ -183,9 +184,9 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Jane", login="perplexing_dual", password="pre-historic age"),
             UserData(name="Diary", login="bring me back 2007th", password="september burns")
         )
-        await UsersRelations.block_user(user_1, user_2, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        await UserRelation.block_user(user_1, user_2, session=self.session)
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.none)
@@ -196,9 +197,9 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Brain", login="just login", password="nothing interesting"),
             UserData(name="HaHaHa", login="why so serious?", password="I think its funny")
         )
-        await UsersRelations.block_user(user_2, user_1, session=self.session)
-        with self.assertRaises(UsersRelations.exc.AlreadyBlockedException):
-            await UsersRelations.block_user(user_2, user_1, session=self.session)
+        await UserRelation.block_user(user_2, user_1, session=self.session)
+        with self.assertRaises(UserRelation.exc.AlreadyBlockedException):
+            await UserRelation.block_user(user_2, user_1, session=self.session)
 
     @make_async_call
     async def test_blocking_blocking_himself(self):
@@ -206,7 +207,7 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="So hard", login="just pls", password="don't break"),
         )
         with self.assertRaises(ValueError):
-            await UsersRelations.block_user(user_1, user_1, session=self.session)
+            await UserRelation.block_user(user_1, user_1, session=self.session)
 
     @make_async_call
     async def test_blocking_user_in_relations(self):
@@ -215,15 +216,11 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="It's hard to come up with", login="creative things", password="in here, yknow?")
         )
 
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.block_user(user_1, user_2, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        await UserRelation.block_user(user_1, user_2, session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(
-            user_1.id, user_2.id, session=self.session
-        )
-        user_2_relation = await UsersRelations.get_exact_relationship_status(
-            user_2.id, user_1.id, session=self.session
-        )
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.none)
@@ -235,16 +232,12 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Hope any of those are funny", login="cuz its hard", password="#blabbering")
         )
 
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        await UsersRelations.block_user(user_2, user_1, session=self.session)
-        await UsersRelations.block_user(user_1, user_2, session=self.session)
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        await UserRelation.block_user(user_2, user_1, session=self.session)
+        await UserRelation.block_user(user_1, user_2, session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(
-            user_1.id, user_2.id, session=self.session
-        )
-        user_2_relation = await UsersRelations.get_exact_relationship_status(
-            user_2.id, user_1.id, session=self.session
-        )
+        user_1_relation = await UserRelation.get_relationship_status(user_1.id, user_2.id, session=self.session)
+        user_2_relation = await UserRelation.get_relationship_status(user_2.id, user_1.id, session=self.session)
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.blocked)
@@ -255,15 +248,18 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="I ran out of fuel", login="I need healing", password="this gonna be meme hell"),
             UserData(name="Why?", login="Cuz", password="i can")
         )
-        await UsersRelations.block_user(user_1, user_2, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(
+
+        blocked_relation = await UserRelation.block_user(user_1, user_2, session=self.session)
+        await blocked_relation.unblock_user(session=self.session)
+
+        user_1_relation = await UserRelation.get_relationship_status(
             user_1.id, user_2.id, session=self.session
         )
-        user_2_relation = await UsersRelations.get_exact_relationship_status(
+        user_2_relation = await UserRelation.get_relationship_status(
             user_2.id, user_1.id, session=self.session
         )
 
-        self.assertEqual(user_1_relation, UsersRelationType.blocked)
+        self.assertEqual(user_1_relation, UsersRelationType.none)
         self.assertEqual(user_2_relation, UsersRelationType.none)
 
     @make_async_call
@@ -278,11 +274,10 @@ class TestUsersFunctionality(unittest.TestCase):
                 password="IDK, just i wanna finish stuff"
             )
         )
-        await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
-        page = await UsersRelations.get_relationships_page(
-            user_1, page=0,
-            relationship_type=UsersRelationType.friend_request_sender,
-            session=self.session
+
+        await UserRelation.send_friend_request(user_1, user_2, session=self.session)
+        page = await UserRelation.get_relations_page(
+            user_1, UsersRelationType.friend_request_sender, page=0, session=self.session
         )
 
         # Gets by first index a first relation record and then first field (status)
@@ -293,5 +288,5 @@ class TestUsersFunctionality(unittest.TestCase):
     @make_async_call
     async def tearDownClass(cls) -> None:
         clean_tests_folders()
-        await cls.session.close()
+        await cls.session.close()  # noqa: is created in setUpClass
         await async_drop_db()
