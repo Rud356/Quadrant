@@ -24,7 +24,7 @@ async def get_pages_count(request: Request):
         user_id=db_user.id, session=sql_session
     )
 
-    return {"pages": pages}
+    return session_schema.SessionPagesCountSchema.construct(pages=pages)
 
 
 @router.get(

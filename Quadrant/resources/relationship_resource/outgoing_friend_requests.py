@@ -11,6 +11,31 @@ from .router import router
 
 
 @router.get(
+    "/api/v1/relations/outgoing_friend_requests/pages",
+    description="Gives a number of pages with users that received your friend requests (pages starting from 1).",
+    dependencies=[Depends(require_authorization, use_cache=False)],
+    responses={
+        200: {"model": relations_schema.RelationsPagesCount},
+        status.HTTP_401_UNAUTHORIZED: {"model": UNAUTHORIZED_HTTPError}
+    },
+    tags=["Users relationships", "Incoming friend request relation"]
+)
+async def get_incoming_friend_requests_pages_count(request: Request):
+    db_user = request.scope["db_user"]
+    sql_session = request.scope["sql_session"]
+
+    pages = await users_package.UserRelation.get_relations_pages_count(
+        db_user, users_package.UsersRelationType.friend_request_receiver,
+        session=sql_session
+    )
+
+    return relations_schema.RelationsPagesCount.construct(
+        relation_type=users_package.UsersRelationType.friend_request_receiver,
+        pages=pages
+    )
+
+
+@router.get(
     "/api/v1/relations/outgoing_friend_requests/pages/{page}",
     description="Gives a page of outgoing friend requests (pages starting from 1).",
     dependencies=[Depends(require_authorization, use_cache=False)],
@@ -28,8 +53,9 @@ async def get_outgoing_friend_requests_page(page: int, request: Request):
     # We want to have pages from 1, but offset should start from 0
     page -= 1
     try:
-        relations_page = await users_package.UsersRelations.get_relationships_page(
-            db_user.id, page, users_package.UsersRelationType.friend_request_sender, session=sql_session
+        relations_page = await users_package.UserRelation.get_relations_page(
+            db_user.id, users_package.UsersRelationType.friend_request_sender,
+            page, session=sql_session
         )
 
     except ValueError:
@@ -71,7 +97,7 @@ async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Req
         user = await users_package.User.get_user_by_username_and_color_id(
             user_tag.username, user_tag.color_id, session=sql_session
         )
-        await users_package.UsersRelations.send_friend_request(
+        await users_package.UserRelation.send_friend_request(
             db_user, user, session=sql_session
         )
 
@@ -81,7 +107,7 @@ async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Req
             detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
-    except users_package.UsersRelations.exc.RelationshipsException:
+    except users_package.UserRelation.exc.AlreadyHasRelationshipException:
         raise HTTPException(
             status_code=400,
             detail={
@@ -121,7 +147,7 @@ async def send_friend_request(to_user_id: UUID, request: Request):
 
     try:
         user = await users_package.User.get_user(to_user_id, session=sql_session)
-        await users_package.UsersRelations.send_friend_request(
+        await users_package.UserRelation.send_friend_request(
             db_user, user, session=sql_session
         )
 
@@ -131,7 +157,8 @@ async def send_friend_request(to_user_id: UUID, request: Request):
             detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
-    except users_package.UsersRelations.exc.RelationshipsException:
+    except users_package.UserRelation.exc.AlreadyHasRelationshipException:
+        # TODO: handle case when user is trying to send friend request to himself
         raise HTTPException(
             status_code=400,
             detail={
@@ -169,10 +196,10 @@ async def cancel_friend_request(to_user_id: UUID, request: Request):
     sql_session = request.scope["sql_session"]
 
     try:
-        user = await users_package.User.get_user(to_user_id, session=sql_session)
-        await users_package.UsersRelations.cancel_friend_request(
-            db_user, user, session=sql_session
+        relation_with_user = await users_package.UserRelation.get_relationship(
+            db_user, to_user_id, session=sql_session
         )
+        await relation_with_user.cancel_friend_request(session=sql_session)
 
     except exc.NoResultFound:
         raise HTTPException(
@@ -180,7 +207,7 @@ async def cancel_friend_request(to_user_id: UUID, request: Request):
             detail={"reason": "USER_NOT_FOUND", "message": "User with given id not found"}
         )
 
-    except users_package.UsersRelations.exc.RelationshipsException:
+    except users_package.UserRelation.exc.InvalidRelationshipStatusException:
         raise HTTPException(
             status_code=400,
             detail={

@@ -7,8 +7,9 @@ from uuid import UUID
 from sqlalchemy import (
     Column, Enum, ForeignKey,
     PrimaryKeyConstraint, and_, func,
-    select, delete
+    select, delete, update
 )
+from asyncpg import exceptions
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, relationship
 
@@ -30,10 +31,6 @@ class UserRelation(Base):
         nullable=False
     )
 
-    opposite_relation: UserRelation = relationship(
-        "UserRelation", foreign_keys=[initiator_user_id, with_user_id], lazy="joined",
-
-    )
     __tablename__ = "users_relations"
     __table_args__ = (
         PrimaryKeyConstraint("initiator_user_id", "with_user_id", name="pk_relations_of_users"),
@@ -53,10 +50,15 @@ class UserRelation(Base):
                 f"(actual relationship is {self.status.name}) with {self.with_user_id}"
             )
             gen_log.debug(text)
-            raise self.exc.InvalidRelationshipStatus(text)
+            raise self.exc.InvalidRelationshipStatusException(text)
 
-        self.status = UsersRelationType.friends
-        self.opposite_relation.status = UsersRelationType.friends
+        query = update(UserRelation).where(
+            and_(
+                UserRelation.initiator_user_id.in_([self.initiator_user_id, self.with_user_id]),
+                UserRelation.with_user_id.in_([self.initiator_user_id, self.with_user_id])
+            )
+        ).values(status=UsersRelationType.friends)
+        await session.execute(query)
         await session.commit()
 
     async def deny_friend_request(self, *, session: AsyncSession) -> None:
@@ -73,7 +75,7 @@ class UserRelation(Base):
                 f"(actual relationship is {self.status.name}) with {self.with_user_id}"
             )
             gen_log.debug(text)
-            raise self.exc.InvalidRelationshipStatus(text)
+            raise self.exc.InvalidRelationshipStatusException(text)
 
         query = self._delete_relationship_if_not_blocked(self.initiator_user_id, self.with_user_id)
         await session.execute(query)
@@ -93,7 +95,7 @@ class UserRelation(Base):
                 f"(actual relationship is {self.status.name}) with {self.with_user_id}"
             )
             gen_log.debug(text)
-            raise self.exc.InvalidRelationshipStatus(text)
+            raise self.exc.InvalidRelationshipStatusException(text)
 
         query = self._delete_relationship_if_not_blocked(self.initiator_user_id, self.with_user_id)
         await session.execute(query)
@@ -113,7 +115,7 @@ class UserRelation(Base):
                 f"(actual relationship is {self.status.name}) with {self.with_user_id}"
             )
             gen_log.debug(text)
-            raise self.exc.InvalidRelationshipStatus(text)
+            raise self.exc.InvalidRelationshipStatusException(text)
 
         query = delete(UserRelation).where(
             and_(
@@ -152,7 +154,7 @@ class UserRelation(Base):
         """
         query = select(cls).filter(
             UserRelation.initiator_user_id == initiator.id,
-            UserRelation.relation_with_id == with_user_id
+            UserRelation.with_user_id == with_user_id
         )
         result = await session.execute(query)
         relation = result.scalar_one()
@@ -173,7 +175,7 @@ class UserRelation(Base):
         """
         query = select(UserRelation.status).filter(
             UserRelation.initiator_user_id == initiator_id,
-            UserRelation.relation_with_id == with_user_id
+            UserRelation.with_user_id == with_user_id
         )
         result = await session.execute(query)
         relation = result.scalar()
@@ -218,17 +220,32 @@ class UserRelation(Base):
         :param session: sqlalchemy session.
         :return: outgoing friend request relation.
         """
+        initiator_id = initiator.id
+        friend_request_receiver_id = to_user.id
+
+        if initiator_id == friend_request_receiver_id:
+            raise ValueError(
+                "User can not send friend request to himself"
+            )
+
+        if initiator.is_bot:
+            raise initiator.exc.UserIsBot("Bots can not add friends")
+
+        if to_user.is_bot:
+            raise cls.exc.InvalidRelationToBotException(
+                "User can not relate to bot beside blocking him"
+            )
 
         # TODO: check if other user has any settings that preventing receiving from friend requests
         try:
             friend_request_outgoing = UserRelation(
-                initiator_user_id=initiator.id,
-                with_user_id=to_user.id,
+                initiator_user_id=initiator_id,
+                with_user_id=friend_request_receiver_id,
                 status=UsersRelationType.friend_request_sender
             )
             friend_request_incoming = UserRelation(
-                initiator_user_id=initiator.id,
-                with_user_id=to_user.id,
+                initiator_user_id=friend_request_receiver_id,
+                with_user_id=initiator_id,
                 status=UsersRelationType.friend_request_receiver
             )
 
@@ -237,24 +254,36 @@ class UserRelation(Base):
 
             return friend_request_outgoing
 
-        except IntegrityError:
+        except (IntegrityError, exceptions.UniqueViolationError):
+            await session.rollback()
+
             text = (
-                f"{to_user.id} and {initiator.id} have relationships "
+                f"{friend_request_receiver_id} and {initiator_id} have relationships "
                 "and so they can not send a friend request to each other"
             )
             gen_log.debug(text)
-            raise cls.exc.AlreadyHasRelationship(text)
+            raise cls.exc.AlreadyHasRelationshipException()
 
     @staticmethod
     async def get_relations_page(
         initiator: User, relation_type: UsersRelationType, page: int, *, session: AsyncSession
     ) -> RelationsPage:
+        """
+        Gives page of user ids with whom initiator has specified type of relations.
+
+        :param initiator: user who initiated relationship.
+        :param relation_type: relation type.
+        :param page: page which we obtain (starts from 0 and is positive).
+        :param session: sqlalchemy session.
+        :return: RelationsPage instance.
+        """
         if page < 0:
             raise ValueError("Invalid page")
 
-        query = select(UserRelation.relation_with_id).join(
-            (User.username, User.status), User.id == UserRelation.relation_with_id
+        query = select(UserRelation.with_user_id).join(
+            User.username, User.id == UserRelation.with_user_id
         )
+
         query = query.filter(
             and_(
                 UserRelation.initiator_user_id == initiator.id,
@@ -264,8 +293,7 @@ class UserRelation(Base):
         query = query.limit(USERS_RELATIONS_PER_PAGE).offset(
             USERS_RELATIONS_PER_PAGE * page
         ).order_by(
-            User.username,
-            User.status.is_(UsersStatus.online)
+            User.username
         )
 
         result = await session.execute(query)
@@ -281,6 +309,13 @@ class UserRelation(Base):
     async def get_relations_pages_count(
         initiator: User, relation_type: UsersRelationType, *, session: AsyncSession
     ) -> int:
+        """
+        Gives a number of pages for initiator with specified relation type.
+        :param initiator: user who initiated relationship.
+        :param relation_type: relation type.
+        :param session: sqlalchemy session.
+        :return: number of pages that can be fetched.
+        """
         query = select(UserRelation.relation_with_id).filter(
             and_(
                 UserRelation.initiator_user_id == initiator.id,
@@ -296,6 +331,21 @@ class UserRelation(Base):
     async def block_user(
         cls, initiator: User, blocking_user: User, *, session: AsyncSession
     ) -> UserRelation:
+        """
+        Blocks specified user.
+
+        :param initiator: user who blocks someone.
+        :param blocking_user: user who will be blocked.
+        :param session: sqlalchemy session.
+        :return: new user relation.
+        """
+        if initiator.id == blocking_user.id:
+            raise ValueError("User can not block himself")
+
+        status = await cls.get_relationship_status(initiator.id, blocking_user.id, session=session)
+        if status == UsersRelationType.blocked:
+            raise cls.exc.AlreadyBlockedException("User is already blocked")
+
         query = cls._delete_relationship_if_not_blocked(initiator.id, blocking_user.id)
         await session.execute(query)
         new_relation = cls(
@@ -330,20 +380,26 @@ class UserRelation(Base):
             """
             pass
 
-        class InvalidRelationshipStatus(RelationshipsException, ValueError):
+        class InvalidRelationshipStatusException(RelationshipsException, ValueError):
             """
             Raised when user is in incorrect relationship with other user to perform action.
             """
             pass
 
-        class AlreadyHasRelationship(RelationshipsException):
+        class AlreadyHasRelationshipException(RelationshipsException):
             """
             Thrown when this relationship type requires
             user to not have any previous relations to other user.
             """
 
-        class AlreadyBlockedException(AlreadyHasRelationship):
+        class AlreadyBlockedException(AlreadyHasRelationshipException):
             """
             Special exception that represents that user is already blocked.
+            """
+            pass
+
+        class InvalidRelationToBotException(RelationshipsException):
+            """
+            Users can not have any relationship to bot, beside blocked by bot or blocking bot.
             """
             pass
