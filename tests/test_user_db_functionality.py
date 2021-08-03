@@ -4,24 +4,29 @@ from uuid import UUID
 from sqlalchemy import exc
 
 from Quadrant.models.db_init import Session
-from Quadrant.models.utils.common_settings_validators import DEFAULT_COMMON_SETTINGS_DICT
-from tests.datasets import create_user, async_init_db, async_drop_db
-from tests.utils import clean_tests_folders, make_async_call
+from tests.datasets import async_drop_db, async_init_db, create_user
+from tests.utils import clean_tests_folders, create_test_folders, make_async_call
 
 
 class TestUsersFunctionality(unittest.TestCase):
     @classmethod
     @make_async_call
     async def setUpClass(cls) -> None:
+        create_test_folders()
         cls.session = Session()
         await async_init_db()
-        cls.test_user_auth = await create_user("Rud_func", "Rud_functions_tester", "H0w_h4rd_lma0", session=cls.session)
+        cls.test_user_auth = await create_user(
+            "Rud_func", "Rud_functions_tester", "H0w_h4rd_lma0", session=cls.session
+        )
         cls.test_user = cls.test_user_auth.user
 
     @make_async_call
     async def test_getting_user(self):
         got_user = await self.test_user.get_user(self.test_user.id, session=self.session)
-        self.assertEqual(got_user.id, self.test_user.id, f"Somehow user with id {self.test_user.id} didn't got himself")
+        self.assertEqual(
+            got_user.id, self.test_user.id,
+            f"Somehow user with id {self.test_user.id} didn't got himself"
+        )
 
     @make_async_call
     async def test_getting_not_existing_user(self):
@@ -69,7 +74,10 @@ class TestUsersFunctionality(unittest.TestCase):
 
     @make_async_call
     async def test_users_default_settings_matching_defaults(self):
-        test_user_auth = await create_user("Rud_defaults_test", "Rud_default", "SomepwdHere", session=self.session)
+        test_user_auth = await create_user(
+            "Rud_defaults_test", "Rud_default",
+            "SomepwdHere", session=self.session
+        )
         self.assertEqual(
             test_user_auth.user.users_common_settings.enable_sites_preview,
             False

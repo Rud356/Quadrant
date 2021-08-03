@@ -36,6 +36,7 @@ class UserAuthorization(BaseModel):
 
 
 class UserRegistration(UserAuthorization):
+    # TODO: maybe add some regex to validate usernames
     username: str = Field(min_length=1, max_length=50)
 
     class Config:

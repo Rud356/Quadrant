@@ -1,7 +1,9 @@
 from enum import Enum
 
 
-class UsersStatus(Enum):
+# Fix for swagger docs
+# See: https://github.com/tiangolo/fastapi/issues/329
+class UsersStatus(str, Enum):
     offline = "offline"
     online = "online"
     away = "away"

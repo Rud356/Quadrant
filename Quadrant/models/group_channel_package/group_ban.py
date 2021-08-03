@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from math import ceil
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID
@@ -89,3 +90,20 @@ class GroupBan(Base):
         )
 
         return query_result.scalars().all()
+
+    @staticmethod
+    async def total_bans_pages(group_id: UUID, *, session: AsyncSession) -> int:
+        """
+        Gives a number of pages with banned users for this group.
+
+        :param group_id: group from which we obtain pages count.
+        :param session: sqlalchemy session.
+        :return: number of pages.
+        """
+        query_result = await session.execute(
+            select(GroupBan.id).filter(  # noqa: count does exists for select
+                GroupBan.group_id == group_id
+            ).count()
+        )
+        pages = ceil(query_result.scalar() / BANS_PER_PAGE)
+        return pages

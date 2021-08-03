@@ -4,6 +4,7 @@ from Quadrant.config import quadrant_config
 from Quadrant.models.users_package import UserInternalAuthorization
 from Quadrant.resources.utils import prepare_users_client_authorization
 from Quadrant.schemas import http_error_example, user_schemas
+from sqlalchemy.exc import IntegrityError
 from .router import router
 
 
@@ -20,6 +21,11 @@ from .router import router
         status.HTTP_403_FORBIDDEN: {
             "model": http_error_example(
                 "REGISTRATION_DISABLED", "Registration was disabled"
+            )
+        },
+        status.HTTP_409_CONFLICT: {
+            "model": http_error_example(
+                "LOGIN_ALREADY_IN_USE", "This login is already registered"
             )
         }
     },
@@ -49,13 +55,20 @@ async def internal_registration(
             }
         )
 
-    user_schemas.UserRegistration.validate(UserInternalAuthorization)
+    user_schemas.UserRegistration.validate(authorization_request)
 
     sql_session = request.scope["sql_session"]
-    new_authorized_user = await UserInternalAuthorization.register_user_internally(
-        authorization_request.username, authorization_request.login,
-        authorization_request.password, session=sql_session
-    )
+    try:
+        new_authorized_user = await UserInternalAuthorization.register_user_internally(
+            authorization_request.username, authorization_request.login,
+            authorization_request.password, session=sql_session
+        )
+
+    except IntegrityError:
+        raise HTTPException(409, {
+            "reason": "LOGIN_ALREADY_IN_USE",
+            "message": "This login is already registered"
+        })
 
     await prepare_users_client_authorization(new_authorized_user, sql_session, request, response)
     return new_authorized_user.user.as_dict()

@@ -84,7 +84,6 @@ class User(Base):
         :param session: sqlalchemy session.
         :return: nothing.
         """
-        # TODO: add validations and clean up
         self.text_status = text_status
         await session.commit()
 
@@ -191,7 +190,6 @@ class User(Base):
         if filter_bots:
             user_query = user_query.filter(cls.is_bot.is_(False))
 
-        # TODO: maybe add option to not fetch users settings
         result = await session.execute(user_query)
         user = result.scalar_one()
 

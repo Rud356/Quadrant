@@ -153,7 +153,6 @@ class UserSession(Base):
         # TODO: Ensure that sessions are closed after this method
         users_sessions_query = await session.stream(UserSession.user_session_query(user_id))
         async for user_session in users_sessions_query.partitions(10):
-            # TODO: clear session from cache that will be added later
             # TODO: add sessions cache
             user_session: UserSession
             user_session.is_alive = False

@@ -11,7 +11,8 @@ class RelationWithUser(BaseModel):
 
 
 class RelationsPage(BaseModel):
-    relations: List[RelationWithUser]
+    relation_type: UsersRelationType
+    relations_with_users_ids: List[UUID]
 
 
 class UnfriendedUserNotification(BaseModel):

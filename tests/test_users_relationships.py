@@ -6,7 +6,7 @@ from Quadrant.models import users_package
 from Quadrant.models.db_init import Session
 from Quadrant.models.users_package import UsersRelationType, UsersRelations
 from tests.datasets import async_drop_db, async_init_db, create_user
-from tests.utils import clean_tests_folders, make_async_call
+from tests.utils import clean_tests_folders, make_async_call, create_test_folders
 
 
 class UserData(NamedTuple):
@@ -21,6 +21,7 @@ class TestUsersFunctionality(unittest.TestCase):
     @classmethod
     @make_async_call
     async def setUpClass(cls) -> None:
+        create_test_folders()
         cls.session = Session()
         await async_init_db()
 
@@ -217,8 +218,12 @@ class TestUsersFunctionality(unittest.TestCase):
         await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
         await UsersRelations.block_user(user_1, user_2, session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        user_1_relation = await UsersRelations.get_exact_relationship_status(
+            user_1.id, user_2.id, session=self.session
+        )
+        user_2_relation = await UsersRelations.get_exact_relationship_status(
+            user_2.id, user_1.id, session=self.session
+        )
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.none)
@@ -234,8 +239,12 @@ class TestUsersFunctionality(unittest.TestCase):
         await UsersRelations.block_user(user_2, user_1, session=self.session)
         await UsersRelations.block_user(user_1, user_2, session=self.session)
 
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        user_1_relation = await UsersRelations.get_exact_relationship_status(
+            user_1.id, user_2.id, session=self.session
+        )
+        user_2_relation = await UsersRelations.get_exact_relationship_status(
+            user_2.id, user_1.id, session=self.session
+        )
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.blocked)
@@ -247,8 +256,12 @@ class TestUsersFunctionality(unittest.TestCase):
             UserData(name="Why?", login="Cuz", password="i can")
         )
         await UsersRelations.block_user(user_1, user_2, session=self.session)
-        user_1_relation = await UsersRelations.get_exact_relationship_status(user_1.id, user_2.id, session=self.session)
-        user_2_relation = await UsersRelations.get_exact_relationship_status(user_2.id, user_1.id, session=self.session)
+        user_1_relation = await UsersRelations.get_exact_relationship_status(
+            user_1.id, user_2.id, session=self.session
+        )
+        user_2_relation = await UsersRelations.get_exact_relationship_status(
+            user_2.id, user_1.id, session=self.session
+        )
 
         self.assertEqual(user_1_relation, UsersRelationType.blocked)
         self.assertEqual(user_2_relation, UsersRelationType.none)
@@ -267,11 +280,14 @@ class TestUsersFunctionality(unittest.TestCase):
         )
         await UsersRelations.send_friend_request(user_1, user_2, session=self.session)
         page = await UsersRelations.get_relationships_page(
-            user_1, page=0, relationship_type=UsersRelationType.friend_request_sender, session=self.session
+            user_1, page=0,
+            relationship_type=UsersRelationType.friend_request_sender,
+            session=self.session
         )
 
         # Gets by first index a first relation record and then first field (status)
-        self.assertEqual(page[0][0], UsersRelationType.friend_request_sender)
+        self.assertEqual(page.relation_type, UsersRelationType.friend_request_sender)
+        self.assertEqual(page.relations_with_users_ids, [user_2.id])
 
     @classmethod
     @make_async_call

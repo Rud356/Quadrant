@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import (
@@ -11,9 +11,11 @@ from sqlalchemy.orm import Mapped
 
 from Quadrant.models.db_init import AsyncSession, Base
 from Quadrant.models.users_package.relations_types import UsersRelationType
+from Quadrant.schemas.relations_schema import RelationsPage
 from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
+# TODO: refactor users relations class to use relations instances'
 
 
 class UsersRelations(Base):
@@ -136,7 +138,7 @@ class UsersRelations(Base):
     async def get_relationships_page(
         user: User, page: int, relationship_type: UsersRelationType,
         *, session: AsyncSession
-    ) -> List[Dict[UsersRelations.relation_status, User.id]]:
+    ) -> RelationsPage:
         """
         Gives page of relationships ordered by username and users with who Users instances with whom has relations.
 
@@ -149,7 +151,9 @@ class UsersRelations(Base):
         if page < 0:
             raise ValueError("Invalid page")
 
-        query = select(UsersRelations.relation_status, User.id).join(User, User.id != user.id)
+        query = select(UsersRelations.relation_with_id).join(
+            User.username, User.id == UsersRelations.relation_with_id
+        )
         # Since we have relations records created for both users - we can easily just look only for initiator id
         query = query.filter(
             UsersRelations.initiator_id == user.id,
@@ -159,13 +163,15 @@ class UsersRelations(Base):
             .order_by(User.username)
 
         result = await session.execute(query)
-        relations = result.all()
+        relations_with_users_ids: List[UUID] = result.scalars().all()
 
-        packed_relations = []
-        for relation, user_id in relations:
-            packed_relations.append({"status": relation, "with_user_id": user_id})
+        packed_relations = RelationsPage.construct(
+            relation_type=relationship_type,
+            relations_with_users_ids=relations_with_users_ids
+        )
+        return packed_relations
 
-        return relations
+    # TODO: add pages count displaying
 
     @staticmethod
     async def send_friend_request(

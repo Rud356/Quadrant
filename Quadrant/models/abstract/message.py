@@ -23,7 +23,6 @@ class ABCMessage(Base):
     """
     Represents abstract message class that we inherit to create messages tables for other types of chats.
     """
-    author_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False)
     message_id: Mapped[int] = Column(BigInteger, primary_key=True)
     created_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -33,6 +32,10 @@ class ABCMessage(Base):
     text: Optional[Mapped[str]] = Column(String(2000), nullable=True)
 
     __abstract__ = True
+
+    @declared_attr
+    def author_id(self) -> Mapped[UUID]:
+        return Column(ForeignKey('users.id'), nullable=False)
 
     @declared_attr
     def channel_id(self) -> Mapped[UUID]:
@@ -230,7 +233,6 @@ class ABCMessage(Base):
         if len(self.text) == 0:
             raise ValueError("Invalid message length")
 
-        # TODO: add more validations
         self.edited = True
         self.text = new_text
         await session.commit()

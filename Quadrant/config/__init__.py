@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import logging
 from argparse import ArgumentParser
 from datetime import datetime
 from pathlib import Path
 from sys import exit
+from os import environ
 
 from ConfigFramework import BaseConfig, loaders
 from ConfigFramework.variables import BoolVar, ConfigVar, IntVar
@@ -25,6 +28,9 @@ if not launch_args.config_path.is_file() and not launch_args.create_config:
 
 yaml_path = launch_args.config_path
 
+if environ.get("testing"):
+    yaml_path = Path(__file__).parent / "test_config.yaml"
+
 if launch_args.create_config:
     yaml_path.touch()
     yaml_loader = loaders.YAMLLoader(data=defaults, defaults={}, config_path=yaml_path)
@@ -32,8 +38,8 @@ if launch_args.create_config:
     print(f"Quadrant config has been initialized. Edit config at {yaml_path}")
     exit(1)
 
-yaml_loader = loaders.YAMLLoader.load(yaml_path)
 env_loader = loaders.EnvLoader.load()
+yaml_loader = loaders.YAMLLoader.load(yaml_path)
 composite_loader = loaders.CompositeLoader.load(env_loader, yaml_loader, defaults=defaults)
 
 

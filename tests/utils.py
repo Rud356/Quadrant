@@ -19,6 +19,10 @@ def make_async_call(f):
     return async_run
 
 
+def create_test_folders():
+    quadrant_config.profile_pictures_dir.mkdir(parents=True, exist_ok=True)
+    quadrant_config.uploads.mkdir(parents=True, exist_ok=True)
+
+
 def clean_tests_folders():
-    rmtree(quadrant_config.static_folder_location.value, ignore_errors=True)
     rmtree(quadrant_config.media_folder_location.value, ignore_errors=True)

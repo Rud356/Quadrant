@@ -38,7 +38,7 @@ async def get_outgoing_friend_requests_page(page: int, request: Request):
             detail={"reason": "INVALID_PAGE", "message": "No content to show"}
         )
 
-    return {"relations": relations_page}
+    return relations_page
 
 
 @router.patch(
