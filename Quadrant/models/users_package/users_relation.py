@@ -15,7 +15,7 @@ from Quadrant.schemas.relations_schema import RelationsPage
 from .user import User
 
 USERS_RELATIONS_PER_PAGE = 50
-# TODO: refactor users relations class to use relations instances'
+# TODO: refactor users relations class to use relations instances
 
 
 class UsersRelations(Base):

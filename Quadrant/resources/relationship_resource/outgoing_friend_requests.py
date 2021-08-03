@@ -94,7 +94,7 @@ async def send_friend_request_by_user_tag(user_tag: SearchUserBody, request: Req
 
 
 @router.patch(
-    "/api/v1/relations/outgoing_friend_requests/{to_user_id}",
+    "/api/v1/relations/outgoing_friend_requests/{to_user}",
     description="Sends friend request.",
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={
@@ -144,7 +144,7 @@ async def send_friend_request(to_user_id: UUID, request: Request):
 
 
 @router.delete(
-    "/api/v1/relations/outgoing_friend_requests/{to_user_id}",
+    "/api/v1/relations/outgoing_friend_requests/{to_user}",
     description="Cancels sent friend request.",
     dependencies=[Depends(require_authorization, use_cache=False)],
     responses={

@@ -52,7 +52,7 @@ class ABCMessage(Base):
     def attached_file(self) -> Mapped[UploadedFile]:
         return relationship(UploadedFile, lazy="joined", uselist=False)
 
-    async def user_can_send_message_check(self, author: users_package.User, *, session) -> None:
+    async def can_user_send_message_check(self, author: users_package.User, *, session) -> None:
         """
         Checks if author can send a message to this channel.
 
@@ -82,7 +82,7 @@ class ABCMessage(Base):
             raise cls.common_exc.UserIsNotAMemberException("You're not a member of chat")
 
         # Raises exception if this participant can send a message
-        await cls.user_can_send_message_check(channel, author, session=session)
+        await cls.can_user_send_message_check(channel, author, session=session)
 
         if attached_file_id is None and len(text) == 0:
             raise ValueError("No content been posted")

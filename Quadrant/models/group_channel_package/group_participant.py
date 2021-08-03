@@ -11,7 +11,6 @@ class GroupParticipant(Base):
 
     user: User = relationship("User", lazy='joined', uselist=False)
     __table_args__ = (
-        PrimaryKeyConstraint("channel_id", "user_id", name="_dm_channel_member"),
-        UniqueConstraint("channel_id", "user_id", name="_unique_dm_channel_member")
+        PrimaryKeyConstraint("channel_id", "user_id", name="pk_dm_channel_member"),
     )
     __tablename__ = "group_channel_participants"
