@@ -10,4 +10,4 @@ python-rapidjson~=1.0.0
 marshmallow~=3.11.1
 pathvalidate~=2.4.1
 pycares~=3.2.3
-Pillow~=8.2.0
+Pillow>=8.3.2
