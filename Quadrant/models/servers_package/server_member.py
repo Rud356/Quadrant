@@ -1,6 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, PrimaryKeyConstraint
+from sqlalchemy import (
+    Boolean, Column, DateTime,
+    ForeignKey, String, PrimaryKeyConstraint
+)
 from sqlalchemy.orm import relationship
 
 from Quadrant import models
@@ -41,9 +44,10 @@ class ServerMember(Base):
     )
     __tablename__ = "server_members"
 
-    async def assign_role(self, assigned_by: models.User, role: ServerRole, *, session) -> None:
+    async def assign_role(self, assigned_by: models.User, role: ServerRole, *, session) -> RolesToMember:
         # TODO: check permissions to assign roles
 
-        self.roles_assignments.append(RolesToMember(server_id=self.server_id, member_id=self.id, role=role))
+        new_role = RolesToMember(server_id=self.server_id, member_id=self.id, role=role)
         await session.commit()
+        return new_role
 

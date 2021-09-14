@@ -66,8 +66,6 @@ class GroupBan(Base):
         result = await session.execute(query)  # noqa: exists is a valid for query
         return result.scalar() or True
 
-    # TODO: add method to get pages of bans
-
     @staticmethod
     async def get_bans_page(
         group_id: UUID, page: int = 0, *, session: AsyncSession

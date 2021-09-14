@@ -14,8 +14,6 @@ class UserData(NamedTuple):
     login: str
     password: str
 
-# TODO: fix freezes on finishing tests
-
 
 class TestUsersFunctionality(unittest.TestCase):
     @classmethod

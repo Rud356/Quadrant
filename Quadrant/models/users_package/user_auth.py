@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from uuid import UUID
 from typing import Optional
 from hmac import compare_digest
 from secrets import token_urlsafe
+from uuid import UUID
 
-from sqlalchemy import BigInteger, Column, ForeignKey, String, select
+from sqlalchemy import (
+    BigInteger, Column, ForeignKey,
+    String, select, UniqueConstraint
+)
 from sqlalchemy.orm import backref, relationship, Mapped
 
 from Quadrant.models.db_init import Base, AsyncSession
@@ -17,17 +20,18 @@ from .user import User, UsersCommonSettings
 
 class UserInternalAuthorization(Base):
     user_id: Mapped[UUID] = Column(ForeignKey('users.id'), nullable=False, unique=True, index=True)
-    internal_token: Mapped[str] = Column(String(128), primary_key=True)
 
-    login: Mapped[Optional[str]] = Column(String(64), nullable=True, unique=True, index=True)
-    password: Mapped[Optional[str]] = Column(String(64), nullable=True)
-    salt: Mapped[Optional[str]] = Column(String(40), nullable=True)
+    login: Mapped[Optional[str]] = Column(String(64), nullable=False, unique=True, index=True)
+    password: Mapped[Optional[str]] = Column(String(64), nullable=False)
+    salt: Mapped[Optional[str]] = Column(String(40), nullable=False)
 
     user: User = relationship(
-        User, uselist=False, backref=backref('internal_auth', cascade="all, delete-orphan"),
+        User, uselist=False,
+        backref=backref('internal_auth', cascade="all, delete-orphan"),
         lazy='joined'
     )
 
+    __table_args__ = (UniqueConstraint('login', 'password', name='_unique_user_internal_auth'),)
     __tablename__ = "users_auth"
 
     # TODO: add fetching Oauth authorization records
@@ -80,7 +84,7 @@ class UserInternalAuthorization(Base):
         """
         query = select(UserInternalAuthorization) \
             .join(User).filter(
-                UserInternalAuthorization.internal_token == token,
+                UserInternalAuthorization.user.internal_token == token,
                 User.is_banned.is_(False),
                 User.is_bot.is_(is_bot)
             )
@@ -123,7 +127,6 @@ class UserInternalAuthorization(Base):
 
 
 class OauthUserAuthorization(Base):
-    record_id = Column(BigInteger, primary_key=True)
     user_id = Column(ForeignKey('users.id'), nullable=False)
 
     oauth_provider = Column(String(100), nullable=True)
@@ -131,8 +134,8 @@ class OauthUserAuthorization(Base):
     refresh_token = Column(String(100), unique=True, index=True, nullable=True)
 
     user: User = relationship(
-        UserInternalAuthorization,
-        primaryjoin="UserInternalAuthorization.user_id == OauthUserAuthorization.user_id",
+        User, uselist=False,
+        backref=backref('external_auth', cascade="all, delete-orphan"),
         lazy='joined'
     )
     __abstract__ = True

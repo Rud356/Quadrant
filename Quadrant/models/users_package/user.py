@@ -31,6 +31,7 @@ class User(Base):
     status: Mapped[UsersStatus] = Column(Enum(UsersStatus), default=UsersStatus.online, nullable=False)
     text_status: Mapped[str] = Column(String(length=256), nullable=False, default="")
     registered_at: Mapped[datetime] = Column(DateTime, default=datetime.utcnow, nullable=False)
+    internal_token: Mapped[str] = Column(String(128), primary_key=True)
 
     is_bot: Mapped[bool] = Column(Boolean, nullable=False, default=False)
     is_banned: Mapped[bool] = Column(Boolean, nullable=False, default=False)

@@ -20,7 +20,7 @@ async def prepare_users_client_authorization(
         {
             "exp": datetime.utcnow() + timedelta(days=7),
             "session_id": new_session.session_id,
-            "token": new_authorized_user.internal_token
+            "token": new_authorized_user.user.internal_token
         },
         quadrant_config.Security.cookie_secret.value,
         algorithm="HS256"
@@ -29,7 +29,8 @@ async def prepare_users_client_authorization(
     session_token = f"{token_type} {encoded_session_token}"
 
     # TODO: decide if it should be secure cookie or not
+    # TODO: add forever lasting cookie and expiring sessions
     response.set_cookie(
         key="session_token", value=session_token,
-        secure=True, max_age=int(timedelta(days=7).total_seconds())
+        max_age=int(timedelta(days=30).total_seconds())
     )
